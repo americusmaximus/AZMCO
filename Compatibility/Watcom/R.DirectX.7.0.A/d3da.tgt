@@ -136,7 +136,7 @@ WVList
 33
 MItem
 40
-..\..\..\Source\R.DirectX.7.0.M\Main.cxx
+..\..\..\Source\R.DirectX.7.0.A\Main.cxx
 34
 WString
 6
@@ -154,7 +154,7 @@ WVList
 37
 MItem
 42
-..\..\..\Source\R.DirectX.7.0.M\Module.cxx
+..\..\..\Source\R.DirectX.7.0.A\Module.cxx
 38
 WString
 6
@@ -172,7 +172,7 @@ WVList
 41
 MItem
 44
-..\..\..\Source\R.DirectX.7.0.M\Renderer.cxx
+..\..\..\Source\R.DirectX.7.0.A\Renderer.cxx
 42
 WString
 6
@@ -208,7 +208,7 @@ WVList
 49
 MItem
 42
-..\..\..\Source\R.DirectX.7.0.M\Module.hxx
+..\..\..\Source\R.DirectX.7.0.A\Module.hxx
 50
 WString
 3
@@ -226,7 +226,7 @@ WVList
 53
 MItem
 44
-..\..\..\Source\R.DirectX.7.0.M\Renderer.hxx
+..\..\..\Source\R.DirectX.7.0.A\Renderer.hxx
 54
 WString
 3

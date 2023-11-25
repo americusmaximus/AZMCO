@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Watcom", "Source\Watcom\Wat
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Renderers", "Renderers", "{9DD38DAD-7EE7-477F-A16F-907818834242}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "R.DirectX.7.0.M", "Source\R.DirectX.7.0.M\R.DirectX.7.0.M.vcxproj", "{6CAF06F5-80E5-4CE4-9A1C-C8B8CB160818}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "R.DirectX.7.0.A", "Source\R.DirectX.7.0.A\R.DirectX.7.0.A.vcxproj", "{6CAF06F5-80E5-4CE4-9A1C-C8B8CB160818}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B0620679-23C1-43E9-9486-8FF5A97D4C74} = {B0620679-23C1-43E9-9486-8FF5A97D4C74}
 	EndProjectSection
