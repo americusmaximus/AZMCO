@@ -30,4 +30,14 @@ SOFTWARE.
 namespace RendererModuleValues
 {
     extern s32 RendererState; // 0x600170b8
+    extern s32 RendererDeviceIndex; // 0x600170bc
+
+    extern u32 RendererVersion; // 0x60017128
+
+    extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x600fb340
+    extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600fb420
+
+    extern s32 RendererTextureFormatStates[MAX_USABLE_TEXTURE_FORMAT_COUNT]; // 0x60017010
+
+    extern s32 UnknownArray06[6]; // 0x60017068 // TODO
 }

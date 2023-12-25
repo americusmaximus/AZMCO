@@ -21,10 +21,13 @@ SOFTWARE.
 */
 
 #include "Renderer.hxx"
+#include "RendererValues.hxx"
 
 #include <stdio.h>
 
 #define MAX_SETTINGS_BUFFER_LENGTH 80
+
+using namespace RendererModuleValues;
 
 namespace RendererModule
 {
@@ -199,5 +202,57 @@ namespace RendererModule
     void InitializeTextureStateStates(void)
     {
         ZeroMemory(State.Textures.StageStates, MAX_TEXTURE_STATE_STATE_COUNT * sizeof(TextureStageState));
+    }
+
+    // 0x600020a0
+    void SelectRendererDevice(void)
+    {
+        if (RendererDeviceIndex < DEFAULT_DEVICE_INDEX)
+        {
+            State.Device.Capabilities.MinTextureWidth = 1;
+
+            if (State.Lambdas.Lambdas.AcquireWindow != NULL || State.Window.HWND != NULL)
+            {
+                const char* value = getenv(RENDERER_MODULE_DISPLAY_ENVIRONMENT_PROPERTY_NAME);
+
+                SelectDevice(value == NULL ? DEFAULT_DEVICE_INDEX : atoi(value));
+            }
+        }
+    }
+
+    // 0x600092c0
+    void AcquireRendererModuleDescriptor(RendererModuleDescriptor* desc, const char* section)
+    {
+        desc->Signature = AcquireSettingsValue(desc->Signature, section, "signature");
+        desc->Version = AcquireSettingsValue(desc->Version, section, "version");
+
+        {
+            const u32 caps = desc->Caps;
+
+            const u32 lw = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_LINE_WIDTH) >> 0, section, "linewidth");
+            const u32 ts = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_TEXTURE_SQUARE) >> 1, section, "texturesquare");
+            const u32 twp2 = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_TEXTURE_WIDTH_POW2) >> 2, section, "texturewidthpowerof2");
+            const u32 thp2 = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_TEXTURE_HEIGHT_POW2) >> 3, section, "textureheightpowerof2");
+            const u32 soft = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_SOFTWARE) >> 4, section, "software");
+            const u32 win = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_WINDOWED) >> 5, section, "windowed");
+            const u32 gc = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_GLOBAL_CUT) >> 6, section, "globalclut");
+            const u32 tn2p = AcquireSettingsValue((caps & RENDERER_MODULE_CAPS_TRILINEAR_PASS) >> 7, section, "trilinear2pass");
+
+            desc->Caps = ((lw & 1) << 0) | ((ts & 1) << 1) | ((twp2 & 1) << 2) | ((thp2 & 1) << 3)
+                | ((soft & 1) << 4) | ((win & 1) << 5) | ((gc & 1) << 6) | ((tn2p & 1) << 7);
+        }
+
+        desc->MinimumTextureWidth = AcquireSettingsValue(desc->MinimumTextureWidth, section, "texturewidthmin");
+        desc->MaximumTextureWidth = AcquireSettingsValue(desc->MaximumTextureWidth, section, "texturewidthmax");
+        desc->MultipleTextureWidth = AcquireSettingsValue(desc->MultipleTextureWidth, section, "texturewidthmultiple");
+        desc->MinimumTextureHeight = AcquireSettingsValue(desc->MinimumTextureHeight, section, "textureheightmin");
+        desc->MaximumTextureHeight = AcquireSettingsValue(desc->MaximumTextureHeight, section, "textureheightmax");
+        desc->MultipleTextureHeight = AcquireSettingsValue(desc->MultipleTextureHeight, section, "textureheightmultiple");
+        desc->ClipAlign = AcquireSettingsValue(desc->ClipAlign, section, "clipalign");
+        desc->MaximumSimultaneousTextures = AcquireSettingsValue(desc->MaximumSimultaneousTextures, section, "numstages");
+        desc->SubType = AcquireSettingsValue(desc->SubType, section, "subtype");
+        desc->MemorySize = AcquireSettingsValue(desc->MemorySize, section, "textureramsize");
+        desc->MemoryType = AcquireSettingsValue(desc->MemoryType, section, "textureramtype");
+        desc->DXV = AcquireSettingsValue(desc->DXV, section, "dxversion");
     }
 }

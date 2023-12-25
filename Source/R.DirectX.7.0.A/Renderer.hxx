@@ -36,11 +36,13 @@ SOFTWARE.
 #define DEPTH_BIT_MASK_8_BIT 0x800
 
 #define ENVIRONMENT_SECTION_NAME "DX7"
+#define MAX_DEVICE_CAPABILITIES_COUNT 128 /* ORIGINAL: 100 */
 #define MAX_ENUMERATE_DEVICE_COUNT 60 /* ORIGINAL: 10 */
 #define MAX_ENUMERATE_DEVICE_NAME_COUNT 60 /* ORIGINAL: 10 */
 #define MAX_ENUMERATE_DEVICE_NAME_LENGTH 80
 #define MAX_TEXTURE_STAGE_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
+#define MAX_USABLE_TEXTURE_FORMAT_COUNT 22
 #define STATE_ACTIVE 1
 #define STATE_INACTIVE 0
 #define STATE_INITIAL (-1)
@@ -61,7 +63,29 @@ namespace RendererModule
     {
         struct
         {
+            struct
+            {
+                BOOL IsSoft; // 0x60057dbc
+            } Active;
+        } DX;
+
+        struct
+        {
             GUID* Identifier; // 0x6001772c
+
+            struct
+            {
+                u32 MinTextureWidth; // 0x600596c0
+                u32 MaxTextureWidth; // 0x600596c4
+                u32 MinTextureHeight; // 0x600596c8
+                u32 MaxTextureHeight; // 0x600596cc
+                u32 MultipleTextureWidth; // 0x600596d0
+                BOOL IsPowerOfTwoTexturesWidth; // 0x600596d4
+                u32 MultipleTextureHeight; // 0x600596d8
+                BOOL IsPowerOfTwoTexturesHeight; // 0x600596dc
+                u32 MaximumSimultaneousTextures; // 0x600596e0
+                BOOL IsSquareOnlyTextures; // 0x600596e4
+            } Capabilities;
         } Device;
 
         struct
@@ -87,8 +111,18 @@ namespace RendererModule
 
         struct
         {
+            RendererModuleLambdaContainer Lambdas; // 0x6007a3c0
+        } Lambdas;
+
+        struct
+        {
             TextureStageState StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x6007a420
         } Textures;
+
+        struct
+        {
+            HWND HWND; // 0x6007a408
+        } Window;
     };
 
     extern RendererModuleState State;
@@ -98,5 +132,7 @@ namespace RendererModule
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
     u32 AcquireDirectDrawDeviceCount(GUID** uids, HMONITOR** monitors, const char* section);
     u32 AcquireRendererDeviceCount(void);
+    void AcquireRendererModuleDescriptor(RendererModuleDescriptor* desc, const char* section);
     void InitializeTextureStateStates(void);
+    void SelectRendererDevice(void);
 }

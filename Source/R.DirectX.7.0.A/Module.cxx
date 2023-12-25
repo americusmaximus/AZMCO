@@ -37,9 +37,60 @@ namespace RendererModule
     // a.k.a. THRASH_about
     DLLAPI RendererModuleDescriptor* STDCALLAPI AcquireDescriptor(void)
     {
-        // TODO NOT IMPLEMENTED
+        ModuleDescriptor.Version = RendererVersion;
+        ModuleDescriptor.Signature = RENDERER_MODULE_SIGNATURE_D3D7;
+        ModuleDescriptor.Unk1 = 0xd0; // TODO
 
-        return NULL;
+        if (State.Device.Capabilities.MinTextureWidth == 0)
+        {
+            ModuleDescriptor.MaximumTextureWidth = 256;
+            ModuleDescriptor.MaximumTextureHeight = 256;
+            ModuleDescriptor.MinimumTextureWidth = 8;
+            ModuleDescriptor.MinimumTextureHeight = 8;
+            ModuleDescriptor.MultipleTextureWidth = 1;
+            ModuleDescriptor.MultipleTextureHeight = 1;
+
+            ModuleDescriptor.Caps = RENDERER_MODULE_CAPS_WINDOWED | ((State.DX.Active.IsSoft & 1) << 4)
+                | RENDERER_MODULE_CAPS_SOFTWARE | RENDERER_MODULE_CAPS_TEXTURE_HEIGHT_POW2
+                | RENDERER_MODULE_CAPS_TEXTURE_WIDTH_POW2 | RENDERER_MODULE_CAPS_TEXTURE_SQUARE | RENDERER_MODULE_CAPS_LINE_WIDTH;
+
+            ModuleDescriptor.MaximumSimultaneousTextures = 1;
+        }
+        else
+        {
+            ModuleDescriptor.MaximumTextureWidth = State.Device.Capabilities.MaxTextureWidth;
+            ModuleDescriptor.MaximumTextureHeight = State.Device.Capabilities.MaxTextureHeight;
+            ModuleDescriptor.MinimumTextureWidth = State.Device.Capabilities.MinTextureWidth;
+            ModuleDescriptor.MinimumTextureHeight = State.Device.Capabilities.MinTextureHeight;
+            ModuleDescriptor.MultipleTextureWidth = State.Device.Capabilities.MultipleTextureWidth;
+            ModuleDescriptor.MultipleTextureHeight = State.Device.Capabilities.MultipleTextureHeight;
+
+            ModuleDescriptor.Caps = RENDERER_MODULE_CAPS_WINDOWED | ((State.DX.Active.IsSoft & 1) << 4)
+                | (State.Device.Capabilities.IsPowerOfTwoTexturesHeight & 1) << 3
+                | (State.Device.Capabilities.IsPowerOfTwoTexturesWidth & 1) << 2
+                | (State.Device.Capabilities.IsSquareOnlyTextures & 1) << 1 | RENDERER_MODULE_CAPS_LINE_WIDTH;
+
+            ModuleDescriptor.MaximumSimultaneousTextures = State.Device.Capabilities.MaximumSimultaneousTextures;
+        }
+
+        ModuleDescriptor.ClipAlign = 0;
+        ModuleDescriptor.DXV = RENDERER_MODULE_VERSION_DX7;
+        ModuleDescriptor.Author = RENDERER_MODULE_AUTHOR;
+        ModuleDescriptor.Unk4 = 0x14; // TODO
+        ModuleDescriptor.TextureFormatStates = RendererTextureFormatStates;
+        ModuleDescriptor.Unk5 = 4; // TODO
+
+        ModuleDescriptor.Unk6 = UnknownArray06;
+
+        ModuleDescriptor.Capabilities.Capabilities = ModuleDescriptorDeviceCapabilities;
+
+        strcpy(ModuleDescriptor.Name, RENDERER_MODULE_NAME);
+
+        SelectRendererDevice();
+
+        AcquireRendererModuleDescriptor(&ModuleDescriptor, ENVIRONMENT_SECTION_NAME);
+
+        return &ModuleDescriptor;
     }
 
     // 0x600012e0
