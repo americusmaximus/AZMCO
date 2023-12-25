@@ -24,18 +24,10 @@ SOFTWARE.
 
 #include "Renderer.hxx"
 
-#define RENDERER_MODULE_NAME "DX7 3rash"
+#define DEFAULT_DEVICE_INDEX 0
+#define INVALID_DEVICE_INDEX (-1)
 
-#ifdef _WIN64
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x64)"
-#else
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x32)"
-#endif
-
-// ORIGINAL: Lydia Chan, Thursday 02:18PM Jun 21, 2001
-#define RENDERER_MODULE_AUTHOR "Americus Maximus"
-
-namespace RendererModule
+namespace RendererModuleValues
 {
-    void ReleaseRendererModule(void);
+    extern s32 RendererState; // 0x600170b8
 }

@@ -26,6 +26,7 @@
     <ClInclude Include="Renderer.Basic.hxx" />
     <ClInclude Include="RendererModule.Basic.hxx" />
     <ClInclude Include="RendererModule.Export.hxx" />
+    <ClInclude Include="RendererModule.Settings.hxx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

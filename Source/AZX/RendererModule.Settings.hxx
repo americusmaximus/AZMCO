@@ -22,20 +22,17 @@ SOFTWARE.
 
 #pragma once
 
-#include "Renderer.hxx"
+#define RENDERER_MODULE_SETTINGS_FILE_NAME ".\\azmco.ini"
 
-#define RENDERER_MODULE_NAME "DX7 3rash"
+#define RENDERER_MODULE_SETTINGS_SECTION_DX7_NAME "DX7"
+#define RENDERER_MODULE_SETTINGS_SECTION_DX8_NAME "DX8"
 
-#ifdef _WIN64
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x64)"
-#else
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x32)"
-#endif
+// Indicates whether flat shading is active/enabled.
+// In practice means whether to overwrite the vertex color with white color or not.
+// In my case enabling this leads to disappearance of transparency in the game.
+// DEFAULT: TRUE
+#define RENDERER_MODULE_SETTINGS_FLAT_SHADING_PROPERTY_NAME "FlatShading"
 
-// ORIGINAL: Lydia Chan, Thursday 02:18PM Jun 21, 2001
-#define RENDERER_MODULE_AUTHOR "Americus Maximus"
-
-namespace RendererModule
-{
-    void ReleaseRendererModule(void);
-}
+// Indicates whether the hardware accelerated device should be picked first, despite the command from the game.
+// DEFAULT: FALSE
+#define RENDERER_MODULE_SETTINGS_ACCELERATE_GRAPHICS_PROPERTY_NAME "Accelerate"

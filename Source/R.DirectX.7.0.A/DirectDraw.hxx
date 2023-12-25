@@ -22,20 +22,25 @@ SOFTWARE.
 
 #pragma once
 
-#include "Renderer.hxx"
+#define DIRECTDRAW_VERSION 0x700
+#include <ddraw.h>
 
-#define RENDERER_MODULE_NAME "DX7 3rash"
-
-#ifdef _WIN64
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x64)"
-#else
-#define RENDERER_MODULE_TITLE_NAME "DirectX 7.0 (x32)"
+#ifdef __WATCOMC__
+#undef PURE
+#define PURE
 #endif
 
-// ORIGINAL: Lydia Chan, Thursday 02:18PM Jun 21, 2001
-#define RENDERER_MODULE_AUTHOR "Americus Maximus"
+#define DIRECT3D_VERSION 0x700
+#include <d3d.h>
 
-namespace RendererModule
-{
-    void ReleaseRendererModule(void);
-}
+#ifdef __WATCOMC__
+#include <mmsystem.h>
+#endif
+
+#define DDGDI_NONE 0
+#define DDEDM_NONE 0
+#define D3DDP_NONE 0
+#define D3DVBCAPS_NONE 0
+#define D3DVBOPTIMIZE_NONE 0
+#define DDSDM_NONE 0
+#define D3DCOLOR_NONE 0

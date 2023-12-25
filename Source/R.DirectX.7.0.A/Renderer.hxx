@@ -28,20 +28,22 @@ SOFTWARE.
 #include "RendererModule.Export.hxx"
 #endif
 
-#define DIRECTDRAW_VERSION 0x700
-#include <ddraw.h>
+#include "DirectDraw.hxx"
 
-#ifdef __WATCOMC__
-#undef PURE
-#define PURE
-#endif
+#define DEPTH_BIT_MASK_32_BIT 0x100
+#define DEPTH_BIT_MASK_24_BIT 0x200
+#define DEPTH_BIT_MASK_16_BIT 0x400
+#define DEPTH_BIT_MASK_8_BIT 0x800
 
-#define DIRECT3D_VERSION 0x700
-#include <d3d.h>
-
-#ifdef __WATCOMC__
-#include <mmsystem.h>
-#endif
+#define ENVIRONMENT_SECTION_NAME "DX7"
+#define MAX_ENUMERATE_DEVICE_COUNT 60 /* ORIGINAL: 10 */
+#define MAX_ENUMERATE_DEVICE_NAME_COUNT 60 /* ORIGINAL: 10 */
+#define MAX_ENUMERATE_DEVICE_NAME_LENGTH 80
+#define MAX_TEXTURE_STAGE_COUNT 8
+#define MAX_TEXTURE_STATE_STATE_COUNT 120
+#define STATE_ACTIVE 1
+#define STATE_INACTIVE 0
+#define STATE_INITIAL (-1)
 
 namespace Renderer
 {
@@ -50,10 +52,51 @@ namespace Renderer
 
 namespace RendererModule
 {
+    struct TextureStageState
+    {
+        s32 Values[MAX_TEXTURE_STAGE_COUNT];
+    };
+
     struct RendererModuleState
     {
+        struct
+        {
+            GUID* Identifier; // 0x6001772c
+        } Device;
 
+        struct
+        {
+            u32 Count; // 0x60017734
+
+            GUID* Indexes[MAX_ENUMERATE_DEVICE_COUNT]; // 0x6007a3e0
+
+            struct
+            {
+                u32 Count; // 0x60057e48
+                BOOL IsAvailable; // 0x60057e4c
+
+                char Names[MAX_ENUMERATE_DEVICE_NAME_COUNT][MAX_ENUMERATE_DEVICE_NAME_LENGTH]; // 0x60017390
+
+                struct
+                {
+                    GUID* Indexes[MAX_ENUMERATE_DEVICE_COUNT]; // 0x60057e58
+                    GUID Identifiers[MAX_ENUMERATE_DEVICE_COUNT]; // 0x60057e98
+                } Identifiers;
+            } Enumeration;
+        } Devices;
+
+        struct
+        {
+            TextureStageState StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x6007a420
+        } Textures;
     };
 
     extern RendererModuleState State;
+
+    BOOL AcquireRendererDeviceAccelerationState(const u32 indx);
+    BOOL CALLBACK EnumerateDirectDrawDevices(GUID* uid, LPSTR name, LPSTR description, LPVOID context);
+    s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
+    u32 AcquireDirectDrawDeviceCount(GUID** uids, HMONITOR** monitors, const char* section);
+    u32 AcquireRendererDeviceCount(void);
+    void InitializeTextureStateStates(void);
 }

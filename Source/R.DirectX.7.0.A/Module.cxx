@@ -20,9 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "Graphics.Basic.hxx"
 #include "Module.hxx"
+#include "RendererValues.hxx"
+#include "Settings.hxx"
+
+#include <stdlib.h>
 
 using namespace Renderer;
+using namespace RendererModuleValues;
+using namespace Settings;
 
 namespace RendererModule
 {
@@ -231,16 +238,64 @@ namespace RendererModule
     // a.k.a. THRASH_init
     DLLAPI u32 STDCALLAPI Init(void)
     {
-        // TODO NOT IMPLEMENTED
+        RendererState = STATE_INACTIVE;
 
-        return RENDERER_MODULE_FAILURE;
+        InitializeSettings();
+
+        AcquireRendererDeviceCount();
+
+        InitializeTextureStateStates();
+
+        atexit(ReleaseRendererModule);
+
+        return State.Devices.Count;
     }
 
     // 0x60003a90
     // a.k.a. THRASH_is
     DLLAPI u32 STDCALLAPI Is(void)
     {
-        // TODO NOT IMPLEMENTED
+        HWND hwnd = GetDesktopWindow();
+        HDC hdc = GetWindowDC(hwnd);
+
+        if (GetDeviceCaps(hdc, BITSPIXEL) < GRAPHICS_BITS_PER_PIXEL_8)
+        {
+            ReleaseDC(hwnd, hdc);
+
+            return RENDERER_MODULE_FAILURE;
+        }
+
+        IDirectDraw7* instance = NULL;
+        HRESULT result = DirectDrawCreateEx(NULL, (void**)&instance, IID_IDirectDraw7, NULL);
+
+        if (result == DD_OK)
+        {
+            DDCAPS caps;
+            ZeroMemory(&caps, sizeof(DDCAPS));
+
+            caps.dwSize = sizeof(DDCAPS);
+
+            result = instance->GetCaps(&caps, NULL);
+
+            if ((caps.dwCaps & DDCAPS_3D) && result == DD_OK)
+            {
+                IDirect3D7* dx = NULL;
+                result = instance->QueryInterface(IID_IDirect3D7, (void**)&dx);
+
+                instance->Release();
+
+                if (result == DD_OK && dx != NULL)
+                {
+                    dx->Release();
+
+                    return RENDERER_MODULE_DX7_ACCELERATION_AVAILABLE;
+                }
+
+                if (dx != NULL) { dx->Release(); }
+            }
+        }
+
+        if (instance != NULL) { instance->Release(); }
 
         return RENDERER_MODULE_FAILURE;
     }
