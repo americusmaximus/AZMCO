@@ -14,6 +14,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "R.DirectX.7.0.A", "Source\R
 		{B0620679-23C1-43E9-9486-8FF5A97D4C74} = {B0620679-23C1-43E9-9486-8FF5A97D4C74}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B8ABE68-F12A-45BD-88B0-C8CEFB57C066}"
+	ProjectSection(SolutionItems) = preProject
+		azmco.ini = azmco.ini
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

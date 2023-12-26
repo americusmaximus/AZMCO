@@ -92,28 +92,47 @@ namespace RendererModule
 
         return &ModuleDescriptor;
     }
-
+    
     // 0x600012e0
     // a.k.a. THRASH_clearwindow
     DLLAPI u32 STDCALLAPI ClearGameWindow()
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return ClearRendererViewPort(State.ViewPort.X0, State.ViewPort.Y0,
+            State.ViewPort.X1 + State.ViewPort.X0, State.ViewPort.Y0 + State.ViewPort.Y1,
+            State.DX.Surfaces.Window == State.DX.Surfaces.Depth);
     }
 
     // 0x600013b0
     // a.k.a. THRASH_clip
     DLLAPI u32 STDCALLAPI ClipGameWindow(const u32 x0, const u32 y0, const u32 x1, const u32 y1)
     {
-        // TODO NOT IMPLEMENTED
+        State.ViewPort.X0 = x0;
+        State.ViewPort.Y0 = y0;
+        State.ViewPort.X1 = x1 - x0;
+        State.ViewPort.Y1 = y1 - y0;
 
-        return RENDERER_MODULE_FAILURE;
+        AttemptRenderScene();
+
+        if (State.Scene.IsActive) { EndRendererScene(); }
+
+        D3DVIEWPORT7 vp;
+        ZeroMemory(&vp, sizeof(D3DVIEWPORT7));
+
+        vp.dwX = x0;
+        vp.dwY = y0;
+        vp.dvMinZ = 0.0f;
+        vp.dvMaxZ = 0.9999847f;
+        vp.dwWidth = x1 - x0;
+        vp.dwHeight = y1 - y0;
+
+        State.DX.Device->SetViewport(&vp);
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60001870
     // a.k.a. THRASH_createwindow
-    DLLAPI u32 STDCALLAPI CreateGameWindow(void*, void*, void*, void*)
+    DLLAPI u32 STDCALLAPI CreateGameWindow(const u32 width, const u32 height, const u32 format, const u32 options)
     {
         // TODO NOT IMPLEMENTED
 
@@ -122,7 +141,7 @@ namespace RendererModule
 
     // 0x60001900
     // a.k.a. THRASH_destroywindow
-    DLLAPI u32 STDCALLAPI DestroyGameWindow(void*)
+    DLLAPI u32 STDCALLAPI DestroyGameWindow(const u32 indx)
     {
         // TODO NOT IMPLEMENTED
 
@@ -195,14 +214,14 @@ namespace RendererModule
 
     // 0x60001bd0
     // a.k.a. THRASH_drawsprite
-    DLLAPI void STDCALLAPI DrawSprite(void*, void*)
+    DLLAPI void STDCALLAPI DrawSprite(RVX* a, RVX* b)
     {
         // TODO NOT IMPLEMENTED
     }
 
     // 0x60001c30
     // a.k.a. THRASH_drawspritemesh
-    DLLAPI void STDCALLAPI DrawSpriteMesh(void*, void*, void*)
+    DLLAPI void STDCALLAPI DrawSpriteMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
         // TODO NOT IMPLEMENTED
     }
@@ -256,9 +275,7 @@ namespace RendererModule
     // a.k.a. THRASH_flushwindow
     DLLAPI u32 STDCALLAPI FlushGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return EndRendererScene();
     }
 
     // 0x60001dc0
@@ -364,14 +381,16 @@ namespace RendererModule
     // a.k.a. THRASH_pageflip
     DLLAPI u32 STDCALLAPI ToggleGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
+        EndRendererScene();
 
-        return RENDERER_MODULE_FAILURE;
+        if (State.Lock.IsActive) { LOGERROR("D3D pageflip called in while locked\n"); }
+
+        return ToggleRenderer();
     }
 
     // 0x60001d60
     // a.k.a. THRASH_readrect
-    DLLAPI u32 STDCALLAPI ReadRectangle(const u32 x, const u32 y, const u32 width, const u32 height, u32* data)
+    DLLAPI u32 STDCALLAPI ReadRectangle(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels)
     {
         // TODO NOT IMPLEMENTED
 
@@ -380,7 +399,7 @@ namespace RendererModule
 
     // 0x60003ba0
     // a.k.a. THRASH_readrect
-    DLLAPI u32 STDCALLAPI ReadRectangles(const u32 x, const u32 y, const u32 width, const u32 height, u32* data, void*)
+    DLLAPI u32 STDCALLAPI ReadRectangles(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels, void*)
     {
         // TODO NOT IMPLEMENTED
 
@@ -400,9 +419,47 @@ namespace RendererModule
     // a.k.a. THRASH_selectdisplay
     DLLAPI u32 STDCALLAPI SelectDevice(const s32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        State.Device.Identifier = NULL;
 
-        return RENDERER_MODULE_FAILURE;
+        if (State.DX.Instance != NULL) { RestoreGameWindow(); }
+
+        const char* name = NULL;
+
+        if (indx < DEFAULT_DEVICE_INDEX || State.Devices.Count <= indx)
+        {
+            RendererDeviceIndex = DEFAULT_DEVICE_INDEX;
+            State.Device.Identifier = State.Devices.Indexes[DEFAULT_DEVICE_INDEX];
+            name = State.Devices.Enumeration.Names[DEFAULT_DEVICE_INDEX];
+        }
+        else
+        {
+            RendererDeviceIndex = indx;
+            State.Device.Identifier = State.Devices.Indexes[indx];
+            name = State.Devices.Enumeration.Names[indx];
+        }
+
+        strncpy(State.Device.Name, name, MAX_ENUMERATE_DEVICE_NAME_LENGTH);
+
+        if (State.Lambdas.Lambdas.Execute != NULL)
+        {
+            State.Lambdas.Lambdas.Execute(RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_DEVICE, (RENDERERMODULEEXECUTECALLBACK)InitializeRendererDeviceExecute);
+            State.Lambdas.Lambdas.Execute(RENDERER_MODULE_WINDOW_MESSAGE_RELEASE_DEVICE, (RENDERERMODULEEXECUTECALLBACK)ReleaseRendererDeviceExecute);
+            State.Lambdas.Lambdas.Execute(RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_SURFACES, (RENDERERMODULEEXECUTECALLBACK)InitializeRendererDeviceSurfacesExecute);
+
+            if (State.Lambdas.Lambdas.Execute != NULL)
+            {
+                if (GetWindowThreadProcessId(State.Window.Parent.HWND, NULL) != GetCurrentThreadId())
+                {
+                    InitializeRendererDeviceLambdas();
+
+                    return RENDERER_MODULE_SUCCESS;
+                }
+            }
+        }
+
+        InitializeRendererDevice();
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60003d10
@@ -443,7 +500,7 @@ namespace RendererModule
 
     // 0x60008e70
     // a.k.a. THRASH_talloc
-    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, void* p4, const u32 options)
+    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state)
     {
         // TODO NOT IMPLEMENTED
 
@@ -452,7 +509,7 @@ namespace RendererModule
 
     // 0x60008eb0
     // a.k.a. THRASH_tfree
-    DLLAPI u32 STDCALLAPI ReleaseTexture(void*)
+    DLLAPI u32 STDCALLAPI ReleaseTexture(RendererTexture* tex)
     {
         // TODO NOT IMPLEMENTED
 
@@ -479,7 +536,7 @@ namespace RendererModule
 
     // 0x60008f60
     // a.k.a. THRASH_tupdaterect
-    DLLAPI u32 STDCALLAPI UpdateTextureRectangle(void*, void*, void*, void*, void*, void*, void*, void*, void*)
+    DLLAPI RendererTexture* STDCALLAPI UpdateTextureRectangle(RendererTexture* tex, const u32* pixels, const u32* palette, const s32 x, const s32 y, const s32 width, const s32 height, const s32 size, const s32 level)
     {
         // TODO NOT IMPLEMENTED
 
@@ -506,7 +563,7 @@ namespace RendererModule
 
     // 0x60001d90
     // a.k.a. THRASH_writerect
-    DLLAPI u32 STDCALLAPI WriteRectangle(const u32 x, const u32 y, const u32 width, const u32 height, const u32* data)
+    DLLAPI u32 STDCALLAPI WriteRectangle(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels)
     {
         // TODO NOT IMPLEMENTED
 
@@ -515,7 +572,7 @@ namespace RendererModule
 
     // 0x60003c50
     // a.k.a. THRASH_writerect
-    DLLAPI u32 STDCALLAPI WriteRectangles(const u32 x, const u32 y, const u32 width, const u32 height, const u32* data, void*)
+    DLLAPI u32 STDCALLAPI WriteRectangles(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels, void*)
     {
         // TODO NOT IMPLEMENTED
 

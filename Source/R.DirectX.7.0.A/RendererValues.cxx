@@ -31,7 +31,22 @@ namespace RendererModuleValues
     s32 RendererState = STATE_INITIAL;
     s32 RendererDeviceIndex = INVALID_DEVICE_INDEX;
 
+    u32 RendererToggleOptions = DDFLIP_WAIT;
+    u32 RendererBlitOptions = DDBLT_DONOTWAIT;
+
+    f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
+
+    u32 RendererVertexType = D3DFVF_TLVERTEX;
+
+    D3DPRIMITIVETYPE RendererPrimitiveType = D3DPT_TRIANGLELIST;
+
+    u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
+
     u32 RendererVersion = RENDERER_MODULE_VERSION_113;
+
+    f32 RendererDepthBias;
+
+    s32 RendererDeviceType;
 
     RendererModuleDescriptor ModuleDescriptor;
     RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT];

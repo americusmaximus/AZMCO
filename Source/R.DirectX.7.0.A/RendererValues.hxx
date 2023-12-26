@@ -32,7 +32,22 @@ namespace RendererModuleValues
     extern s32 RendererState; // 0x600170b8
     extern s32 RendererDeviceIndex; // 0x600170bc
 
+    extern u32 RendererToggleOptions; // 0x600170cc
+    extern u32 RendererBlitOptions; // 0x600170d0
+
+    extern f32 RendererClearDepth; // 0x600170e0
+
+    extern u32 RendererVertexType; // 0x600170f0
+
+    extern D3DPRIMITIVETYPE RendererPrimitiveType; // 0x60017104
+
+    extern u32 RendererClearColor; // 0x60017118
+
     extern u32 RendererVersion; // 0x60017128
+
+    extern f32 RendererDepthBias; // 0x600178ac
+
+    extern s32 RendererDeviceType; // 0x60057dc0
 
     extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x600fb340
     extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600fb420
