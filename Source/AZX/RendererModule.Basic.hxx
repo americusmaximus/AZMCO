@@ -47,6 +47,10 @@ SOFTWARE.
 
 #define MAX_RENDERER_MODULE_DEVICE_NAME_LENGTH 32
 
+#define RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY 0
+#define RENDERER_MODULE_TEXTURE_LOCATION_LOCAL_VIDEO_MEMORY 1
+#define RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY 2
+
 #define RENDERER_MODULE_SELECT_STATE_MASK 0x0000FFFF
 #define RENDERER_MODULE_SELECT_STATE_STAGE_MASK 0xFFFF0000
 
@@ -499,6 +503,59 @@ namespace RendererModule
         u32 Height;
     };
 
+    // NOTE: Used in DirectX 7 renderers.
+    struct RendererModuleDeviceCapabilities7
+    {
+        BOOL IsAccelerated;
+        u32 RendererDepthBits;
+        u32 RenderScreenBits;
+        u32 RendererDeviceDepthBits;
+        BOOL IsDepthVideoMemoryAvailable;
+        BOOL IsDepthAvailable;
+        BOOL IsGreenAllowSixBits;
+        BOOL IsVideoMemoryAvailable;
+        BOOL IsDitherAvailable;
+        BOOL IsNoVerticalSync;
+        BOOL IsWBufferAvailable;
+        BOOL IsWFogAvailable;
+        BOOL IsWindowModeAvailable;
+        BOOL IsInterpolationAvailable;
+        BOOL IsDepthRemovalAvailable;
+        BOOL IsPerspectiveTextures;
+        BOOL IsAlphaBlending;
+        BOOL IsAlphaProperBlending;
+        BOOL IsAlphaTextures;
+        BOOL IsModulateBlending;
+        BOOL IsSourceAlphaBlending;
+        BOOL IsAntiAliasingAvailable;
+        BOOL IsColorBlending;
+        BOOL IsAnisotropyAvailable;
+        BOOL IsGammaAvailable;
+        BOOL IsSpecularGouraudBlending;
+        BOOL IsStencilBufferAvailable;
+        BOOL IsSpecularBlending;
+        s32 Unk29; // TODO
+        BOOL IsTextureIndependentUVs;
+        BOOL IsMipMapBiasAvailable;
+        s32 Unk32; // TODO
+        u32 MinTextureWidth;
+        u32 MaxTextureWidth;
+        u32 MinTextureHeight;
+        u32 MaxTextureHeight;
+        u32 MultipleTextureWidth;
+        BOOL IsPowerOfTwoTexturesWidth;
+        u32 MultipleTextureHeight;
+        BOOL IsPowerOfTwoTexturesHeight;
+        u32 MaximumSimultaneousTextures;
+        BOOL IsSquareOnlyTextures;
+        BOOL IsAntiAliasEdges;
+        f32 GuardBandLeft;
+        f32 GuardBandRight;
+        f32 GuardBandTop;
+        f32 GuardBandBottom;
+        f32 MaxTextureRepeat;
+    };
+
     struct RendererModuleLambdaContainer
     {
         void* L1; // TODO
@@ -567,5 +624,110 @@ namespace RendererModule
         const char* Author;
 
         u32 DXV;
+    };
+
+    // NOTE: D3DLIGHTTYPE
+    typedef enum RendererModuleLightType
+    {
+        RendererModuleLightTypeNone = 0,
+        RendererModuleLightTypePoint = 1,
+        RendererModuleLightTypeSpot = 2,
+        RendererModuleLightTypeDirectional = 3,
+        RendererModuleLightTypeMax = U32_MAX
+    } RendererModuleLightType;
+
+    // NOTE: D3DLIGHT7
+    struct RendererModuleLight
+    {
+        RendererModuleLightType Type;
+        u32 Diffuse;
+        u32 Specular;
+        u32 Ambient;
+        f32x3 Position;
+        f32x3 Direction;
+        f32 Range;
+        f32 Falloff;
+        f32 Attenuation0;
+        f32 Attenuation1;
+        f32 Attenuation2;
+        f32 Theta;
+        f32 Phi;
+    };
+
+    struct RendererModuleMaterial
+    {
+        u32 Diffuse;
+        u32 Ambient;
+        u32 Specular;
+        u32 Emissive;
+        f32 Power;
+    };
+
+    typedef enum RendererModulePrimitiveType
+    {
+        RendererModulePrimitiveTypeNone = 0,
+        RendererModulePrimitiveTypePointList = 1,
+        RendererModulePrimitiveTypeLineList = 2,
+        RendererModulePrimitiveTypeLineStrip = 3,
+        RendererModulePrimitiveTypeTriangleList = 4,
+        RendererModulePrimitiveTypeTriangleStrip = 5,
+        RendererModulePrimitiveTypeTriangleFan = 6,
+        RendererModulePrimitiveTypeMax = U32_MAX
+    } RendererModulePrimitiveType;
+
+    struct RendererModulePacket
+    {
+        RendererModulePrimitiveType Type;
+        u32 FVF;
+        void* Vertexes;
+        u32 VertexCount;
+        u16* Indexes;
+        u32 IndexCount;
+    };
+
+    struct RendererModuleBufferPacket
+    {
+        void* Vertexes;
+        RendererModulePrimitiveType Type;
+        s32 Unk02; // TODO
+        s32 Unk03; // TODO
+        s32 Unk04; // TODO
+        u32 VertexCount;
+        u16* Indexes;
+        u32 IndexCount;
+    };
+
+    struct RendererModuleGuardBands
+    {
+        s32 Left;
+        s32 Right;
+        s32 Top;
+        s32 Bottom;
+    };
+
+    struct RendererModuleTransformAndLightCapabilites
+    {
+        BOOL IsActive;
+        u32 MaxActiveLights;
+        s32 Unk03; // TODO
+        u32 MaxUserClipPlanes;
+        u32 MaxVertexBlendMatrices;
+        BOOL IsTransformLightBufferSystemMemoryAvailable;
+        BOOL IsTransformLightBufferVideoMemoryAvailable;
+    };
+
+    struct RendererModuleTextureStageBumpMappingMatrix
+    {
+        f32 M00, M01, M10, M11;
+    };
+
+    struct RendererModuleVertexBuffer
+    {
+        void* Buffer;
+        s32 Unk01; // TODO
+        u32 FVF;
+        u32 Capabilities;
+        s32 Unk04; // TODO
+        u32 VertexCount;
     };
 }
