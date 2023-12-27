@@ -44,10 +44,14 @@ namespace RendererModuleValues
     extern u32 RendererClearColor; // 0x60017118
 
     extern u32 RendererVersion; // 0x60017128
+    extern u32 RendererLineVertexSize; // 0x6001712c
+    extern u32 RendererIndexSize; // 0x60017130
 
     extern f32 RendererDepthBias; // 0x600178ac
 
     extern s32 RendererDeviceType; // 0x60057dc0
+
+    extern RendererModule::MinMax MinMax[6]; // 0x60017088 // TODO
 
     extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x600fb340
     extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600fb420

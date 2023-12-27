@@ -43,10 +43,22 @@ namespace RendererModuleValues
     u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
 
     u32 RendererVersion = RENDERER_MODULE_VERSION_113;
+    u32 RendererLineVertexSize = sizeof(RTLVX);
+    u32 RendererIndexSize = RENDERER_MODULE_INDEX_SIZE_4;
 
     f32 RendererDepthBias;
 
     s32 RendererDeviceType;
+
+    RendererModule::MinMax MinMax[6] =
+    {
+        { 0x0,   0x4a },
+        { 0x64,  0x6e },
+        { 0xc8,  0xd7 },
+        { 0x12c, 0x13b },
+        { 0x190, 0x19f },
+        { 0x2bc, 0x2cb }
+    }; // TODO
 
     RendererModuleDescriptor ModuleDescriptor;
     RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT];

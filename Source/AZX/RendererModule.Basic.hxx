@@ -490,7 +490,14 @@ typedef void* (STDCALLAPI* RENDERERMODULEALLOCATEMEMORYLAMBDA)(const u32 size);
 
 namespace RendererModule
 {
-    struct RendererModuleWindowLock;
+    struct RendererModuleWindowLock
+    {
+        void* Data;
+        u32 Stride;
+        s32 Format;
+        u32 Width;
+        u32 Height;
+    };
 
     struct RendererModuleLambdaContainer
     {
