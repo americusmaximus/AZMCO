@@ -114,3 +114,7 @@ struct u32x4 { u32 X, Y, Z, W; };
 #if defined(__WATCOMC__)
 #define roundf round
 #endif
+
+#if _MSC_VER <= 1200
+#define isnan _isnan
+#endif

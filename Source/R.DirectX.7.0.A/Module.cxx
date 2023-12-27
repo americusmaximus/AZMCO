@@ -176,14 +176,14 @@ namespace RendererModule
     // // a.k.a. THRASH_drawline
     DLLAPI void STDCALLAPI DrawLine(RVX* a, RVX* b)
     {
-        // TODO NOT IMPLEMENTED
+        RenderLine(a, b);
     }
 
     // 0x60001b20
     // a.k.a. THRASH_drawlinemesh
     DLLAPI void STDCALLAPI DrawLineMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        RenderLineMesh(vertexes, indexes, count);
     }
 
     // 0x60001d00
@@ -191,70 +191,104 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawLineStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[x + 0], (RVX*)&vs[x + 1]); }
     }
 
     // 0x60001b40
     // a.k.a. THRASH_drawlinestrip
     DLLAPI void STDCALLAPI DrawLineStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[indexes[x + 0]], (RVX*)&vs[indexes[x + 1]]); }
     }
 
     // 0x60001b80
     // a.k.a. THRASH_drawpoint
     DLLAPI void STDCALLAPI DrawPoint(RVX* vertex)
     {
-        // TODO NOT IMPLEMENTED
+        RenderPoints(vertex, 1);
     }
 
     // 0x60001ba0
     // a.k.a. THRASH_drawpointmesh
     DLLAPI void STDCALLAPI DrawPointMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            const u16 index = *(u16*)((addr)indexes + (addr)(x * RendererIndexSize));
+
+            DrawPoint((RVX*)&vs[index]);
+        }
     }
 
     // 0x60001d30
     // a.k.a. THRASH_drawpointstrip
     DLLAPI void STDCALLAPI DrawPointStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&vs[x]); }
     }
 
     // 0x60001a80
     // a.k.a. THRASH_drawquad
     DLLAPI void STDCALLAPI DrawQuad(RVX* a, RVX* b, RVX* c, RVX* d)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Settings.Cull == 1 || ((u32)AcquireNormal((f32x3*)a, (f32x3*)b, (f32x3*)c) & 0x80000000) != State.Settings.Cull) { RenderQuad(a, b, c, d); } // TODO
     }
 
     // 0x60001ae0
     // a.k.a. THRASH_drawquadmesh
     DLLAPI void STDCALLAPI DrawQuadMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        RenderQuadMesh(vertexes, indexes, count);
     }
 
     // 0x60001bd0
     // a.k.a. THRASH_drawsprite
     DLLAPI void STDCALLAPI DrawSprite(RVX* a, RVX* b)
     {
-        // TODO NOT IMPLEMENTED
+        RTLVX ea;
+        CopyMemory(&ea, b, sizeof(RTLVX));
+
+        ea.XYZ.Y = ((RTLVX*)a)->XYZ.Y;
+        ea.UV.Y = ((RTLVX*)a)->UV.Y;
+
+        RTLVX eb;
+        CopyMemory(&ea, b, sizeof(RTLVX));
+
+        eb.XYZ.X = ((RTLVX*)a)->XYZ.X;
+        eb.UV.X = ((RTLVX*)a)->UV.X;
+
+        DrawQuad(a, (RVX*)&ea, b, (RVX*)&eb);
     }
 
     // 0x60001c30
     // a.k.a. THRASH_drawspritemesh
     DLLAPI void STDCALLAPI DrawSpriteMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        for (u32 x = 0; x < count; x++)
+        {
+            const u16 ia = *(u16*)((addr)indexes + (addr)RendererIndexSize * (addr)(x + 0));
+            const u16 ib = *(u16*)((addr)indexes + (addr)RendererIndexSize * (addr)(x + 1));
+
+            RVX* a = (RVX*)((addr)vertexes + (addr)RendererVertexSize * (addr)ia);
+            RVX* b = (RVX*)((addr)vertexes + (addr)RendererVertexSize * (addr)ib);
+
+            DrawSprite(a, b);
+        }
     }
 
     // 0x600019c0
     // a.k.a. THRASH_drawtri
     DLLAPI void STDCALLAPI DrawTriangle(RVX* a, RVX* b, RVX* c)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Settings.Cull == 1 || ((u32)AcquireNormal((f32x3*)a, (f32x3*)b, (f32x3*)c) & 0x80000000) != State.Settings.Cull) { RenderTriangle(a, b, c); } // TODO
     }
 
     // 0x60001cd0
@@ -262,21 +296,23 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawTriangleFan(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawTriangle((RVX*)&vs[0], (RVX*)&vs[x + 1], (RVX*)&vs[x + 2]); }
     }
 
     // 0x60001a60
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFans(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        RenderTriangleFans(vertexes, count + 2, count, indexes);
     }
 
     // 0x60001a20
     // a.k.a. THRASH_drawtrimesh
     DLLAPI void STDCALLAPI DrawTriangleMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        RenderTriangleMesh(vertexes, indexes, count);
     }
 
     // 0x60001c80
@@ -285,14 +321,25 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawTriangleStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if (count == 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        DrawTriangle((RVX*)&vs[0], (RVX*)&vs[1], (RVX*)&vs[2]);
+
+        for (u32 x = 1; x < count; x = x + 2)
+        {
+            DrawTriangle((RVX*)&vs[x + 0], (RVX*)&vs[x + 2], (RVX*)&vs[x + 1]);
+
+            if ((x + 1) < count) { DrawTriangle((RVX*)&vs[x + 1], (RVX*)&vs[x + 2], (RVX*)&vs[x + 3]); }
+        }
     }
 
     // 0x60001a40
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        RenderTriangleStrips(vertexes, count + 2, count, indexes);
     }
 
     // 0x60001320
@@ -322,7 +369,7 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI RendererTexture* STDCALLAPI AcquireGameWindowTexture(const u32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        if (indx < MAX_WINDOW_COUNT) { return State.Windows[indx].Texture; }
 
         return NULL;
     }
