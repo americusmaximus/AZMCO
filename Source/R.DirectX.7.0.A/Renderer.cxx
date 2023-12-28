@@ -3696,9 +3696,9 @@ namespace RendererModule
             // B
             {
                 void* v = (void*)((addr)State.Data.Vertexes.Vertexes + (addr)(RendererVertexSize * (State.Data.Vertexes.Count + 1)));
-
+                
                 const u16 indx = *(u16*)((addr)indexes + (addr)(RendererIndexSize * (x * 2 + 1)));
-
+                
                 void* b = (void*)((addr)vertexes + (addr)(RendererVertexSize * indx));
 
                 CopyMemory(v, b, RendererVertexSize);

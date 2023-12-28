@@ -25,7 +25,7 @@ The renderer modules were implemented with minor changes, such as omission of wr
 #### DirectX 7
 The original game shipped with DirectX 7 renderer. The renderer is very similar to the ones in the Need For Speed series, since it is evolution of the same engine.
 
-1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original.
+1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original, however it is fully functional for predecessor games such as Neer For Speed Hot Pursuit and High Stakes.
 
 ## Similar Projects
 ### Predecessors
