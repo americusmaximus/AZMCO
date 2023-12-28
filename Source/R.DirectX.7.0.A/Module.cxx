@@ -351,7 +351,6 @@ namespace RendererModule
 
     // 0x60001dc0
     // a.k.a. THRASH_getstate
-    // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI AcquireState(const u32 state)
     {
         const u32 actual = state & RENDERER_MODULE_SELECT_STATE_MASK;
@@ -366,7 +365,6 @@ namespace RendererModule
 
     // 0x60001950
     // a.k.a. THRASH_getwindowtexture
-    // NOTE: Never being called by the application.
     DLLAPI RendererTexture* STDCALLAPI AcquireGameWindowTexture(const u32 indx)
     {
         if (indx < MAX_WINDOW_COUNT) { return State.Windows[indx].Texture; }
