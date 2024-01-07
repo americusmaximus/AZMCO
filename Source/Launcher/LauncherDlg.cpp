@@ -282,7 +282,7 @@ void CLauncherDlg::OnBnClicked1001()
 
     TCHAR szDirectory[MAX_PATH] = _T("");
     GetCurrentDirectory(MAX_PATH - 1, szDirectory);
-    
+
     CString appName;
     appName.Format(FILE_NAME_TEMPLATE, szDirectory, APP_FILE_NAME);
 
@@ -293,7 +293,7 @@ void CLauncherDlg::OnBnClicked1001()
         CString error;
         error.Format(_T("Process failed with return code: %d. Error #%d"), (int)result, GetLastError());
 
-        AfxMessageBox(error.GetString(), MB_OK | MB_ICONERROR);
+        AfxMessageBox(error.GetString(), MB_OK | MB_ICONEXCLAMATION);
     }
 }
 
@@ -345,6 +345,8 @@ void CLauncherDlg::OnCbnSelchange1003()
     if (((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME))->GetCheck() == BST_CHECKED)
     {
         ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN))->SetCurSel(indx);
+
+        OnCbnSelchange1008();
     }
 
     for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
@@ -395,7 +397,7 @@ void CLauncherDlg::OnKillFocus1004()
 
         if (count != 1)
         {
-            AfxMessageBox(_T("Please enter an integer."), MB_OK | MB_ICONEXCLAMATION);
+            AfxMessageBox(ERROR_MESSAGE_ENTER_INTEGER, MB_OK | MB_ICONEXCLAMATION);
 
             edit->SetFocus();
 
@@ -405,7 +407,7 @@ void CLauncherDlg::OnKillFocus1004()
 
     if (number < 0 || number > 25)
     {
-        AfxMessageBox(_T("Please enter an integer between 0 and 25."), MB_OK | MB_ICONEXCLAMATION);
+        AfxMessageBox(ERROR_MESSAGE_ENTER_INTEGER_0_25, MB_OK | MB_ICONEXCLAMATION);
 
         edit->SetFocus();
     }
@@ -589,7 +591,7 @@ void CLauncherDlg::OnKillFocus1012()
 
         if (count != 1)
         {
-            AfxMessageBox(_T("Please enter an integer."), MB_OK | MB_ICONEXCLAMATION);
+            AfxMessageBox(ERROR_MESSAGE_ENTER_INTEGER, MB_OK | MB_ICONEXCLAMATION);
 
             edit->SetFocus();
 
@@ -599,7 +601,7 @@ void CLauncherDlg::OnKillFocus1012()
 
     if (number < 1 || number > 8)
     {
-        AfxMessageBox(_T("Please enter an integer between 1 and 8."), MB_OK | MB_ICONEXCLAMATION);
+        AfxMessageBox(ERROR_MESSAGE_ENTER_INTEGER_1_8, MB_OK | MB_ICONEXCLAMATION);
 
         edit->SetFocus();
     }
@@ -685,11 +687,11 @@ void CLauncherDlg::OnBnClicked1019()
 // IDC_BUTTON_SAVE
 void CLauncherDlg::OnBnClicked1020()
 {
-    CButton* button = (CButton*)GetDlgItem(IDC_BUTTON_SAVE);
+    if (!SaveSettingsCopy()) { AfxMessageBox(ERROR_MESSAGE_UNABLE_CREATE_SETTINGS_FILE_COPY, MB_OK | MB_ICONEXCLAMATION); return; }
 
-    // TODO: Add your control notification handler code here
+    if (!SaveSettings()) { AfxMessageBox(ERROR_MESSAGE_UNABLE_CREATE_SETTINGS_FILE, MB_OK | MB_ICONEXCLAMATION); return; }
 
-    button->EnableWindow(FALSE);
+    (CButton*)GetDlgItem(IDC_BUTTON_SAVE)->EnableWindow(FALSE);
 }
 
 // IDC_BUTTON_EXIT

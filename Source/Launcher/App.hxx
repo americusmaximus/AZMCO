@@ -34,6 +34,9 @@ SOFTWARE.
 
 #define TRACK_DIRECTORY_TEMPLATE _T("\\Data\\Tracks\\*.*")
 
+#define SECTION_NAME_INTEGER_PROPERTY_VALUE_TEMPLATE _T("%s=%d")
+#define SECTION_NAME_STRING_PROPERTY_VALUE_TEMPLATE _T("%s=%s")
+
 #define CARS_SECTION_NAME _T("[cars]")
 #define CARS_SECTION_PLAYER_ID_PROPERTY_NAME _T("playerID")
 #define CARS_SECTION_SKIN_ID_PROPERTY_NAME _T("skinID")
@@ -60,8 +63,15 @@ SOFTWARE.
 #define CAR_LIST_SECTION_NAME _T("[carlist]")
 #define CAR_LIST_ITEM_TEMAPLE _T("%s (#%d)")
 
+#define ERROR_MESSAGE_ENTER_INTEGER _T("Please enter an integer.")
+#define ERROR_MESSAGE_ENTER_INTEGER_0_25 _T("Please enter an integer between 0 and 25.")
+#define ERROR_MESSAGE_ENTER_INTEGER_1_8 _T("Please enter an integer between 1 and 8.")
+
 #define ERROR_MESSAGE_MISSING_APP_FILE _T("Unable to find file %s.\r\nPelase make sure the launcher is in the same directory as the game.")
 #define ERROR_MESSAGE_MISSING_CONFIG_FILE _T("Unable to find file %s.\r\nYou must install Motor City Online Debug before running the launcher.")
+
+#define ERROR_MESSAGE_UNABLE_CREATE_SETTINGS_FILE _T("Unable to update file nofront.ini")
+#define ERROR_MESSAGE_UNABLE_CREATE_SETTINGS_FILE_COPY _T("Unable to create a backup copy of file nofront.bak")
 
 namespace App
 {
@@ -130,6 +140,9 @@ namespace App
         Game = 3
     };
 
+    CStringArray* AcquireSettings(CString& path);
+    CString* AlterSettings(CString& value);
+
     void Init(void);
     void InitializeCars(void);
     void InitializeSettings(void);
@@ -139,4 +152,7 @@ namespace App
     void InitCarsSectionValue(CString& line);
     void InitTrackSectionValue(CString& line);
     void InitGameSectionValue(CString& line);
+
+    BOOL SaveSettings(void);
+    BOOL SaveSettingsCopy(void);
 }
