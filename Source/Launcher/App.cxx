@@ -263,25 +263,25 @@ namespace App
         {
             AppState.Player.Car = number;
 
-            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+            AppState.Opponents.Same = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
         }
         else if (name.CompareNoCase(CARS_SECTION_SKIN_ID_PROPERTY_NAME) == 0)
         {
             AppState.Player.Skin = number;
 
-            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+            AppState.Opponents.Same = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
         }
         else if (name.CompareNoCase(CARS_SECTION_OPPONENT_ID_PROPERTY_NAME) == 0)
         {
             AppState.Opponents.Car = number;
 
-            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+            AppState.Opponents.Same = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
         }
         else if (name.CompareNoCase(CARS_SECTION_OPPONENT_SKIN_ID_PROPERTY_NAME) == 0)
         {
             AppState.Opponents.Skin = number;
 
-            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+            AppState.Opponents.Same = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
         }
         else if (name.CompareNoCase(CARS_SECTION_OPPONENT_COUNT_PROPERTY_NAME) == 0) { AppState.Opponents.Count = number; }
         else if (name.CompareNoCase(CARS_SECTION_TRAFFIC_PROPERTY_NAME) == 0) { AppState.Track.Traffic = number != 0; }

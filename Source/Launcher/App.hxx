@@ -94,10 +94,11 @@ namespace App
 
         struct
         {
-            BOOL SameAsPlayer;
+            BOOL Same;
 
             int Car;
             int Skin;
+
             int Count;
             int Difficulty;
         } Opponents;

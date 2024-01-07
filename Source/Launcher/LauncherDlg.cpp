@@ -278,6 +278,8 @@ HCURSOR CLauncherDlg::OnQueryDragIcon()
 // IDC_BUTTON_GO
 void CLauncherDlg::OnBnClicked1001()
 {
+    OnBnClicked1020();
+
     TCHAR szDirectory[MAX_PATH] = _T("");
     GetCurrentDirectory(MAX_PATH - 1, szDirectory);
     
@@ -300,6 +302,8 @@ void CLauncherDlg::OnCbnSelchange1002()
 {
     const int indx = ((CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_CAR))->GetCurSel();
 
+    AppState.Player.Car = AppState.Cars->GetAt(indx)->ID;
+
     // Player -> Skin
     {
         CComboBox* skins = (CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_SKIN);
@@ -318,20 +322,16 @@ void CLauncherDlg::OnCbnSelchange1002()
         }
 
         skins->SetCurSel(0);
+
+        OnCbnSelchange1003();
     }
 
     // Opponent -> Car
+    if (((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME))->GetCheck() == BST_CHECKED)
     {
-        CButton* check = (CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME);
+        ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR))->SetCurSel(indx);
 
-        if (check->GetCheck() == BST_CHECKED)
-        {
-            CComboBox* cars = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR);
-
-            cars->SetCurSel(indx);
-
-            OnCbnSelchange1007();
-        }
+        OnCbnSelchange1007();
     }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
@@ -340,11 +340,18 @@ void CLauncherDlg::OnCbnSelchange1002()
 // IDC_COMBOBOX_PLAYER_SKIN
 void CLauncherDlg::OnCbnSelchange1003()
 {
+    const int indx = ((CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_SKIN))->GetCurSel();
+
     if (((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME))->GetCheck() == BST_CHECKED)
     {
-        CComboBox* skins = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN);
+        ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN))->SetCurSel(indx);
+    }
 
-        skins->SetCurSel(((CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_SKIN))->GetCurSel());
+    for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
+    {
+        Car* car = AppState.Cars->GetAt(x);
+
+        if (car->ID == AppState.Player.Car) { AppState.Player.Skin = car->Skins->GetAt(indx)->ID; break; }
     }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
@@ -436,13 +443,13 @@ void CLauncherDlg::OnDeltapos1005(NMHDR* pNMHDR, LRESULT* pResult)
 // IDC_CHECK_OPPONENT_SAME
 void CLauncherDlg::OnBnClicked1006()
 {
-    const BOOL checked = ((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME))->GetCheck() == BST_CHECKED;
+    AppState.Opponents.Same = ((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME))->GetCheck() == BST_CHECKED;
 
     CComboBox* cars = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR);
     CComboBox* skins = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN);
 
     // Opponents -> Car
-    if (checked)
+    if (AppState.Opponents.Same)
     {
         cars->SetCurSel(((CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_CAR))->GetCurSel());
     }
@@ -459,9 +466,10 @@ void CLauncherDlg::OnBnClicked1006()
     }
 
     OnCbnSelchange1007();
+    OnCbnSelchange1008();
 
-    cars->EnableWindow(!checked);
-    skins->EnableWindow(!checked);
+    cars->EnableWindow(!AppState.Opponents.Same);
+    skins->EnableWindow(!AppState.Opponents.Same);
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
 }
@@ -470,6 +478,8 @@ void CLauncherDlg::OnBnClicked1006()
 void CLauncherDlg::OnCbnSelchange1007()
 {
     const int indx = ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR))->GetCurSel();
+
+    AppState.Opponents.Car = AppState.Cars->GetAt(indx)->ID;
 
     // Opponents -> Skin
     {
@@ -505,7 +515,14 @@ void CLauncherDlg::OnCbnSelchange1007()
 // IDC_COMBOBOX_OPPONENT_SKIN
 void CLauncherDlg::OnCbnSelchange1008()
 {
-    // TODO: Add your control notification handler code here
+    const int indx = ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN))->GetCurSel();
+
+    for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
+    {
+        Car* car = AppState.Cars->GetAt(x);
+
+        if (car->ID == AppState.Opponents.Car) { AppState.Opponents.Skin = car->Skins->GetAt(indx)->ID; break; }
+    }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
 }
@@ -551,7 +568,7 @@ void CLauncherDlg::OnEnChange1012()
 
         if (number < 1 || number > 8) { return; }
 
-        AppState.Player.Mode = number;
+        AppState.Track.Laps = number;
     }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
@@ -604,9 +621,9 @@ void CLauncherDlg::OnDeltapos1013(NMHDR* pNMHDR, LRESULT* pResult)
             edit->GetWindowText(value);
             _stscanf_s(value, _T("%d"), &number);
 
-            AppState.Player.Mode = max(1, min((increment ? (number + 1) : (number - 1)), 8));
+            AppState.Track.Laps = max(1, min((increment ? (number + 1) : (number - 1)), 8));
 
-            value.Format(_T("%d"), AppState.Player.Mode);
+            value.Format(_T("%d"), AppState.Track.Laps);
 
             edit->SetWindowText(value.GetString());
         }
