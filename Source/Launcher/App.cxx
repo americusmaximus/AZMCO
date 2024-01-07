@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Americus Maximus
+Copyright (c) 2023 - 2024 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -65,41 +65,41 @@ namespace App
 
                 if (!found)
                 {
-                    if (trimmed.CompareNoCase(CAR_LIST_SECTION_NAME) == 0)
-                    {
-                        found = TRUE;
-
-                        continue;
-                    }
+                    if (trimmed.CompareNoCase(CAR_LIST_SECTION_NAME) == 0) { found = TRUE; }
                 }
-                else if(!trimmed.IsEmpty() && trimmed.GetAt(0) != _T('['))
+                else
                 {
-                    int pos = trimmed.Find(_T('='), 0);
+                    if (trimmed.GetAt(0) == _T('[')) { break; }
 
-                    if (pos >= 0)
+                    if (!trimmed.IsEmpty())
                     {
-                        CString idString = trimmed.Left(pos);
-                        CString valueString = trimmed.Right(trimmed.GetLength() - pos - 1);
+                        const int pos = trimmed.Find(_T('='), 0);
 
-                        int id = 0;
-                        int count = _stscanf_s(idString, _T("%d"), &id);
+                        if (pos >= 0)
+                        {
+                            CString idString = trimmed.Left(pos);
+                            CString valueString = trimmed.Right(trimmed.GetLength() - pos - 1);
 
-                        if (count != 1) { continue; }
+                            int id = 0;
+                            int count = _stscanf_s(idString, _T("%d"), &id);
 
-                        Car* car = new Car();
+                            if (count != 1) { continue; }
 
-                        car->ID = id;
-                        car->Name = new CString(valueString);
-                        car->Skins = new CArray<Skin*, Skin*>();
+                            Car* car = new Car();
 
-                        Skin* skin = new Skin();
+                            car->ID = id;
+                            car->Name = new CString(valueString);
+                            car->Skins = new CArray<Skin*, Skin*>();
 
-                        skin->ID = 0;
-                        skin->Name = new CString(_T("Random"));
+                            Skin* skin = new Skin();
 
-                        car->Skins->Add(skin);
+                            skin->ID = 0;
+                            skin->Name = new CString(_T("Random"));
 
-                        AppState.Cars->Add(car);
+                            car->Skins->Add(skin);
+
+                            AppState.Cars->Add(car);
+                        }
                     }
                 }
             }
@@ -110,7 +110,70 @@ namespace App
 
     void InitializeSkins(void)
     {
-        // TODO
+        TCHAR szDirectory[MAX_PATH] = _T("");
+        GetCurrentDirectory(MAX_PATH - 1, szDirectory);
+
+        CString path(szDirectory);
+        path.Append(TEXT_FILE_NAME);
+
+        CStdioFile file;
+
+        if (file.Open(path.GetString(), CFile::modeRead))
+        {
+            CString line;
+
+            while (file.ReadString(line))
+            {
+                CString trimmed = line.Trim();
+
+                const int first = trimmed.Find(_T(' '), 0);
+
+                if (first == -1) { continue; }
+
+                int car = 0;
+                int skin = 0;
+
+                // Car
+                {
+                    CString carString = trimmed.Left(first).Trim();
+
+                    const int count = _stscanf_s(carString, _T("%d"), &car);
+
+                    if (count != 1) { continue; }
+                }
+
+                trimmed = trimmed.Right(trimmed.GetLength() - first - 1).Trim();
+
+                const int second = trimmed.Find(_T(' '), first + 1);
+
+                if (second == -1) { continue; }
+
+                // Skin
+                {
+                    CString skinString = trimmed.Left(second).Trim();
+
+                    const int count = _stscanf_s(skinString, _T("%d"), &skin);
+
+                    if (count != 1) { continue; }
+                }
+
+                if (car == 0 || skin == 0) { continue; }
+
+                Skin* skn = new Skin();
+
+                skn->ID = skin;
+                skn->Name = new CString(trimmed.Right(trimmed.GetLength() - trimmed.Find(_T(' '))).Trim());
+
+                for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
+                {
+                    Car* c = AppState.Cars->GetAt(x);
+
+                    if (c->ID == car) { c->Skins->Add(skn); break; }
+                }
+            }
+
+            file.Close();
+        }
     }
 
     void InitializeTracks(void)
