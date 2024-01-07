@@ -56,6 +56,8 @@ BOOL CLauncherDlg::OnInitDialog()
 
     // Player -> Car
     {
+        int indx = -1;
+
         CComboBox* cars = (CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_CAR);
 
         for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
@@ -66,17 +68,31 @@ BOOL CLauncherDlg::OnInitDialog()
             value.Format(CAR_LIST_ITEM_TEMAPLE, car->Name->GetString(), car->ID);
 
             cars->AddString(value.GetString());
+
+            if (car->ID == AppState.Player.Car) { indx = x; }
         }
 
-        // TODO: Select one
+        cars->SetCurSel(indx == -1 ? 0 : indx);
+
+        OnCbnSelchange1002();
     }
 
     // Player -> Mode
 
     // Opponents -> Same as Player
+    const BOOL same = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+
+    {
+        ((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME_AS_PLAYER))->SetCheck(same ? BST_CHECKED : BST_UNCHECKED);
+
+        ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR))->EnableWindow(!same);
+        ((CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN))->EnableWindow(!same);
+    }
 
     // Opponents -> Car
     {
+        int indx = -1;
+
         CComboBox* cars = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR);
 
         for (uint32_t x = 0; x < AppState.Cars->GetCount(); x++)
@@ -87,9 +103,13 @@ BOOL CLauncherDlg::OnInitDialog()
             value.Format(CAR_LIST_ITEM_TEMAPLE, car->Name->GetString(), car->ID);
 
             cars->AddString(value.GetString());
+
+            if (car->ID == AppState.Opponents.Car) { indx = x; }
         }
 
-        // TODO: Select one
+        cars->SetCurSel(indx == -1 ? 0 : indx);
+
+        OnCbnSelchange1007();
     }
 
     // Opponents -> Opponents
@@ -243,14 +263,16 @@ void CLauncherDlg::OnCbnSelchange1002()
 
         if (indx < 0) { return; }
 
-        Car* car = AppState.Cars->GetAt(indx);
+        CArray<Skin*, Skin*>* carSkins = AppState.Cars->GetAt(indx)->Skins;
 
-        for (uint32_t x = 0; x < car->Skins->GetCount(); x++)
+        for (uint32_t x = 0; x < carSkins->GetCount(); x++)
         {
-            skins->AddString(car->Skins->GetAt(x)->Name->GetString());
+            Skin* carSkin = carSkins->GetAt(x);
+
+            skins->AddString(carSkin->Name->GetString());
         }
 
-        // TODO: Select one
+        skins->SetCurSel(0);
     }
 
     // Opponent -> Car
@@ -282,15 +304,13 @@ void CLauncherDlg::OnCbnSelchange1003()
 // IDC_CHECK_OPPONENT_SAME_AS_PLAYER
 void CLauncherDlg::OnBnClicked1006()
 {
-    CButton* check = (CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME_AS_PLAYER);
+    const BOOL checked = ((CButton*)GetDlgItem(IDC_CHECK_OPPONENT_SAME_AS_PLAYER))->GetCheck() == BST_CHECKED;
 
     CComboBox* cars = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_CAR);
     CComboBox* skins = (CComboBox*)GetDlgItem(IDC_COMBOBOX_OPPONENT_SKIN);
 
-    BOOL state = check->GetCheck() == BST_CHECKED;
-
     // Opponents -> Car
-    if (state)
+    if (checked)
     {
         cars->SetCurSel(((CComboBox*)GetDlgItem(IDC_COMBOBOX_PLAYER_CAR))->GetCurSel());
     }
@@ -308,8 +328,8 @@ void CLauncherDlg::OnBnClicked1006()
 
     OnCbnSelchange1007();
 
-    cars->EnableWindow(!state);
-    skins->EnableWindow(!state);
+    cars->EnableWindow(!checked);
+    skins->EnableWindow(!checked);
 }
 
 // IDC_COMBOBOX_OPPONENT_CAR
