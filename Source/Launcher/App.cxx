@@ -28,6 +28,8 @@ namespace App
 
     void Init(void)
     {
+        InitializeSettings();
+
         AppState.Cars = new CArray<Car*, Car*>();
 
         InitializeCars();
@@ -101,6 +103,45 @@ namespace App
                             AppState.Cars->Add(car);
                         }
                     }
+                }
+            }
+
+            file.Close();
+        }
+    }
+
+    void InitializeSettings(void)
+    {
+        TCHAR szDirectory[MAX_PATH] = _T("");
+        GetCurrentDirectory(MAX_PATH - 1, szDirectory);
+
+        CString path(szDirectory);
+        path.Append(INI_FILE_NAME);
+
+        CStdioFile file;
+
+        if (file.Open(path.GetString(), CFile::modeRead))
+        {
+            CString line;
+            SettingsSection section = SettingsSection::None;
+
+            while (file.ReadString(line))
+            {
+                CString trimmed = line.Trim();
+
+                if (trimmed.GetAt(0) == _T('['))
+                {
+                    if (trimmed.CompareNoCase(CARS_SECTION_NAME) == 0) { section = SettingsSection::Cars; continue; }
+                    else if (trimmed.CompareNoCase(TRACK_SECTION_NAME) == 0) { section = SettingsSection::Track; continue; }
+                    else if (trimmed.CompareNoCase(GAME_SECTION_NAME) == 0) { section = SettingsSection::Game; continue; }
+                    else { section = SettingsSection::None; continue; }
+                }
+
+                switch (section)
+                {
+                case App::Cars: { InitCarsSectionValue(trimmed); break; }
+                case App::Track: { InitTrackSectionValue(trimmed); break; }
+                case App::Game: { InitGameSectionValue(trimmed); break; }
                 }
             }
 
@@ -199,5 +240,99 @@ namespace App
         }
 
         finder.Close();
+    }
+
+    void InitCarsSectionValue(CString& line)
+    {
+        const int pos = line.FindOneOf(_T(" ="));
+
+        if (pos == -1) { return; }
+
+        CString name = line.Left(pos);
+        CString value = line.Right(line.GetLength() - max(line.ReverseFind(_T(' ')), line.ReverseFind(_T('='))) - 1);
+
+        int number = 0;
+
+        {
+            const int count = _stscanf_s(value, _T("%d"), &number);
+
+            if (count != 1) { return; }
+        }
+
+        if (name.CompareNoCase(CARS_SECTION_PLAYER_ID_PROPERTY_NAME) == 0)
+        {
+            AppState.Player.Car = number;
+
+            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+        }
+        else if (name.CompareNoCase(CARS_SECTION_SKIN_ID_PROPERTY_NAME) == 0)
+        {
+            AppState.Player.Skin = number;
+
+            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+        }
+        else if (name.CompareNoCase(CARS_SECTION_OPPONENT_ID_PROPERTY_NAME) == 0)
+        {
+            AppState.Opponents.Car = number;
+
+            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+        }
+        else if (name.CompareNoCase(CARS_SECTION_OPPONENT_SKIN_ID_PROPERTY_NAME) == 0)
+        {
+            AppState.Opponents.Skin = number;
+
+            AppState.Opponents.SameAsPlayer = AppState.Player.Car == AppState.Opponents.Car && AppState.Player.Skin == AppState.Opponents.Skin;
+        }
+        else if (name.CompareNoCase(CARS_SECTION_OPPONENT_COUNT_PROPERTY_NAME) == 0) { AppState.Opponents.Count = number; }
+        else if (name.CompareNoCase(CARS_SECTION_TRAFFIC_PROPERTY_NAME) == 0) { AppState.Track.Traffic = number != 0; }
+    }
+
+    void InitTrackSectionValue(CString& line)
+    {
+        const int pos = line.FindOneOf(_T(" ="));
+
+        if (pos == -1) { return; }
+
+        CString name = line.Left(pos);
+        CString value = line.Right(line.GetLength() - max(line.ReverseFind(_T(' ')), line.ReverseFind(_T('='))) - 1);
+
+        int number = 0;
+
+        if (name.CompareNoCase(TRACK_SECTION_INDEX_PROPERTY_NAME) != 0)
+        {
+            const int count = _stscanf_s(value, _T("%d"), &number);
+
+            if (count != 1) { return; }
+        }
+
+        if (name.CompareNoCase(TRACK_SECTION_INDEX_PROPERTY_NAME) == 0) { AppState.Track.Track = new CString(value); }
+        else if (name.CompareNoCase(TRACK_SECTION_NIGHT_PROPERTY_NAME) == 0) { AppState.Track.Night = number != 0; }
+        else if (name.CompareNoCase(TRACK_SECTION_WEATHER_PROPERTY_NAME) == 0) { AppState.Track.Weather = number != 0; }
+        else if (name.CompareNoCase(TRACK_SECTION_MIRRORED_PROPERTY_NAME) == 0) { AppState.Track.Mirrored = number != 0; }
+        else if (name.CompareNoCase(TRACK_SECTION_BACKWARD_PROPERTY_NAME) == 0) { AppState.Track.Backward = number != 0; }
+        else if (name.CompareNoCase(TRACK_SECTION_LAPS_PROPERTY_NAME) == 0) { AppState.Track.Laps = number; }
+    }
+
+    void InitGameSectionValue(CString& line)
+    {
+        const int pos = line.FindOneOf(_T(" ="));
+
+        if (pos == -1) { return; }
+
+        CString name = line.Left(pos);
+        CString value = line.Right(line.GetLength() - max(line.ReverseFind(_T(' ')), line.ReverseFind(_T('='))) - 1);
+
+        int number = 0;
+
+        {
+            const int count = _stscanf_s(value, _T("%d"), &number);
+
+            if (count != 1) { return; }
+        }
+
+        if (name.CompareNoCase(GAME_SECTION_NO_DAMAGE_PROPERTY_NAME) == 0) { AppState.Track.NoDamage = number != 0; }
+        else if (name.CompareNoCase(GAME_SECTION_DIFFICULTY_PROPERTY_NAME) == 0) { AppState.Opponents.Difficulty = number; }
+        else if (name.CompareNoCase(GAME_SECTION_RACE_MODE_PROPERTY_NAME) == 0) { AppState.Player.Mode = number; }
+        else if (name.CompareNoCase(GAME_SECTION_ROUND_COUNT_PROPERTY_NAME) == 0) { AppState.Track.Laps = number; }
     }
 }

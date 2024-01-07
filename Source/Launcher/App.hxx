@@ -34,6 +34,29 @@ SOFTWARE.
 
 #define TRACK_DIRECTORY_TEMPLATE _T("\\Data\\Tracks\\*.*")
 
+#define CARS_SECTION_NAME _T("[cars]")
+#define CARS_SECTION_PLAYER_ID_PROPERTY_NAME _T("playerID")
+#define CARS_SECTION_SKIN_ID_PROPERTY_NAME _T("skinID")
+#define CARS_SECTION_OPPONENT_ID_PROPERTY_NAME _T("opponentID")
+#define CARS_SECTION_OPPONENT_SKIN_ID_PROPERTY_NAME _T("opponentSkinID")
+#define CARS_SECTION_OPPONENT_COUNT_PROPERTY_NAME _T("numai")
+#define CARS_SECTION_TRAFFIC_PROPERTY_NAME _T("traffic")
+
+#define TRACK_SECTION_NAME _T("[track]")
+#define TRACK_SECTION_INDEX_PROPERTY_NAME _T("index")
+#define TRACK_SECTION_NIGHT_PROPERTY_NAME _T("night")
+#define TRACK_SECTION_WEATHER_PROPERTY_NAME _T("weather")
+#define TRACK_SECTION_MIRRORED_PROPERTY_NAME _T("mirrored")
+#define TRACK_SECTION_BACKWARD_PROPERTY_NAME _T("backward")
+#define TRACK_SECTION_LAPS_PROPERTY_NAME _T("laps")
+
+#define GAME_SECTION_NAME _T("[game]")
+#define GAME_SECTION_NO_DAMAGE_PROPERTY_NAME _T("nodamage")
+#define GAME_SECTION_DIFFICULTY_PROPERTY_NAME _T("difficulty")
+#define GAME_SECTION_RACE_MODE_PROPERTY_NAME _T("racemode")
+#define GAME_SECTION_ROUND_COUNT_PROPERTY_NAME _T("rounds")
+#define GAME_SECTION_HANDICAPPED_PROPERTY_NAME _T("handicapped")
+
 #define CAR_LIST_SECTION_NAME _T("[carlist]")
 #define CAR_LIST_ITEM_TEMAPLE _T("%s (#%d)")
 
@@ -83,7 +106,8 @@ namespace App
 
         struct
         {
-            LPCSTR Track;
+            CString* Track;
+
             int Laps;
 
             BOOL Night;
@@ -97,8 +121,21 @@ namespace App
 
     extern LauncherAppState AppState;
 
+    enum SettingsSection : uint32_t
+    {
+        None = 0,
+        Cars = 1,
+        Track = 2,
+        Game = 3
+    };
+
     void Init(void);
     void InitializeCars(void);
+    void InitializeSettings(void);
     void InitializeSkins(void);
     void InitializeTracks(void);
+
+    void InitCarsSectionValue(CString& line);
+    void InitTrackSectionValue(CString& line);
+    void InitGameSectionValue(CString& line);
 }
