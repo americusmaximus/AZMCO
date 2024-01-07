@@ -333,6 +333,5 @@ namespace App
         if (name.CompareNoCase(GAME_SECTION_NO_DAMAGE_PROPERTY_NAME) == 0) { AppState.Track.NoDamage = number != 0; }
         else if (name.CompareNoCase(GAME_SECTION_DIFFICULTY_PROPERTY_NAME) == 0) { AppState.Opponents.Difficulty = number; }
         else if (name.CompareNoCase(GAME_SECTION_RACE_MODE_PROPERTY_NAME) == 0) { AppState.Player.Mode = number; }
-        else if (name.CompareNoCase(GAME_SECTION_ROUND_COUNT_PROPERTY_NAME) == 0) { AppState.Track.Laps = number; }
     }
 }

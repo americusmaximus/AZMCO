@@ -28,6 +28,7 @@ protected:
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
+	afx_msg virtual void OnOK();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:

@@ -204,34 +204,22 @@ BOOL CLauncherDlg::OnInitDialog()
     }
 
     // Track -> Night
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_NIGHT))->SetCheck(AppState.Track.Night ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_NIGHT))->SetCheck(AppState.Track.Night ? BST_CHECKED : BST_UNCHECKED);
 
     // Track -> Weather
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_WEATHER))->SetCheck(AppState.Track.Weather ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_WEATHER))->SetCheck(AppState.Track.Weather ? BST_CHECKED : BST_UNCHECKED);
 
     // Track -> No Damage
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_NO_DAMAGE))->SetCheck(AppState.Track.NoDamage ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_NO_DAMAGE))->SetCheck(AppState.Track.NoDamage ? BST_CHECKED : BST_UNCHECKED);
 
     // Track -> Mirrored
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_MIRRORED))->SetCheck(AppState.Track.Mirrored ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_MIRRORED))->SetCheck(AppState.Track.Mirrored ? BST_CHECKED : BST_UNCHECKED);
 
     // Track -> Backward
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_BACKWARD))->SetCheck(AppState.Track.Backward ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_BACKWARD))->SetCheck(AppState.Track.Backward ? BST_CHECKED : BST_UNCHECKED);
 
     // Track -> Traffic
-    {
-        ((CButton*)GetDlgItem(IDC_CHECK_TRACK_TRAFFIC))->SetCheck(AppState.Track.Backward ? BST_CHECKED : BST_UNCHECKED);
-    }
+    ((CButton*)GetDlgItem(IDC_CHECK_TRACK_TRAFFIC))->SetCheck(AppState.Track.Backward ? BST_CHECKED : BST_UNCHECKED);
 
     // Go!
     {
@@ -275,6 +263,8 @@ void CLauncherDlg::OnPaint()
         CDialogEx::OnPaint();
     }
 }
+
+void CLauncherDlg::OnOK() { }
 
 // The system calls this function to obtain the cursor to display while the user drags
 //  the minimized window.
@@ -361,12 +351,27 @@ void CLauncherDlg::OnCbnSelchange1003()
 // IDC_EDIT_PLAYER_MODE
 void CLauncherDlg::OnEnChange1004()
 {
-    // TODO:  If this is a RICHEDIT control, the control will not
-    // send this notification unless you override the CDialogEx::OnInitDialog()
-    // function and call CRichEditCtrl().SetEventMask()
-    // with the ENM_CHANGE flag ORed into the mask.
+    int number = 0;
 
-    // TODO:  Add your control notification handler code here
+    CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_PLAYER_MODE);
+
+    {
+        CString value;
+        edit->GetWindowText(value);
+
+        const int count = _stscanf_s(value, _T("%d"), &number);
+
+        if (count != 1)
+        {
+            value.Format(_T("%d"), AppState.Player.Mode);
+
+            edit->SetWindowText(value.GetString());
+
+            return;
+        }
+
+        AppState.Player.Mode = number;
+    }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
 }
