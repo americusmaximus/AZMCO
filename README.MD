@@ -17,7 +17,7 @@ There are multiple goals this project tries to achieve:
 ### Compatibility, Code Style & Standards
 In order to be able to run the code not only in the modern operating systems, but also in legacy environments, such as Windows XP, the code base has to abstain from usage of modern C++ language features.
 
-Modern Visual Studio makes the binary dependent on modern runtime libraries that are not available in the legacy systems, therefore the game won't work. In order to make the code work on legacy systems please see [detailed instructions on compatibility](COMPATIBILITY.MD)
+Modern Visual Studio makes the binary dependent on modern runtime libraries that are not available in the legacy systems, therefore the game won't work. In order to make the code work on legacy systems please see [detailed instructions on compatibility](COMPATIBILITY.MD).
 
 ### Renderer Modules
 The renderer modules were implemented with minor changes, such as omission of write-only variables, making calls to functions when result is not used, as well as addition of configuration file and reading values from it, which is useful in a few cases.
