@@ -28,8 +28,10 @@ namespace App
 
     void Init(void)
     {
-        AppState.Cars = new CStringArray();
-        AppState.Skins = new CStringArray();
+        AppState.Cars = new CArray<Car*, Car*>();
+
+        InitializeCars();
+        InitializeSkins();
 
         AppState.Difficulties = new CStringArray();
 
@@ -42,12 +44,81 @@ namespace App
         InitializeTracks();
     }
 
+    void InitializeCars(void)
+    {
+        TCHAR szDirectory[MAX_PATH] = _T("");
+        GetCurrentDirectory(MAX_PATH - 1, szDirectory);
+
+        CString path(szDirectory);
+        path.Append(INI_FILE_NAME);
+
+        CStdioFile file;
+
+        if (file.Open(path.GetString(), CFile::modeRead))
+        {
+            BOOL found = FALSE;
+            CString line;
+
+            while (file.ReadString(line))
+            {
+                CString trimmed = line.Trim();
+
+                if (!found)
+                {
+                    if (trimmed.CompareNoCase(CAR_LIST_SECTION_NAME) == 0)
+                    {
+                        found = TRUE;
+
+                        continue;
+                    }
+                }
+                else if(!trimmed.IsEmpty() && trimmed.GetAt(0) != _T('['))
+                {
+                    int pos = trimmed.Find(_T('='), 0);
+
+                    if (pos >= 0)
+                    {
+                        CString idString = trimmed.Left(pos);
+                        CString valueString = trimmed.Right(trimmed.GetLength() - pos - 1);
+
+                        int id = 0;
+                        int count = _stscanf_s(idString, _T("%d"), &id);
+
+                        if (count != 1) { continue; }
+
+                        Car* car = new Car();
+
+                        car->ID = id;
+                        car->Name = new CString(valueString);
+                        car->Skins = new CArray<Skin*, Skin*>();
+
+                        Skin* skin = new Skin();
+
+                        skin->ID = 0;
+                        skin->Name = new CString(_T("Random"));
+
+                        car->Skins->Add(skin);
+
+                        AppState.Cars->Add(car);
+                    }
+                }
+            }
+
+            file.Close();
+        }
+    }
+
+    void InitializeSkins(void)
+    {
+        // TODO
+    }
+
     void InitializeTracks(void)
     {
         TCHAR szDirectory[MAX_PATH] = _T("");
         GetCurrentDirectory(MAX_PATH - 1, szDirectory);
 
-        CString path = CString(szDirectory);
+        CString path(szDirectory);
         path.Append(TRACK_DIRECTORY_TEMPLATE);
 
         CFileFind finder;

@@ -27,22 +27,37 @@ SOFTWARE.
 #define FILE_NAME_TEMPLATE _T("%s\\%s")
 
 #define APP_FILE_NAME _T("mcity_d.exe")
-#define INI_FILE_NAME _T("nofront.ini")
-#define INI_TEMP_FILE_NAME _T("nofront.tmp")
-#define INI_BACKUP_FILE_NAME _T("nofront.bak")
-#define TEXT_FILE_NAME _T("mcitynofrontskinslist.txt")
+#define INI_FILE_NAME _T("\\nofront.ini")
+#define INI_TEMP_FILE_NAME _T("\\nofront.tmp")
+#define INI_BACKUP_FILE_NAME _T("\\nofront.bak")
+#define TEXT_FILE_NAME _T("\\mcitynofrontskinslist.txt")
 
 #define TRACK_DIRECTORY_TEMPLATE _T("\\Data\\Tracks\\*.*")
+
+#define CAR_LIST_SECTION_NAME _T("[carlist]")
+#define CAR_LIST_ITEM_TEMAPLE _T("%s (#%d)")
 
 #define ERROR_MESSAGE_MISSING_APP_FILE _T("Unable to find file %s.\r\nPelase make sure the launcher is in the same directory as the game.")
 #define ERROR_MESSAGE_MISSING_CONFIG_FILE _T("Unable to find file %s.\r\nYou must install Motor City Online Debug before running the launcher.")
 
 namespace App
 {
+    struct Skin
+    {
+        int ID;
+        CString* Name;
+    };
+
+    struct Car
+    {
+        int ID;
+        CString* Name;
+        CArray<Skin*, Skin*>* Skins;
+    };
+
     struct LauncherAppState
     {
-        CStringArray* Cars;
-        CStringArray* Skins;
+        CArray<Car*, Car*>* Cars;
 
         struct
         {
@@ -83,5 +98,7 @@ namespace App
     extern LauncherAppState AppState;
 
     void Init(void);
+    void InitializeCars(void);
+    void InitializeSkins(void);
     void InitializeTracks(void);
 }

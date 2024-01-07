@@ -34,4 +34,8 @@ public:
 	afx_msg void OnBnClicked1001();
 	afx_msg void OnBnClicked1020();
 	afx_msg void OnBnClicked1021();
+	afx_msg void OnCbnSelchange1002();
+	afx_msg void OnBnClicked1006();
+	afx_msg void OnCbnSelchange1007();
+	afx_msg void OnCbnSelchange1003();
 };
