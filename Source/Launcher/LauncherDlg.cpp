@@ -57,6 +57,7 @@ BEGIN_MESSAGE_MAP(CLauncherDlg, CDialogEx)
     ON_CBN_SELCHANGE(IDC_COMBOBOX_PLAYER_CAR, &CLauncherDlg::OnCbnSelchange1002)
     ON_CBN_SELCHANGE(IDC_COMBOBOX_PLAYER_SKIN, &CLauncherDlg::OnCbnSelchange1003)
     ON_EN_CHANGE(IDC_EDIT_PLAYER_MODE, &CLauncherDlg::OnEnChange1004)
+    ON_EN_KILLFOCUS(IDC_EDIT_PLAYER_MODE, &CLauncherDlg::OnKillFocus1004)
     ON_NOTIFY(UDN_DELTAPOS, IDC_UPDOWN_PLAYER_MODE, &CLauncherDlg::OnDeltapos1005)
     ON_BN_CLICKED(IDC_CHECK_OPPONENT_SAME, &CLauncherDlg::OnBnClicked1006)
     ON_CBN_SELCHANGE(IDC_COMBOBOX_OPPONENT_CAR, &CLauncherDlg::OnCbnSelchange1007)
@@ -65,6 +66,7 @@ BEGIN_MESSAGE_MAP(CLauncherDlg, CDialogEx)
     ON_CBN_SELCHANGE(IDC_COMBOBOX_OPPONENT_DIFFICULTY, &CLauncherDlg::OnCbnSelchange1010)
     ON_CBN_SELCHANGE(IDC_COMBOBOX_TRACK_TRACK, &CLauncherDlg::OnCbnSelchange1011)
     ON_EN_CHANGE(IDC_EDIT_TRACK_LAPS, &CLauncherDlg::OnEnChange1012)
+    ON_EN_KILLFOCUS(IDC_EDIT_TRACK_LAPS, &CLauncherDlg::OnKillFocus1012)
     ON_NOTIFY(UDN_DELTAPOS, IDC_UPDOWN_TRACK_LAPS, &CLauncherDlg::OnDeltapos1013)
     ON_BN_CLICKED(IDC_CHECK_TRACK_NIGHT, &CLauncherDlg::OnBnClicked1014)
     ON_BN_CLICKED(IDC_CHECK_TRACK_WEATHER, &CLauncherDlg::OnBnClicked1015)
@@ -361,14 +363,9 @@ void CLauncherDlg::OnEnChange1004()
 
         const int count = _stscanf_s(value, _T("%d"), &number);
 
-        if (count != 1)
-        {
-            value.Format(_T("%d"), AppState.Player.Mode);
+        if (count != 1) { return; }
 
-            edit->SetWindowText(value.GetString());
-
-            return;
-        }
+        if (number < 0 || number > 25) { return; }
 
         AppState.Player.Mode = number;
     }
@@ -376,11 +373,61 @@ void CLauncherDlg::OnEnChange1004()
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
 }
 
+// IDC_EDIT_PLAYER_MODE
+void CLauncherDlg::OnKillFocus1004()
+{
+    int number = 0;
+
+    CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_PLAYER_MODE);
+
+    {
+        CString value;
+        edit->GetWindowText(value);
+
+        const int count = _stscanf_s(value, _T("%d"), &number);
+
+        if (count != 1)
+        {
+            AfxMessageBox(_T("Please enter an integer."), MB_OK | MB_ICONEXCLAMATION);
+
+            edit->SetFocus();
+
+            return;
+        }
+    }
+
+    if (number < 0 || number > 25)
+    {
+        AfxMessageBox(_T("Please enter an integer between 0 and 25."), MB_OK | MB_ICONEXCLAMATION);
+
+        edit->SetFocus();
+    }
+}
+
 // IDC_UPDOWN_PLAYER_MODE
 void CLauncherDlg::OnDeltapos1005(NMHDR* pNMHDR, LRESULT* pResult)
 {
     LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-    // TODO: Add your control notification handler code here
+
+    {
+        int number = 0;
+        const BOOL increment = pNMUpDown->iDelta <= 0;
+
+        CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_PLAYER_MODE);
+
+        {
+            CString value;
+            edit->GetWindowText(value);
+            _stscanf_s(value, _T("%d"), &number);
+
+            AppState.Player.Mode = max(0, min((increment ? (number + 1) : (number - 1)), 25));
+
+            value.Format(_T("%d"), AppState.Player.Mode);
+
+            edit->SetWindowText(value.GetString());
+        }
+    }
+
     *pResult = 0;
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
@@ -455,7 +502,6 @@ void CLauncherDlg::OnCbnSelchange1007()
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
 }
 
-
 // IDC_COMBOBOX_OPPONENT_SKIN
 void CLauncherDlg::OnCbnSelchange1008()
 {
@@ -491,21 +537,81 @@ void CLauncherDlg::OnCbnSelchange1011()
 // IDC_EDIT_TRACK_LAPS
 void CLauncherDlg::OnEnChange1012()
 {
-    // TODO:  If this is a RICHEDIT control, the control will not
-    // send this notification unless you override the CDialogEx::OnInitDialog()
-    // function and call CRichEditCtrl().SetEventMask()
-    // with the ENM_CHANGE flag ORed into the mask.
+    int number = 0;
 
-    // TODO:  Add your control notification handler code here
+    CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_TRACK_LAPS);
+
+    {
+        CString value;
+        edit->GetWindowText(value);
+
+        const int count = _stscanf_s(value, _T("%d"), &number);
+
+        if (count != 1) { return; }
+
+        if (number < 1 || number > 8) { return; }
+
+        AppState.Player.Mode = number;
+    }
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }
+}
+
+// IDC_EDIT_TRACK_LAPS
+void CLauncherDlg::OnKillFocus1012()
+{
+    int number = 0;
+
+    CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_TRACK_LAPS);
+
+    {
+        CString value;
+        edit->GetWindowText(value);
+
+        const int count = _stscanf_s(value, _T("%d"), &number);
+
+        if (count != 1)
+        {
+            AfxMessageBox(_T("Please enter an integer."), MB_OK | MB_ICONEXCLAMATION);
+
+            edit->SetFocus();
+
+            return;
+        }
+    }
+
+    if (number < 1 || number > 8)
+    {
+        AfxMessageBox(_T("Please enter an integer between 1 and 8."), MB_OK | MB_ICONEXCLAMATION);
+
+        edit->SetFocus();
+    }
 }
 
 // IDC_UPDOWN_TRACK_LAPS
 void CLauncherDlg::OnDeltapos1013(NMHDR* pNMHDR, LRESULT* pResult)
 {
     LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-    // TODO: Add your control notification handler code here
+
+    {
+        int number = 0;
+        const BOOL increment = pNMUpDown->iDelta <= 0;
+
+        CEdit* edit = (CEdit*)GetDlgItem(IDC_EDIT_TRACK_LAPS);
+
+        {
+            CString value;
+            edit->GetWindowText(value);
+            _stscanf_s(value, _T("%d"), &number);
+
+            AppState.Player.Mode = max(1, min((increment ? (number + 1) : (number - 1)), 8));
+
+            value.Format(_T("%d"), AppState.Player.Mode);
+
+            edit->SetWindowText(value.GetString());
+        }
+    }
+
     *pResult = 0;
 
     if (IsChangeAllowed) { ((CButton*)GetDlgItem(IDC_BUTTON_SAVE))->EnableWindow(TRUE); }

@@ -310,7 +310,7 @@ namespace App
         else if (name.CompareNoCase(TRACK_SECTION_WEATHER_PROPERTY_NAME) == 0) { AppState.Track.Weather = number != 0; }
         else if (name.CompareNoCase(TRACK_SECTION_MIRRORED_PROPERTY_NAME) == 0) { AppState.Track.Mirrored = number != 0; }
         else if (name.CompareNoCase(TRACK_SECTION_BACKWARD_PROPERTY_NAME) == 0) { AppState.Track.Backward = number != 0; }
-        else if (name.CompareNoCase(TRACK_SECTION_LAPS_PROPERTY_NAME) == 0) { AppState.Track.Laps = number; }
+        else if (name.CompareNoCase(TRACK_SECTION_LAPS_PROPERTY_NAME) == 0) { AppState.Track.Laps = max(1, min(8, number)); }
     }
 
     void InitGameSectionValue(CString& line)
@@ -332,6 +332,6 @@ namespace App
 
         if (name.CompareNoCase(GAME_SECTION_NO_DAMAGE_PROPERTY_NAME) == 0) { AppState.Track.NoDamage = number != 0; }
         else if (name.CompareNoCase(GAME_SECTION_DIFFICULTY_PROPERTY_NAME) == 0) { AppState.Opponents.Difficulty = number; }
-        else if (name.CompareNoCase(GAME_SECTION_RACE_MODE_PROPERTY_NAME) == 0) { AppState.Player.Mode = number; }
+        else if (name.CompareNoCase(GAME_SECTION_RACE_MODE_PROPERTY_NAME) == 0) { AppState.Player.Mode = max(0, min(25, number)); }
     }
 }

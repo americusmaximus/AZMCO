@@ -36,6 +36,7 @@ public:
 	afx_msg void OnCbnSelchange1002();
 	afx_msg void OnCbnSelchange1003();
 	afx_msg void OnEnChange1004();
+	afx_msg void OnKillFocus1004();
 	afx_msg void OnDeltapos1005(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnBnClicked1006();
 	afx_msg void OnCbnSelchange1007();
@@ -44,6 +45,7 @@ public:
 	afx_msg void OnCbnSelchange1010();
 	afx_msg void OnCbnSelchange1011();
 	afx_msg void OnEnChange1012();
+	afx_msg void OnKillFocus1012();
 	afx_msg void OnDeltapos1013(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnBnClicked1014();
 	afx_msg void OnBnClicked1015();
