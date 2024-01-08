@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Americus Maximus
+Copyright (c) 2023 - 2024 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ SOFTWARE.
 #define RENDERER_MODULE_MESSAGE_SEVERITY_MESSAGE 2
 
 #define MAX_RENDERER_MODULE_DEVICE_NAME_LENGTH 32
+#define MAX_RENDERER_MODULE_DEVICE_LONG_NAME_LENGTH 80
 
 #define RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY 0
 #define RENDERER_MODULE_TEXTURE_LOCATION_LOCAL_VIDEO_MEMORY 1
@@ -587,7 +588,7 @@ namespace RendererModule
     struct RendererModuleDescriptor
     {
         u32 Signature;
-        s32 Unk1; // TODO
+        s32 Size;
         u32 Version;
         u32 Caps;
         u32 MinimumTextureWidth;
@@ -619,11 +620,11 @@ namespace RendererModule
         u32 MemorySize;
         u32 MemoryType;
 
-        // DirectX 6.0
-
         const char* Author;
 
         u32 DXV;
+
+        char DeviceName[MAX_RENDERER_MODULE_DEVICE_LONG_NAME_LENGTH];
     };
 
     // NOTE: D3DLIGHTTYPE
