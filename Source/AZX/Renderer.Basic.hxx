@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Americus Maximus
+Copyright (c) 2023 - 2024 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,7 @@ SOFTWARE.
 #define RENDERER_RESOLUTION_MODE_1024_768_16 3
 #define RENDERER_RESOLUTION_MODE_1280_1024_16 4
 #define RENDERER_RESOLUTION_MODE_1600_1200_16 5
+#define RENDERER_RESOLUTION_MODE_640_480_32 7
 
 namespace Renderer
 {

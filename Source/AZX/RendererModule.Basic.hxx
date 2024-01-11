@@ -564,6 +564,60 @@ namespace RendererModule
         f32 MaxTextureRepeat;
     };
 
+    // NOTE: Used in DirectX 8 renderers.
+    struct RendererModuleDeviceCapabilities8
+    {
+        BOOL IsAccelerated;
+        u32 RendererDepthBits;
+        u32 RenderScreenBits;
+        u32 RendererDeviceDepthBits;
+        BOOL IsDepthVideoMemoryAvailable;
+        BOOL IsDepthAvailable;
+        BOOL IsGreenAllowSixBits;
+        BOOL IsVideoMemoryAvailable;
+        BOOL IsDitherAvailable;
+        BOOL IsNoVerticalSync;
+        BOOL IsWBufferAvailable;
+        BOOL IsWFogAvailable;
+        BOOL IsWindowModeAvailable;
+        BOOL IsInterpolationAvailable;
+        BOOL IsDepthRemovalAvailable;
+        BOOL IsPerspectiveTextures;
+        BOOL IsAlphaBlending;
+        BOOL IsAlphaProperBlending;
+        BOOL IsAlphaTextures;
+        BOOL IsModulateBlending;
+        BOOL IsSourceAlphaBlending;
+        BOOL IsAntiAliasingAvailable;
+        BOOL IsColorBlending;
+        BOOL IsAnisotropyAvailable;
+        u32 MaxAnisotropy;
+        BOOL IsGammaAvailable;
+        BOOL IsSpecularGouraudBlending;
+        BOOL IsStencilBufferAvailable;
+        BOOL IsSpecularBlending;
+        s32 Unk29; // TODO
+        BOOL IsTextureIndependentUVs;
+        BOOL IsMipMapBiasAvailable;
+        s32 Unk32; // TODO
+        u32 MinTextureWidth;
+        u32 MaxTextureWidth;
+        u32 MinTextureHeight;
+        u32 MaxTextureHeight;
+        u32 MultipleTextureWidth;
+        BOOL IsPowerOfTwoTexturesWidth;
+        u32 MultipleTextureHeight;
+        BOOL IsPowerOfTwoTexturesHeight;
+        u32 MaximumSimultaneousTextures;
+        BOOL IsSquareOnlyTextures;
+        BOOL IsAntiAliasEdges;
+        f32 GuardBandLeft;
+        f32 GuardBandRight;
+        f32 GuardBandTop;
+        f32 GuardBandBottom;
+        f32 MaxTextureRepeat;
+    };
+
     struct RendererModuleLambdaContainer
     {
         void* L1; // TODO
