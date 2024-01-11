@@ -92,6 +92,11 @@ namespace RendererModule
 
             struct
             {
+                D3DGAMMARAMP Gamma; // 0x6001faa0
+            } State;
+
+            struct
+            {
                 u32 Width; // 0x6001dfb8
                 u32 Height; // 0x6001dfbc
 
@@ -99,11 +104,6 @@ namespace RendererModule
 
                 IDirect3DSurface8* Surfaces[MAX_ACTIVE_SURFACE_COUNT]; // 0x6001de20
             } Surfaces;
-
-            struct
-            {
-                D3DGAMMARAMP Gamma; // 0x6001faa0
-            } State;
         } DX;
 
         struct
@@ -181,7 +181,7 @@ namespace RendererModule
         {
             D3DFORMAT Formats[MAX_TEXTURE_FORMAT_COUNT]; // 0x6001efa0
 
-            TextureStage Stages[MAX_TEXTURE_STAGE_COUNT]; // 0x6001f164
+            TextureStage Stages[MAX_TEXTURE_STAGE_COUNT]; // 0x6001f140
 
             TextureStageState StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x60020100
         } Textures;

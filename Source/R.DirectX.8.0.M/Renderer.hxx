@@ -124,15 +124,6 @@ namespace RendererModule
 
             struct
             {
-                u32 Width; // 0x6001eec8
-                u32 Height; // 0x6001eecc
-                u32 Bits; // 0x6001eed0
-
-                IDirect3DSurface8* Surfaces[MAX_ACTIVE_SURFACE_COUNT]; // 0x6001ed2c
-            } Surfaces;
-
-            struct
-            {
                 D3DFORMAT Back; // 0x6001ed70
             } Formats;
 
@@ -140,6 +131,15 @@ namespace RendererModule
             {
                 D3DGAMMARAMP Gamma; // 0x600209a0
             } State;
+
+            struct
+            {
+                u32 Width; // 0x6001eec8
+                u32 Height; // 0x6001eecc
+                u32 Bits; // 0x6001eed0
+
+                IDirect3DSurface8* Surfaces[MAX_ACTIVE_SURFACE_COUNT]; // 0x6001ed2c
+            } Surfaces;
         } DX;
 
         struct
@@ -156,6 +156,7 @@ namespace RendererModule
             struct
             {
                 u32 Count; // 0x6001dac4
+
                 IDirect3DVertexBuffer8* Buffer; // 0x6001dabc
 
                 u32 StartIndex; // 0x6001dac0
@@ -216,7 +217,7 @@ namespace RendererModule
         {
             D3DFORMAT Formats[MAX_TEXTURE_FORMAT_COUNT]; // 0x6001efa0
 
-            TextureStage Stages[MAX_TEXTURE_STAGE_COUNT]; // 0x60020064
+            TextureStage Stages[MAX_TEXTURE_STAGE_COUNT]; // 0x60020040
 
             TextureStageState StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x6001dae8
         } Textures;
@@ -226,7 +227,7 @@ namespace RendererModule
             u32 X0; // 0x6001da9c
             u32 Y0; // 0x6001daa0
             u32 X1; // 0x6001daa4
-            u32 Y1; // 6001daa8
+            u32 Y1; // 0x6001daa8
         } ViewPort;
 
         struct
