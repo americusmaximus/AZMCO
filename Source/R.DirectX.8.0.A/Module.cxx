@@ -70,7 +70,7 @@ namespace RendererModule
 
         return &ModuleDescriptor;
     }
-
+    
     // 0x60001390
     // a.k.a. THRASH_clearwindow
     DLLAPI u32 STDCALLAPI ClearGameWindow(void)
@@ -239,7 +239,7 @@ namespace RendererModule
 
         return RENDERER_MODULE_FAILURE;
     }
-
+    
     // 0x60002f30
     // a.k.a. THRASH_getstate
     DLLAPI u32 STDCALLAPI AcquireState(const u32 state)
@@ -441,7 +441,7 @@ namespace RendererModule
 
         return RENDERER_MODULE_FAILURE;
     }
-
+    
     // 0x600016f0
     // a.k.a. THRASH_unlockwindow
     DLLAPI u32 STDCALLAPI UnlockGameWindow(const RendererModuleWindowLock* state)

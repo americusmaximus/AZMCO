@@ -36,9 +36,9 @@ namespace RendererModuleValues
     extern u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT]; // 0x6001f9a0
 
     extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x600404c0
+    extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600405a0
 
     extern s32 RendererTextureFormatStates[MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT]; // 0x6001d9e0
-    extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600405a0
 
     extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
 }

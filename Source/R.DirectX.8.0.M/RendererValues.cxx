@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2024 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "Graphics.Basic.hxx"
+#include "RendererValues.hxx"
 
-#include "Basic.hxx"
+using namespace Renderer;
+using namespace RendererModule;
 
-#define GRAPHICS_BITS_PER_PIXEL_8 8
-#define GRAPHICS_BITS_PER_PIXEL_16 16
-#define GRAPHICS_BITS_PER_PIXEL_24 24
-#define GRAPHICS_BITS_PER_PIXEL_32 32
+namespace RendererModuleValues
+{
+    u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
+    u32 RendererVersion = RENDERER_MODULE_VERSION_115;
 
-#define GRAPHICS_RESOLUTION_480 480
-#define GRAPHICS_RESOLUTION_512 512
-#define GRAPHICS_RESOLUTION_600 600
-#define GRAPHICS_RESOLUTION_640 640
-#define GRAPHICS_RESOLUTION_768 768
-#define GRAPHICS_RESOLUTION_800 800
-#define GRAPHICS_RESOLUTION_1024 1024
-#define GRAPHICS_RESOLUTION_1200 1200
-#define GRAPHICS_RESOLUTION_1280 1280
-#define GRAPHICS_RESOLUTION_1536 1536
-#define GRAPHICS_RESOLUTION_1600 1600
-#define GRAPHICS_RESOLUTION_2048 2048
+    BOOL IsRendererInit = TRUE;
+    u32 RendererVertexSize = sizeof(RTLVX);
+    u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
 
-#define GRAPCHICS_COLOR_WHITE 0xFFFFFFFF
+    u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT];
+
+    RendererModuleDescriptor ModuleDescriptor;
+    RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT];
+
+    s32 RendererTextureFormatStates[MAX_USABLE_TEXTURE_FORMAT_COUNT] =
+    {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    }; // TODO
+
+    s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT] =
+    {
+        0, 0, 0, 0, 4, 0, 0, 0, 0, 0
+    }; // TODO
+}

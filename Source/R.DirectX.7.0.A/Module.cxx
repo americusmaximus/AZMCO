@@ -143,13 +143,13 @@ namespace RendererModule
         {
             State.Window.Count = State.Window.Count + 1;
 
-            State.Windows[State.Window.Count + WINDOW_OFFSET].Texture = AllocateRendererTexture(width, height, format, 0, 0, TRUE);
+            State.Windows[State.Window.Count + MIN_WINDOW_INDEX].Texture = AllocateRendererTexture(width, height, format, 0, 0, TRUE);
 
             InitializeRendererDeviceDepthSurfaces(width, height,
-                State.Windows[State.Window.Count + WINDOW_OFFSET].Surface,
-                State.Windows[State.Window.Count + WINDOW_OFFSET].Texture->Texture);
+                State.Windows[State.Window.Count + MIN_WINDOW_INDEX].Surface,
+                State.Windows[State.Window.Count + MIN_WINDOW_INDEX].Texture->Texture);
 
-            if (State.Windows[State.Window.Count + WINDOW_OFFSET].Texture != NULL) { return State.Window.Count + WINDOW_OFFSET; }
+            if (State.Windows[State.Window.Count + MIN_WINDOW_INDEX].Texture != NULL) { return State.Window.Count + MIN_WINDOW_INDEX; }
         }
 
         return RENDERER_MODULE_FAILURE;
@@ -159,7 +159,7 @@ namespace RendererModule
     // a.k.a. THRASH_destroywindow
     DLLAPI u32 STDCALLAPI DestroyGameWindow(const u32 indx)
     {
-        if (indx < MAX_WINDOW_COUNT && State.Windows[indx].Texture != NULL && WINDOW_OFFSET < indx)
+        if (indx < MAX_WINDOW_COUNT && State.Windows[indx].Texture != NULL && MIN_WINDOW_INDEX < indx)
         {
             if (State.Windows[indx].Surface != NULL)
             {

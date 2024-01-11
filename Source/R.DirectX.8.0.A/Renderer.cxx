@@ -105,7 +105,7 @@ namespace RendererModule
 
         if (State.Devices.Count == 0) { return State.Devices.Count; }
 
-        const static D3DFORMAT formats[RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_R5G6B5, D3DFMT_X1R5G5B5 };
+        const static D3DFORMAT formats[MAX_RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_R5G6B5, D3DFMT_X1R5G5B5 };
 
         u32 actual = 0;
 
@@ -113,7 +113,7 @@ namespace RendererModule
         {
             BOOL found = TRUE;
 
-            for (u32 xx = 0; xx < RENDERER_DEVICE_FORMAT_COUNT; xx++)
+            for (u32 xx = 0; xx < MAX_RENDERER_DEVICE_FORMAT_COUNT; xx++)
             {
                 if (State.DX.Instance->CheckDeviceType(x, D3DDEVTYPE_HAL, formats[xx], formats[xx], FALSE) == D3D_OK) { found = TRUE; break; }
             }
@@ -490,12 +490,12 @@ namespace RendererModule
     // 0x60003a50
     BOOL AcquireRendererDeviceDepthFormat(u32* bits, D3DFORMAT* result)
     {
-        const D3DFORMAT x16[RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_R5G6B5, D3DFMT_R5G6B5 };
-        const D3DFORMAT x32[RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8 };
+        const D3DFORMAT x16[MAX_RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_R5G6B5, D3DFMT_R5G6B5 };
+        const D3DFORMAT x32[MAX_RENDERER_DEVICE_FORMAT_COUNT] = { D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8 };
 
         const D3DFORMAT* formats = (*bits == GRAPHICS_BITS_PER_PIXEL_32) ? x32 : x16;
 
-        for (u32 x = 0; x < RENDERER_DEVICE_FORMAT_COUNT; x++)
+        for (u32 x = 0; x < MAX_RENDERER_DEVICE_FORMAT_COUNT; x++)
         {
             if (State.DX.Instance->CheckDeviceFormat(State.Device.Index, D3DDEVTYPE_HAL, formats[x],
                 D3DUSAGE_RENDERTARGET, D3DRTYPE_SURFACE, formats[x]) == D3D_OK)
@@ -519,8 +519,8 @@ namespace RendererModule
     // 0x60003cf0
     BOOL AcquireRendererDeviceDepthFormat(const u32 device, const D3DFORMAT adapter, const D3DFORMAT target, D3DFORMAT* result)
     {
-        const D3DFORMAT x16[RENDERER_DEVICE_DEPTH_FORMAT_COUNT] = { D3DFMT_D16, D3DFMT_D32, D3DFMT_D24S8, D3DFMT_D24X8, D3DFMT_D24X4S4 };
-        const D3DFORMAT x32[RENDERER_DEVICE_DEPTH_FORMAT_COUNT] = { D3DFMT_D32, D3DFMT_D24S8, D3DFMT_D24X8, D3DFMT_D24X4S4, D3DFMT_D16 };
+        const D3DFORMAT x16[MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT] = { D3DFMT_D16, D3DFMT_D32, D3DFMT_D24S8, D3DFMT_D24X8, D3DFMT_D24X4S4 };
+        const D3DFORMAT x32[MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT] = { D3DFMT_D32, D3DFMT_D24S8, D3DFMT_D24X8, D3DFMT_D24X4S4, D3DFMT_D16 };
 
         const D3DFORMAT* formats = NULL;
 
@@ -531,7 +531,7 @@ namespace RendererModule
         default: { return TRUE; }
         }
 
-        for (u32 x = 0; x < RENDERER_DEVICE_DEPTH_FORMAT_COUNT; x++)
+        for (u32 x = 0; x < MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT; x++)
         {
             if (State.DX.Instance->CheckDeviceFormat(device, D3DDEVTYPE_HAL, adapter, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, formats[x]) == D3D_OK)
             {
@@ -601,7 +601,7 @@ namespace RendererModule
     // 0x60001870
     void ReleaseRendererWindows(void)
     {
-        for (u32 x = WINDOW_OFFSET; x < State.Window.Count + WINDOW_OFFSET; x++)
+        for (u32 x = MIN_WINDOW_INDEX; x < State.Window.Count + MIN_WINDOW_INDEX; x++)
         {
             DestroyGameWindow(x);
         }
@@ -888,8 +888,8 @@ namespace RendererModule
     // 0x60001d40
     void InitializeVertexBuffer(void)
     {
-        if (State.DX.Device->CreateVertexBuffer(0x27ffd8, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
-            D3DFVF_NONE, D3DPOOL_DEFAULT, &State.Data.Vertexes.Buffer) == D3D_OK) // TODO
+        if (State.DX.Device->CreateVertexBuffer(MAX_VERTEX_BUFFER_SIZE, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
+            D3DFVF_NONE, D3DPOOL_DEFAULT, &State.Data.Vertexes.Buffer) == D3D_OK)
         {
             ZeroMemory(State.Data.Packets.Packets, MAX_RENDER_PACKET_COUNT * sizeof(RendererPacket));
 
