@@ -35,12 +35,24 @@ namespace RendererModuleValues
     u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
     u32 RendererVersion = RENDERER_MODULE_VERSION_114;
 
+    u32 RendererIndexSize = RENDERER_MODULE_INDEX_SIZE_4;
+
     u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT];
 
     RendererModuleDescriptor ModuleDescriptor;
     RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT];
 
     s32 RendererTextureFormatStates[MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT];
+
+    RendererModule::MinMax MinMax[6] =
+    {
+        { 0x0,   0x4a },
+        { 0x64,  0x6e },
+        { 0xc8,  0xd7 },
+        { 0x12c, 0x13b },
+        { 0x190, 0x19f },
+        { 0x2bc, 0x2cb }
+    }; // TODO
 
     s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT] =
     {

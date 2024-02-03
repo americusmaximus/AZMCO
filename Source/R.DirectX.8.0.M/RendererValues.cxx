@@ -31,6 +31,8 @@ namespace RendererModuleValues
     u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
     u32 RendererVersion = RENDERER_MODULE_VERSION_115;
 
+    u32 RendererIndexSize = RENDERER_MODULE_INDEX_SIZE_4;
+
     BOOL IsRendererInit = TRUE;
     u32 RendererVertexSize = sizeof(RTLVX);
     u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
@@ -43,6 +45,16 @@ namespace RendererModuleValues
     s32 RendererTextureFormatStates[MAX_USABLE_TEXTURE_FORMAT_COUNT] =
     {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    }; // TODO
+
+    RendererModule::MinMax MinMax[6] =
+    {
+        { 0x0,   0x4a },
+        { 0x64,  0x6e },
+        { 0xc8,  0xd7 },
+        { 0x12c, 0x13b },
+        { 0x190, 0x19f },
+        { 0x2bc, 0x2cb }
     }; // TODO
 
     s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT] =

@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "Graphics.Basic.hxx"
 #include "Module.hxx"
 #include "RendererValues.hxx"
 #include "Settings.hxx"
@@ -81,9 +82,29 @@ namespace RendererModule
     // a.k.a. THRASH_clip
     DLLAPI u32 STDCALLAPI ClipGameWindow(const u32 x0, const u32 y0, const u32 x1, const u32 y1)
     {
-        // TODO NOT IMPLEMENTED
+        State.ViewPort.X0 = x0;
+        State.ViewPort.Y0 = y0;
+        State.ViewPort.X1 = x1 - x0;
+        State.ViewPort.Y1 = y1 - y0;
 
-        return RENDERER_MODULE_FAILURE;
+        RenderPackets();
+        AttemptRenderPackets();
+
+        D3DVIEWPORT8 vp;
+        ZeroMemory(&vp, sizeof(D3DVIEWPORT8));
+
+        vp.X = x0;
+        vp.Y = y0;
+        vp.MinZ = 0.0f;
+        vp.MaxZ = 0.9999847f;
+        vp.Width = x1 - x0;
+        vp.Height = y1 - y0;
+
+        const HRESULT result = State.DX.Device->SetViewport(&vp);
+
+        BeginRendererScene();
+
+        return result == D3D_OK ? RENDERER_MODULE_SUCCESS : RENDERER_MODULE_FAILURE;
     }
 
     // 0x60001630
@@ -241,9 +262,9 @@ namespace RendererModule
     // a.k.a. THRASH_getstate
     DLLAPI u32 STDCALLAPI AcquireState(const u32 state)
     {
-        // TODO NOT IMPLEMENTED
+        const s32 indx = AcquireTextureStateStageIndex(state & RENDERER_MODULE_SELECT_STATE_MASK);
 
-        return RENDERER_MODULE_FAILURE;
+        return  (-1 < indx) ? State.Textures.StageStates[indx].Values[MAKETEXTURESTAGEVALUE(state)] : indx;
     }
 
     // 0x60001800
@@ -388,16 +409,82 @@ namespace RendererModule
     // a.k.a. THRASH_setvideomode
     DLLAPI u32 STDCALLAPI SelectVideoMode(const u32 mode, const u32 pending, const u32 depth)
     {
-        // TODO NOT IMPLEMENTED
+        s32 actual = (s32)mode;
 
-        return RENDERER_MODULE_FAILURE;
+        if (actual < 0 || ModuleDescriptor.Capabilities.Count <= actual
+            || !ModuleDescriptor.Capabilities.Capabilities[actual].IsActive)
+        {
+            actual = 1; // TODO
+        }
+
+        if (depth == 1) { State.DX.Surfaces.Bits = GRAPHICS_BITS_PER_PIXEL_16; } // TODO
+        else if (depth == 2) { State.DX.Surfaces.Bits = GRAPHICS_BITS_PER_PIXEL_32; } // TODO
+        else { State.DX.Surfaces.Bits = 0; }
+
+        u32 result = RENDERER_MODULE_FAILURE;
+
+        if (State.Lambdas.Lambdas.Execute != NULL)
+        {
+            if (GetWindowThreadProcessId(State.Window.Parent.HWND, NULL) != GetCurrentThreadId())
+            {
+                State.Window.HWND = NULL;
+                State.Window.HWND = State.Lambdas.Lambdas.AcquireWindow();
+
+                State.Mutexes.Device = CreateEventA(NULL, FALSE, FALSE, NULL);
+
+                SetForegroundWindow(State.Window.HWND);
+                PostMessageA(State.Window.HWND, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_DEVICE, actual, pending);
+
+                result = WaitForSingleObject(State.Mutexes.Device, 10000) == WAIT_OBJECT_0;
+            }
+        }
+        else
+        {
+            InitializeRendererDeviceExecute(0, State.Window.HWND, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_DEVICE, actual, pending, NULL);
+        }
+
+        BeginRendererScene();
+
+        InitializeRendererModuleState(actual, pending, depth, ENVIRONMENT_SECTION_NAME);
+        SelectBasicRendererState(RENDERER_MODULE_STATE_62, (void*)(DAT_6001eee0 + 1));
+
+        InitializeRendererState();
+
+        SelectGameWindow(2); // TODO
+
+        {
+            RendererModuleWindowLock* lock = LockGameWindow();
+
+            UnlockGameWindow(NULL);
+
+            SelectRendererStateValue(RENDERER_MODULE_STATE_SELECT_WINDOW_LOCK_STATE, lock);
+        }
+
+        return result;
     }
 
     // 0x60001380
     // a.k.a. THRASH_sync
     DLLAPI u32 STDCALLAPI SyncGameWindow(const u32 type)
     {
-        // TODO NOT IMPLEMENTED
+        if (type == 0) // TODO
+        {
+            LockGameWindow();
+            UnlockGameWindow(NULL);
+        }
+        else if (type == 2) // TODO
+        {
+            if (State.DX.Device != NULL)
+            {
+                D3DRASTER_STATUS status;
+                ZeroMemory(&status, sizeof(D3DRASTER_STATUS));
+
+                while (State.DX.Device->GetRasterStatus(&status) == D3D_OK)
+                {
+                    if (status.InVBlank) { return RENDERER_MODULE_FAILURE; }
+                }
+            }
+        }
 
         return RENDERER_MODULE_FAILURE;
     }

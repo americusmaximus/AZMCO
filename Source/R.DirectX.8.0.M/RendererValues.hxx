@@ -29,6 +29,8 @@ namespace RendererModuleValues
     extern u32 MaxRendererSimultaneousTextures; // 0x6001c0ac
     extern u32 RendererVersion; // 0x6001c0b0
 
+    extern u32 RendererIndexSize; // 0x6001c0b8
+
     extern BOOL IsRendererInit; // 0x6001c07c
     extern u32 RendererVertexSize; // 0x6001c080
     extern u32 RendererCurrentShader; // 0x6001c084
@@ -39,6 +41,8 @@ namespace RendererModuleValues
     extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600429a0
 
     extern s32 RendererTextureFormatStates[MAX_USABLE_TEXTURE_FORMAT_COUNT]; // 0x6001d9e0
+
+    extern RendererModule::MinMax MinMax[6]; // 0x6001c04c
 
     extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
 }

@@ -53,6 +53,15 @@ namespace Renderer
 
 namespace RendererModule
 {
+    extern u32 DAT_6001dfcc; // 0x6001dfcc
+    extern u32 DAT_6001dfd0; // 0x6001dfd0
+
+    struct MinMax
+    {
+        u32 Min;
+        u32 Max;
+    };
+
     struct TextureStageState
     {
         s32 Values[MAX_TEXTURE_STAGE_COUNT];
@@ -152,6 +161,10 @@ namespace RendererModule
         {
             RENDERERMODULELOGLAMBDA Log; // 0x6001c108
 
+            RENDERERMODULESELECTSTATELAMBDA SelectState; // 0x6001dfe8
+            RENDERERMODULEALLOCATEMEMORYLAMBDA AllocateMemory; // 0x6001dfec
+            RENDERERMODULERELEASEMEMORYLAMBDA ReleaseMemory; // 0x6001dff0
+
             RendererModuleLambdaContainer Lambdas; // 0x600200e0
         } Lambdas;
 
@@ -170,6 +183,8 @@ namespace RendererModule
         struct
         {
             BOOL IsWindowMode; // 0x6001de44
+
+            u32 Cull; // 0x6001dff4
         } Settings;
 
         struct
@@ -198,6 +213,11 @@ namespace RendererModule
         {
             u32 Count; // 0x6001da90
 
+            struct
+            {
+                HWND HWND; // 0x6001dfc8
+            } Parent;
+
             HWND HWND; // 0x6001de40
         } Window;
     };
@@ -210,9 +230,12 @@ namespace RendererModule
     BOOL AcquireRendererDeviceDepthWindowFormat(u32* width, u32* height, u32* bits, D3DFORMAT* format);
     BOOL BeginRendererScene(void);
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
+    s32 AcquireTextureStateStageIndex(const u32 state);
     u32 AcquireRendererDeviceCount(void);
     u32 AcquireRendererDeviceFormat(const D3DFORMAT format);
     u32 AcquireRendererDeviceFormatSize(const D3DFORMAT format);
+    u32 SelectBasicRendererState(const u32 state, void* value);
+    u32 SelectRendererTransforms(const f32 zNear, const f32 zFar);
     u32 STDCALLAPI InitializeRendererDeviceExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);
     u32 STDCALLAPI InitializeRendererDeviceSurfacesExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);
     void AcquireRendererDeviceFormats(void);
@@ -220,6 +243,8 @@ namespace RendererModule
     void AcquireRendererModuleDescriptor(RendererModuleDescriptor* desc, const char* section);
     void AcquireRendererTextureFormats(void);
     void AttemptRenderPackets(void);
+    void InitializeRendererModuleState(const u32 mode, const u32 pending, const u32 depth, const char* section);
+    void InitializeRendererState(void);
     void InitializeTextureStateStates(void);
     void InitializeVertexBuffer(void);
     void InitializeViewPort(void);
@@ -227,4 +252,5 @@ namespace RendererModule
     void ReleaseRendererObjects(void);
     void ReleaseRendererWindows(void);
     void RenderPackets(void);
+    void SelectRendererStateValue(const u32 state, void* value);
 }
