@@ -31,7 +31,7 @@ EXPORTS
     _THRASH_lockwindow = LockGameWindow                     @29
     _THRASH_pageflip = ToggleGameWindow                     @30
     _THRASH_readrect = ReadRectangle                        @31
-    _THRASH_readrects = ReadRectangles                      @32         
+    _THRASH_readrects = ReadRectangles                      @32
     _THRASH_restore = RestoreGameWindow                     @33
     _THRASH_selectdisplay = SelectDevice                    @34
     _THRASH_setstate = SelectState                          @35
