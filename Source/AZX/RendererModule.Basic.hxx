@@ -501,6 +501,9 @@ typedef const void(STDCALLAPI* RENDERERMODULESELECTINSTANCELAMBDA)(const void*);
 typedef const void(STDCALLAPI* RENDERERMODULESELECTSTATELAMBDA)(const u32, void*);
 typedef void* (STDCALLAPI* RENDERERMODULEALLOCATEMEMORYLAMBDA)(const u32 size);
 
+typedef const void(STDCALLAPI* RENDERERACTIVELAMBDA)(const BOOL value);
+typedef const void(STDCALLAPI* RENDERERINACTIVELAMBDA)(const void* value);
+
 namespace RendererModule
 {
     struct RendererModuleWindowLock

@@ -27,8 +27,11 @@ SOFTWARE.
 #include <math.h>
 #include <stdio.h>
 
+#define MAX_MESSAGE_BUFFER_LENGTH 512
+
 #define MAX_SETTINGS_BUFFER_LENGTH 80
 
+using namespace Renderer;
 using namespace RendererModuleValues;
 
 namespace RendererModule
@@ -63,6 +66,25 @@ namespace RendererModule
         }
 
         return atoi(tv);
+    }
+
+    // 0x60008650
+    // 0x60008690
+    // NOTE: Originally there are 3 different methods for error, warning, and info (which is never being called).
+    void Message(const u32 severity, const char* format, ...)
+    {
+        char buffer[MAX_MESSAGE_BUFFER_LENGTH];
+
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, MAX_MESSAGE_BUFFER_LENGTH, format, args);
+        va_end(args);
+
+        if (severity == RENDERER_MODULE_MESSAGE_SEVERITY_ERROR)
+        {
+            if (State.Lambdas.Log != NULL) { State.Lambdas.Log(severity, buffer); }
+            else { MessageBoxA(NULL, buffer, "Abort Message", MB_SETFOREGROUND | MB_SYSTEMMODAL | MB_ICONERROR | MB_OKCANCEL); }
+        }
     }
 
     // 0x600076d0
@@ -645,9 +667,9 @@ namespace RendererModule
     }
 
     // 0x600021c0
-    void AttemptRenderPackets(void)
+    BOOL AttemptRenderPackets(void)
     {
-        if (!State.Scene.IsActive) { return; }
+        if (!State.Scene.IsActive) { return FALSE; }
 
         if (State.DX.Device != NULL)
         {
@@ -655,6 +677,8 @@ namespace RendererModule
 
             State.Scene.IsActive = State.DX.Device->EndScene() != D3D_OK;
         }
+
+        return State.Scene.IsActive;
     }
 
     // 0x60001e90
@@ -667,7 +691,7 @@ namespace RendererModule
 
         for (u32 x = 0; x < State.Data.Packets.Count; x++)
         {
-            const RendererPacket* packet = &State.Data.Packets.Packets[x];
+            const RendererPacket* packet = &State.Data.Packets.Packets[x + 1];
 
             State.DX.Device->DrawPrimitive(packet->PrimitiveType, State.Data.Vertexes.StartIndex, packet->PrimitiveCount);
 
@@ -894,7 +918,7 @@ namespace RendererModule
         if (State.DX.Device->CreateVertexBuffer(MAX_VERTEX_BUFFER_SIZE, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
             D3DFVF_NONE, D3DPOOL_DEFAULT, &State.Data.Vertexes.Buffer) == D3D_OK)
         {
-            ZeroMemory(State.Data.Packets.Packets, MAX_RENDER_PACKET_COUNT * sizeof(RendererPacket));
+            ZeroMemory(&State.Data.Packets.Packets[1], MAX_RENDER_PACKET_COUNT * sizeof(RendererPacket));
 
             State.Data.Packets.Count = 0;
 
@@ -1358,5 +1382,123 @@ namespace RendererModule
         }
 
         return result;
+    }
+
+    // 0x60001d80
+    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count)
+    {
+        u32 indx = 0;
+        BOOL list = FALSE;
+        BOOL result = FALSE;
+
+        if (State.Data.Packets.Count != 0)
+        {
+            if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == type)
+            {
+                switch (type)
+                {
+                case D3DPT_POINTLIST:
+                case D3DPT_LINELIST:
+                case D3DPT_TRIANGLELIST: { list = TRUE; break; }
+                case D3DPT_LINESTRIP:
+                case D3DPT_TRIANGLESTRIP:
+                case D3DPT_TRIANGLEFAN:
+                {
+                    indx = State.Data.Packets.Count;
+
+                    if ((MAX_RENDER_PACKET_COUNT - 1) < State.Data.Packets.Count) { result = TRUE; }
+
+                    break;
+                }
+                }
+            }
+            else
+            {
+                indx = State.Data.Packets.Count;
+
+                if ((MAX_RENDER_PACKET_COUNT - 1) < State.Data.Packets.Count) { result = TRUE; }
+            }
+        }
+
+        if (MAX_VERTEX_COUNT < State.Data.Vertexes.Count + count) { result = TRUE; }
+
+        if (MAX_VERTEX_COUNT < State.Data.Vertexes.StartIndex + count) { return TRUE; }
+
+        if (!result)
+        {
+            u32 max = 0;
+
+            if (list) { max = State.Data.Packets.Packets[indx + 1].PrimitiveCount; }
+
+            switch (type)
+            {
+            case D3DPT_LINELIST: { max = max + count / 2; break; }
+            case D3DPT_LINESTRIP: { max = (max - 1) + count; break; }
+            case D3DPT_TRIANGLELIST: { max = max + count / 3; break; }
+            case D3DPT_POINTLIST: { max = max + count; break; }
+            case D3DPT_TRIANGLESTRIP:
+            case D3DPT_TRIANGLEFAN: { max = (max - 2) + count; break; }
+            }
+
+            if (State.Data.MaxPrimitiveCount < max) { return TRUE; }
+        }
+
+        return result;
+    }
+
+    // 0x60001f40
+    void RenderAllPackets(void)
+    {
+        RenderPackets();
+
+        State.Data.Packets.Count = 0;
+        State.Data.Vertexes.StartIndex = 0;
+        State.Data.Vertexes.Count = 0;
+    }
+
+    // 0x60001f60
+    void UpdateVertexValues(RTLVX2* vertex)
+    {
+        // TODO NOT IMPLEMENTED
+    }
+
+    // 0x60001b10
+    // a.k.a. showbackbuffer
+    u32 ToggleRenderer(void)
+    {
+        if (State.DX.Device->TestCooperativeLevel() != D3D_OK)
+        {
+            if (IsRendererToggleLambdaActive)
+            {
+                if (State.Lambdas.RendererActiveLambda != NULL) { State.Lambdas.RendererActiveLambda(FALSE); }
+
+                IsRendererToggleLambdaActive = FALSE;
+            }
+
+            while (TRUE)
+            {
+                if (State.DX.Device->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+                {
+                    ReleaseRendererObjects();
+
+                    if (State.DX.Device->Reset(&State.Device.Presentation) == D3D_OK)
+                    {
+                        if (State.Lambdas.RendererActiveLambda != NULL) { State.Lambdas.RendererActiveLambda(TRUE); }
+
+                        IsRendererToggleLambdaActive = TRUE;
+
+                        return RENDERER_MODULE_SUCCESS;
+                    }
+                }
+
+                if (State.Lambdas.RendererInactiveLambda != NULL) { State.Lambdas.RendererInactiveLambda(State.Lambdas.RendererInactiveLambdaValue); }
+
+                Sleep(10);
+            }
+        }
+
+        State.DX.Device->Present(NULL, NULL, State.Window.HWND, NULL);
+
+        return RENDERER_MODULE_SUCCESS;
     }
 }
