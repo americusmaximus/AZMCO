@@ -131,21 +131,96 @@ namespace RendererModule
     // a.k.a. THRASH_drawline
     DLLAPI void STDCALLAPI DrawLine(RVX* a, RVX* b)
     {
-        // TODO NOT IMPLEMENTED
+        State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
+
+        if (IsNotEnoughRenderPackets(D3DPT_LINELIST, 2)) { RenderAllPackets(); }
+
+        if (State.Data.Packets.Count == 0)
+        {
+            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_LINELIST;
+            State.Data.Packets.Packets[1].PrimitiveCount = 1;
+            State.Data.Packets.Packets[1].StartIndex = 2;
+
+            State.Data.Packets.Count = 1;
+        }
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_LINELIST)
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
+                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+
+            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
+                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 2;
+        }
+        else
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 2;
+
+            State.Data.Packets.Count = State.Data.Packets.Count + 1;
+        }
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize * 2, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        memcpy(buffer, a, RendererVertexSize);
+        memcpy((void*)((addr)buffer + (addr)RendererVertexSize), b, RendererVertexSize);
+
+        UpdateVertexValues((RTLVX2*)buffer);
+        UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)RendererVertexSize));
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + 2;
     }
 
     // 0x60002be0
     // a.k.a. THRASH_drawlinemesh
     DLLAPI void STDCALLAPI DrawLineMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        State.Data.Counters.Lines = State.Data.Counters.Lines + count;
+
+        u32 a = 0;
+        u32 b = 0;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 2));
+
+            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
+            {
+                a = ((u8*)indxs)[0];
+                b = ((u8*)indxs)[1];
+            }
+            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
+                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
+            {
+                a = ((u16*)indxs)[0];
+                b = ((u16*)indxs)[1];
+            }
+            else
+            {
+                a = ((u32*)indxs)[0];
+                b = ((u32*)indxs)[1];
+            }
+
+            DrawLine((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)));
+        }
     }
 
     // 0x60003000
     // a.k.a. THRASH_drawlinestrip
     DLLAPI void STDCALLAPI DrawLineStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[x + 0], (RVX*)&vs[x + 1]); }
     }
 
     // 0x60002c70
@@ -153,42 +228,257 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawLineStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
+
+        u32 value = count & 0x80000001;
+        BOOL allowed = value == 0;
+
+        if ((s32)value < 0) { allowed = (value - 1 | 0xfffffffe) == 0xffffffff; }
+
+        if (!allowed) { return; }
+
+        if (IsNotEnoughRenderPackets(D3DPT_LINESTRIP, count + 1)) { RenderAllPackets(); }
+
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 1;
+
+        State.Data.Packets.Count = State.Data.Packets.Count + 1;
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize * (count + 1), (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        for (u32 x = 0; x < (count + 1); x++)
+        {
+            u32 indx = 0;
+
+            {
+                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
+
+                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
+                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
+                else { indx = ((u32*)indxs)[0]; }
+            }
+
+            RVX* vertex = (RVX*)((addr)buffer + (addr)(indx * RendererVertexSize));
+
+            memcpy(vertex, (RVX*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+
+            UpdateVertexValues((RTLVX2*)vertex);
+        }
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + count + 1;
     }
 
     // 0x60002dc0
     // a.k.a. THRASH_drawpoint
     DLLAPI void STDCALLAPI DrawPoint(RVX* vertex)
     {
-        // TODO NOT IMPLEMENTED
+        State.Data.Counters.Vertexes = State.Data.Counters.Vertexes + 1;
+
+        if (IsNotEnoughRenderPackets(D3DPT_POINTLIST, 1)) { RenderAllPackets(); }
+
+        if (State.Data.Packets.Count == 0)
+        {
+            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[1].PrimitiveCount = 1;
+            State.Data.Packets.Packets[1].StartIndex = 1;
+
+            State.Data.Packets.Count = 1;
+        }
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_POINTLIST)
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
+                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+
+            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
+                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 1;
+        }
+        else
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 1;
+
+            State.Data.Packets.Count = State.Data.Packets.Count + 1;
+        }
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        memcpy(buffer, vertex, RendererVertexSize);
+
+        UpdateVertexValues((RTLVX2*)buffer);
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + 1;
     }
 
     // 0x60002ec0
     // a.k.a. THRASH_drawpointmesh
     DLLAPI void STDCALLAPI DrawPointMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        State.Data.Counters.Vertexes = State.Data.Counters.Vertexes + count;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            u32 indx = 0;
+
+            {
+                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
+
+                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
+                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
+                else { indx = ((u32*)indxs)[0]; }
+            }
+
+            DrawPoint((RVX*)((addr)vertexes + (addr)(indx * RendererVertexSize)));
+        }
     }
 
     // 0x60003030
     // a.k.a. THRASH_drawpointstrip
     DLLAPI void STDCALLAPI DrawPointStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&vs[x + 0]); }
     }
 
     // 0x60002790
     // a.k.a. THRASH_drawquad
     DLLAPI void STDCALLAPI DrawQuad(RVX* a, RVX* b, RVX* c, RVX* d)
     {
-        // TODO NOT IMPLEMENTED
+        State.Data.Counters.Quads = State.Data.Counters.Quads + 1;
+
+        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 6)) { RenderAllPackets(); }
+
+        if (State.Data.Packets.Count == 0)
+        {
+            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[1].PrimitiveCount = 2;
+            State.Data.Packets.Packets[1].StartIndex = 6;
+
+            State.Data.Packets.Count = 1;
+        }
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
+                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 2;
+
+            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
+                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 6;
+        }
+        else
+        {
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 6;
+
+            State.Data.Packets.Count = State.Data.Packets.Count + 1;
+        }
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize * 4, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        // A
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 0)));
+        }
+
+        // B
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 1)));
+        }
+
+        // C
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 2)));
+        }
+
+        // A
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 3)), a, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 3)));
+        }
+
+        // C
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 4)), c, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 4)));
+        }
+
+        // D
+        {
+            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 5)), d, RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 5)));
+        }
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + 6;
     }
 
     // 0x600029b0
     // a.k.a. THRASH_drawquadmesh
     DLLAPI void STDCALLAPI DrawQuadMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        State.Data.Counters.Quads = State.Data.Counters.Quads + count;
+
+        u32 a = 0;
+        u32 b = 0;
+        u32 c = 0;
+        u32 d = 0;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 4));
+
+            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
+            {
+                a = ((u8*)indxs)[0];
+                b = ((u8*)indxs)[1];
+                c = ((u8*)indxs)[2];
+                d = ((u8*)indxs)[3];
+            }
+            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
+                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
+            {
+                a = ((u16*)indxs)[0];
+                b = ((u16*)indxs)[1];
+                c = ((u16*)indxs)[2];
+                d = ((u16*)indxs)[3];
+            }
+            else
+            {
+                a = ((u32*)indxs)[0];
+                b = ((u32*)indxs)[1];
+                c = ((u32*)indxs)[2];
+                d = ((u32*)indxs)[3];
+            }
+
+            DrawQuad((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(c * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(d * RendererVertexSize)));
+        }
     }
 
     // 0x60001960
@@ -196,7 +486,19 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawSprite(RVX* a, RVX* b)
     {
-        // TODO NOT IMPLEMENTED
+        RTLVX c;
+        memcpy(&c, b, RendererVertexSize);
+
+        c.XYZ.Y = ((RTLVX*)a)->XYZ.Y;
+        c.UV.Y = ((RTLVX*)a)->UV.Y;
+
+        RTLVX d;
+        memcpy(&d, b, RendererVertexSize);
+
+        d.XYZ.X = ((RTLVX*)a)->XYZ.X;
+        d.UV.X = ((RTLVX*)a)->XYZ.X;
+
+        DrawQuad(a, (RVX*)&c, b, (RVX*)&d);
     }
 
     // 0x600019e0
@@ -204,58 +506,255 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawSpriteMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        u32 a = 0;
+        u32 b = 0;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 2));
+
+            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
+            {
+                a = ((u8*)indxs)[0];
+                b = ((u8*)indxs)[1];
+            }
+            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
+                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
+            {
+                a = ((u16*)indxs)[0];
+                b = ((u16*)indxs)[1];
+            }
+            else
+            {
+                a = ((u32*)indxs)[0];
+                b = ((u32*)indxs)[1];
+            }
+
+            DrawSprite((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)));
+        }
     }
 
     // 0x60002290
     // a.k.a. THRASH_drawtri
     DLLAPI void STDCALLAPI DrawTriangle(RVX* a, RVX* b, RVX* c)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Settings.Cull == 1
+            || ((u32)AcquireNormal((f32x3*)a, (f32x3*)b, (f32x3*)c) & 0x80000000) != State.Settings.Cull) // TODO
+        {
+            State.Data.Counters.Triangles = State.Data.Counters.Triangles + 1;
+
+            if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 3)) { RenderAllPackets(); }
+
+            if (State.Data.Packets.Count == 0)
+            {
+                State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[1].PrimitiveCount = 1;
+                State.Data.Packets.Packets[1].StartIndex = 3;
+
+                State.Data.Packets.Count = 1;
+            }
+            else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+            {
+                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+
+                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 3;
+            }
+            else
+            {
+                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
+                State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 3;
+
+                State.Data.Packets.Count = State.Data.Packets.Count + 1;
+            }
+
+            RVX* buffer = NULL;
+            State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+                RendererVertexSize * 3, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+            // A
+            {
+                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
+                UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 0)));
+            }
+
+            // B
+            {
+                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
+                UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 1)));
+            }
+
+            // C
+            {
+                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
+                UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 2)));
+            }
+
+            State.Data.Vertexes.Buffer->Unlock();
+
+            State.Data.Vertexes.Count = State.Data.Vertexes.Count + 3;
+        }
     }
 
     // 0x60002fd0
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFan(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawTriangle(vertexes, (RVX*)&vs[x + 1], (RVX*)&vs[x + 2]); }
     }
 
     // 0x60002650
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFans(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        State.Data.Counters.TriangleFans = State.Data.Counters.TriangleFans + 1;
+
+        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLEFAN, count + 2)) { RenderAllPackets(); }
+
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLEFAN;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+
+        State.Data.Packets.Count = State.Data.Packets.Count + 1;
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize * (count + 2), (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        for (u32 x = 0; x < (count + 2); x++)
+        {
+            u32 indx = 0;
+
+            {
+                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
+
+                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
+                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
+                else { indx = ((u32*)indxs)[0]; }
+            }
+
+            memcpy((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(x * RendererVertexSize)));
+        }
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + (count + 2);
     }
 
     // 0x60002460
     // a.k.a. THRASH_drawtrimesh
     DLLAPI void STDCALLAPI DrawTriangleMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        u32 a = 0;
+        u32 b = 0;
+        u32 c = 0;
+
+        State.Data.Counters.Triangles = State.Data.Counters.Triangles + count;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 3));
+
+            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
+            {
+                a = ((u8*)indxs)[0];
+                b = ((u8*)indxs)[1];
+                c = ((u8*)indxs)[2];
+            }
+            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
+                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
+            {
+                a = ((u16*)indxs)[0];
+                b = ((u16*)indxs)[1];
+                c = ((u16*)indxs)[2];
+            }
+            else
+            {
+                a = ((u32*)indxs)[0];
+                b = ((u32*)indxs)[1];
+                c = ((u32*)indxs)[2];
+            }
+
+            DrawTriangle((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)),
+                (RVX*)((addr)vertexes + (addr)(c * RendererVertexSize)));
+        }
     }
 
     // 0x60002f80
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if ((s32)count <= 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        DrawTriangle((RVX*)&vs[0], (RVX*)&vs[1], (RVX*)&vs[2]);
+
+        for (u32 x = 1; x < count; x = x + 2)
+        {
+            DrawTriangle((RVX*)&vs[x + 0], (RVX*)&vs[x + 2], (RVX*)&vs[x + 1]);
+
+            if ((x + 1) < count) { DrawTriangle((RVX*)&vs[x + 1], (RVX*)&vs[x + 2], (RVX*)&vs[x + 3]); }
+        }
     }
 
     // 0x60002510
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        State.Data.Counters.TriangleStrips = State.Data.Counters.TriangleStrips + 1;
+
+        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLESTRIP, count + 2)) { RenderAllPackets(); }
+
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+
+        State.Data.Packets.Count = State.Data.Packets.Count + 1;
+
+        RVX* buffer = NULL;
+        State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
+            RendererVertexSize * (count + 2), (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
+
+        for (u32 x = 0; x < (count + 2); x++)
+        {
+            u32 indx = 0;
+
+            {
+                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
+
+                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
+                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
+                else { indx = ((u32*)indxs)[0]; }
+            }
+
+            memcpy((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+            UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(x * RendererVertexSize)));
+        }
+
+        State.Data.Vertexes.Buffer->Unlock();
+
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + (count + 2);
     }
 
     // 0x60001300
     // a.k.a. THRASH_flushwindow
     DLLAPI u32 STDCALLAPI FlushGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return AttemptRenderPackets();
     }
     
     // 0x600030d0
@@ -345,9 +844,20 @@ namespace RendererModule
     // a.k.a. THRASH_pageflip
     DLLAPI u32 STDCALLAPI ToggleGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
+        FlushGameWindow();
 
-        return RENDERER_MODULE_FAILURE;
+        if (State.Lock.IsActive) { LOGERROR("pageflip called in while locked\n"); }
+
+        ToggleRenderer();
+
+        State.Data.Counters.Triangles = 0;
+        State.Data.Counters.Quads = 0;
+        State.Data.Counters.Lines = 0;
+        State.Data.Counters.TriangleStrips = 0;
+        State.Data.Counters.TriangleFans = 0;
+        State.Data.Counters.Vertexes = 0;
+
+        return BeginRendererScene();
     }
 
     // 0x60003070
@@ -373,9 +883,35 @@ namespace RendererModule
     // a.k.a. THRASH_restore
     DLLAPI u32 STDCALLAPI RestoreGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
+        if (!State.DX.IsInit) { return RENDERER_MODULE_FAILURE; }
 
-        return RENDERER_MODULE_FAILURE;
+        HWND window = NULL;
+
+        if (State.Lambdas.Lambdas.Execute != NULL)
+        {
+            if (GetWindowThreadProcessId(State.Window.Parent.HWND, NULL) != GetCurrentThreadId())
+            {
+                window = State.Lambdas.Lambdas.AcquireWindow();
+
+                State.Mutexes.Surface = CreateEventA(NULL, FALSE, FALSE, NULL);
+
+                SetForegroundWindow(window);
+                PostMessageA(window, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_SURFACES, 0, 0);
+
+                if (WaitForSingleObject(State.Mutexes.Surface, 10000) == WAIT_OBJECT_0)
+                {
+                    State.DX.IsInit = FALSE;
+
+                    return RENDERER_MODULE_SUCCESS;
+                }
+            }
+        }
+
+        InitializeRendererDeviceSurfacesExecute(0, window, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_DEVICE, 0, 0, NULL);
+
+        State.DX.IsInit = FALSE;
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60003800

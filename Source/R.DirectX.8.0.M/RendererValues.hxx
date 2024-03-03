@@ -45,4 +45,6 @@ namespace RendererModuleValues
     extern RendererModule::MinMax MinMax[6]; // 0x6001c04c
 
     extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
+
+    extern BOOL IsRendererToggleLambdaActive; // 0z6001c040
 }

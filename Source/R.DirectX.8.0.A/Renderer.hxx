@@ -190,7 +190,7 @@ namespace RendererModule
 
             RENDERERACTIVELAMBDA RendererActiveLambda; // 0x6001ded0
             RENDERERINACTIVELAMBDA RendererInactiveLambda; // 0x6001ded4
-            void* RendererInactiveLambdaValue; // 0x6001ded8
+            void* RendererInactiveLambdaValue; // 0x6001ded8 // TODO
         } Lambdas;
 
         struct

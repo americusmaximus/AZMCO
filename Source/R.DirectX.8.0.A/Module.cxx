@@ -879,9 +879,35 @@ namespace RendererModule
     // a.k.a. THRASH_restore
     DLLAPI u32 STDCALLAPI RestoreGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
+        if (!State.DX.IsInit) { return RENDERER_MODULE_FAILURE; }
 
-        return RENDERER_MODULE_FAILURE;
+        HWND window = NULL;
+
+        if (State.Lambdas.Lambdas.Execute != NULL)
+        {
+            if (GetWindowThreadProcessId(State.Window.Parent.HWND, NULL) != GetCurrentThreadId())
+            {
+                window = State.Lambdas.Lambdas.AcquireWindow();
+
+                State.Mutexes.Surface = CreateEventA(NULL, FALSE, FALSE, NULL);
+
+                SetForegroundWindow(window);
+                PostMessageA(window, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_SURFACES, 0, 0);
+
+                if (WaitForSingleObject(State.Mutexes.Surface, 10000) == WAIT_OBJECT_0)
+                {
+                    State.DX.IsInit = FALSE;
+
+                    return RENDERER_MODULE_SUCCESS;
+                }
+            }
+        }
+
+        InitializeRendererDeviceSurfacesExecute(0, window, RENDERER_MODULE_WINDOW_MESSAGE_INITIALIZE_DEVICE, 0, 0, NULL);
+
+        State.DX.IsInit = FALSE;
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60003180

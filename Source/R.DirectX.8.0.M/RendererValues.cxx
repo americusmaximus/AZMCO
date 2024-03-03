@@ -61,4 +61,6 @@ namespace RendererModuleValues
     {
         0, 0, 0, 0, 4, 0, 0, 0, 0, 0
     }; // TODO
+
+    BOOL IsRendererToggleLambdaActive = TRUE;
 }

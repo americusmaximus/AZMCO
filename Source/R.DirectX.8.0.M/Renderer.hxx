@@ -41,10 +41,21 @@ SOFTWARE.
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
 #define MAX_USABLE_TEXTURE_FORMAT_COUNT 34
 #define MAX_VERTEX_BUFFER_SIZE 2621400
+#define MAX_VERTEX_COUNT 65535
 #define MAX_WINDOW_COUNT 256
 #define MIN_ACTUAL_DEVICE_CAPABILITIES_INDEX 13
 #define MIN_SIMULTANEOUS_TEXTURE_COUNT 1
 #define MIN_WINDOW_INDEX 8
+
+#if !defined(__WATCOMC__) && _MSC_VER <= 1200
+inline void LOGERROR(...) { }
+inline void LOGWARNING(...) { }
+inline void LOGMESSAGE(...) { }
+#else
+#define LOGERROR(...) Message(RENDERER_MODULE_MESSAGE_SEVERITY_ERROR, __VA_ARGS__)
+#define LOGWARNING(...) Message(RENDERER_MODULE_MESSAGE_SEVERITY_WARNING, __VA_ARGS__)
+#define LOGMESSAGE(...) Message(RENDERER_MODULE_MESSAGE_SEVERITY_MESSAGE, __VA_ARGS__)
+#endif
 
 namespace Renderer
 {
@@ -153,13 +164,23 @@ namespace RendererModule
 
         struct
         {
+            struct
+            {
+                u32 Triangles; // 0x6001dac8
+                u32 Quads; // 0x6001dacc
+                u32 Lines; // 0x6001dad0
+                u32 TriangleStrips; // 0x6001dad4
+                u32 TriangleFans; // 0x6001dad8
+                u32 Vertexes; // 0x6001dadc
+            } Counters;
+
             u32 MaxPrimitiveCount; // 0x6001dab8
 
             struct
             {
                 u32 Count; // 0x6001dab4
 
-                RendererPacket Packets[MAX_RENDER_PACKET_COUNT]; // 0x60021000
+                RendererPacket Packets[MAX_RENDER_PACKET_COUNT + 1]; // 0x60021000
             } Packets;
 
             struct
@@ -202,6 +223,10 @@ namespace RendererModule
             RENDERERMODULERELEASEMEMORYLAMBDA ReleaseMemory; // 0x6001ef00
 
             RendererModuleLambdaContainer Lambdas; // 0x60020fe0
+
+            RENDERERACTIVELAMBDA RendererActiveLambda; // 0x6001ede0
+            RENDERERINACTIVELAMBDA RendererInactiveLambda; // 0x6001ede4
+            void* RendererInactiveLambdaValue; // 0x6001ede8 // TODO
         } Lambdas;
 
         struct
@@ -267,12 +292,17 @@ namespace RendererModule
 
     extern RendererModuleState State;
 
+    void Message(const u32 severity, const char* format, ...);
+
     BOOL AcquireRendererDeviceCapabilities(void);
     BOOL AcquireRendererDeviceDepthFormat(const u32 device, const D3DFORMAT adapter, const D3DFORMAT target, D3DFORMAT* result);
     BOOL AcquireRendererDeviceDepthFormat(u32* bits, D3DFORMAT* result);
     BOOL AcquireRendererDeviceDepthWindowFormat(u32* width, u32* height, u32* bits, D3DFORMAT* format);
+    BOOL AttemptRenderPackets(void);
     BOOL BeginRendererScene(void);
+    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
     D3DFORMAT AcquireRendererTextureFormat(const u32 indx);
+    inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
     s32 AcquireTextureStateStageIndex(const u32 state);
     u32 AcquireRendererDeviceCount(void);
@@ -282,11 +312,11 @@ namespace RendererModule
     u32 SelectRendererTransforms(const f32 zNear, const f32 zFar);
     u32 STDCALLAPI InitializeRendererDeviceExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);
     u32 STDCALLAPI InitializeRendererDeviceSurfacesExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);
+    u32 ToggleRenderer(void);
     void AcquireRendererDeviceFormats(void);
     void AcquireRendererDeviceMemorySize(void);
     void AcquireRendererModuleDescriptor(RendererModuleDescriptor* desc, const char* section);
     void AcquireRendererTextureFormats(const D3DFORMAT format);
-    void AttemptRenderPackets(void);
     void InitializeRendererModuleState(const u32 mode, const u32 pending, const u32 depth, const char* section);
     void InitializeRendererState(void);
     void InitializeTextureStateStates(void);
@@ -295,6 +325,8 @@ namespace RendererModule
     void ReleaseRendererModule(void);
     void ReleaseRendererObjects(void);
     void ReleaseRendererWindows(void);
+    void RenderAllPackets(void);
     void RenderPackets(void);
     void SelectRendererStateValue(const u32 state, void* value);
+    void UpdateVertexValues(Renderer::RTLVX2* vertex);
 }
