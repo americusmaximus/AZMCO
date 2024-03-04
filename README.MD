@@ -32,6 +32,9 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 1. [AutoZone High Stakes](https://github.com/americusmaximus/AZHS)
 2. [AutoZone Hot Pursuit](https://github.com/americusmaximus/AZHP)
 
+### Server
+1. [Rusty Motors Racing Server](https://github.com/rustymotors/server)
+
 ## Thanks
 1. [Reddit](https://www.reddit.com/) for providing [Motor City Online](https://www.reddit.com/r/needforspeed/comments/12xz4ce/do_you_guys_remember_motor_city_online_and_if_so/) and the offline patch.
 
