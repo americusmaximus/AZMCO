@@ -2317,8 +2317,8 @@ namespace RendererModule
         else
         {
             rect.x1 = x0;
-            rect.x2 = x1;
             rect.y1 = y0;
+            rect.x2 = x1;
             rect.y2 = y1;
         }
 

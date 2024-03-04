@@ -36,6 +36,7 @@ namespace RendererModuleValues
     BOOL IsRendererInit = TRUE;
     u32 RendererVertexSize = sizeof(RTLVX);
     u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
+    f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
 
     u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT];
 
@@ -61,6 +62,8 @@ namespace RendererModuleValues
     {
         0, 0, 0, 0, 4, 0, 0, 0, 0, 0
     }; // TODO
+
+    u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
 
     BOOL IsRendererToggleLambdaActive = TRUE;
 }

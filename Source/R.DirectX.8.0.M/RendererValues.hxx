@@ -34,6 +34,7 @@ namespace RendererModuleValues
     extern BOOL IsRendererInit; // 0x6001c07c
     extern u32 RendererVertexSize; // 0x6001c080
     extern u32 RendererCurrentShader; // 0x6001c084
+    extern f32 RendererClearDepth; // 0x6001c088
 
     extern u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT]; // 0x600208a0
 
@@ -45,6 +46,8 @@ namespace RendererModuleValues
     extern RendererModule::MinMax MinMax[6]; // 0x6001c04c
 
     extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
+
+    extern u32 RendererClearColor; // 0x6001c03c
 
     extern BOOL IsRendererToggleLambdaActive; // 0z6001c040
 }

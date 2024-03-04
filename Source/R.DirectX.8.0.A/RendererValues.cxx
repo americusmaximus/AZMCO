@@ -31,6 +31,7 @@ namespace RendererModuleValues
     BOOL IsRendererInit = TRUE;
     u32 RendererVertexSize = sizeof(RTLVX);
     u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
+    f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
 
     u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
     u32 RendererVersion = RENDERER_MODULE_VERSION_114;
@@ -58,6 +59,8 @@ namespace RendererModuleValues
     {
         0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0
     }; // TODO
+
+    u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
 
     BOOL IsRendererToggleLambdaActive = TRUE;
 }

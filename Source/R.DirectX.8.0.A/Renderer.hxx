@@ -25,6 +25,7 @@ SOFTWARE.
 #include "DirectX.hxx"
 #include "RendererModule.Export.hxx"
 
+#define CLEAR_DEPTH_VALUE (1.0f)
 #define DEFAULT_DEVICE_INDEX 0
 #define ENVIRONMENT_SECTION_NAME "DX8"
 #define MAX_ACTIVE_SURFACE_COUNT 8
@@ -122,6 +123,7 @@ namespace RendererModule
 
                 u32 Bits; // 0x6001dfc0
 
+                IDirect3DSurface8* Window; // 0x6001de1c
                 IDirect3DSurface8* Surfaces[MAX_ACTIVE_SURFACE_COUNT]; // 0x6001de20
             } Surfaces;
         } DX;
@@ -264,6 +266,7 @@ namespace RendererModule
     u32 AcquireRendererDeviceCount(void);
     u32 AcquireRendererDeviceFormat(const D3DFORMAT format);
     u32 AcquireRendererDeviceFormatSize(const D3DFORMAT format);
+    u32 ClearRendererViewPort(const u32 x0, const u32 y0, const u32 x1, const u32 y1, const BOOL window);
     u32 SelectBasicRendererState(const u32 state, void* value);
     u32 SelectRendererTransforms(const f32 zNear, const f32 zFar);
     u32 STDCALLAPI InitializeRendererDeviceExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);

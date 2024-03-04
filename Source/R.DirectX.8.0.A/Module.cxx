@@ -76,9 +76,9 @@ namespace RendererModule
     // a.k.a. THRASH_clearwindow
     DLLAPI u32 STDCALLAPI ClearGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return ClearRendererViewPort(State.ViewPort.X0, State.ViewPort.Y0,
+            State.ViewPort.X1 + State.ViewPort.X0, State.ViewPort.Y0 + State.ViewPort.Y1,
+            State.DX.Surfaces.Window == State.DX.Surfaces.Surfaces[3]);
     }
 
     // 0x600014c0

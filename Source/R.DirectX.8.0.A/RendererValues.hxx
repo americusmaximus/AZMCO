@@ -29,6 +29,7 @@ namespace RendererModuleValues
     extern BOOL IsRendererInit; // 0x6001c080
     extern u32 RendererVertexSize; // 0x6001c084
     extern u32 RendererCurrentShader; // 0x6001c088
+    extern f32 RendererClearDepth; // 0x6001c08c
 
     extern u32 MaxRendererSimultaneousTextures; // 0x6001c0ac
     extern u32 RendererVersion; // 0x6001c0b0
@@ -45,6 +46,8 @@ namespace RendererModuleValues
     extern RendererModule::MinMax MinMax[6]; // 0x6001c050
 
     extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
+
+    extern u32 RendererClearColor; // 0x6001c040
 
     extern BOOL IsRendererToggleLambdaActive; // 0x6001c044
 }

@@ -1653,4 +1653,39 @@ namespace RendererModule
 
         return RENDERER_MODULE_SUCCESS;
     }
+
+    // 0x60001d00
+    u32 ClearRendererViewPort(const u32 x0, const u32 y0, const u32 x1, const u32 y1, const BOOL window)
+    {
+        D3DRECT rect;
+
+        DWORD options = (window == FALSE); // D3DCLEAR_TARGET
+
+        if (State.Device.Capabilities.IsDepthAvailable && State.DX.Surfaces.Bits != 0)
+        {
+            DWORD value = D3DZB_FALSE;
+            State.DX.Device->GetRenderState(D3DRS_ZENABLE, &value);
+
+            if (value != D3DZB_FALSE) { options = options | D3DCLEAR_ZBUFFER; }
+        }
+
+        if (State.Device.Capabilities.IsStencilBufferAvailable) { options = options | D3DCLEAR_STENCIL; }
+
+        if (x1 == 0)
+        {
+            rect.x1 = 0;
+            rect.y1 = 0;
+            rect.x2 = State.DX.Surfaces.Width;
+            rect.y2 = State.DX.Surfaces.Height;
+        }
+        else
+        {
+            rect.x1 = x0;
+            rect.y1 = y0;
+            rect.x2 = x0 + x1;
+            rect.y2 = y0 + y1;
+        }
+
+        return State.DX.Device->Clear(1, &rect, options, RendererClearColor, RendererClearDepth, 0) == D3D_OK;
+    }
 }
