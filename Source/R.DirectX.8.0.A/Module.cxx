@@ -78,7 +78,7 @@ namespace RendererModule
     {
         return ClearRendererViewPort(State.ViewPort.X0, State.ViewPort.Y0,
             State.ViewPort.X1 + State.ViewPort.X0, State.ViewPort.Y0 + State.ViewPort.Y1,
-            State.DX.Surfaces.Window == State.DX.Surfaces.Surfaces[3]);
+            State.Window.Surface == State.DX.Surfaces.Surfaces[3]);
     }
 
     // 0x600014c0
@@ -856,7 +856,82 @@ namespace RendererModule
     // a.k.a. THRASH_lockwindow
     DLLAPI RendererModuleWindowLock* STDCALLAPI LockGameWindow(void)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Window.Surface == NULL || State.Window.Index == 1
+            || State.Window.Index == 3 || MIN_WINDOW_INDEX <= State.Window.Index) {
+            return NULL;
+        }
+
+        if (State.Lock.IsActive) { UnlockGameWindow(NULL); }
+
+        if (State.Scene.IsActive) { AttemptRenderPackets(); }
+
+        if (State.Lambdas.Lambdas.LockWindow != NULL) { State.Lambdas.Lambdas.LockWindow(TRUE); }
+
+        IDirect3DSurface8* surface = (State.Window.Index < MIN_WINDOW_INDEX)
+            ? State.DX.Surfaces.Surfaces[State.Window.Index]
+            : State.Windows[State.Window.Index].Surface->Surface;
+
+        if (surface == NULL) { return NULL; }
+
+        D3DLOCKED_RECT rect;
+        ZeroMemory(&rect, sizeof(D3DLOCKED_RECT));
+
+        if (surface->LockRect(&rect, NULL, D3DLOCK_NOSYSLOCK) == D3D_OK)
+        {
+            D3DSURFACE_DESC desc;
+            ZeroMemory(&desc, sizeof(D3DSURFACE_DESC));
+
+            surface->GetDesc(&desc);
+
+            const u32 bits = AcquireRendererDeviceFormatSize(desc.Format);
+
+            switch (bits)
+            {
+            case GRAPHICS_BITS_PER_PIXEL_16:
+            {
+                State.Lock.Surface = surface;
+
+                State.Lock.State.Data = rect.pBits;
+                State.Lock.State.Stride = rect.Pitch;
+                State.Lock.State.Format = RENDERER_PIXEL_FORMAT_R5G6B5;
+                State.Lock.State.Width = desc.Width;
+                State.Lock.State.Height = desc.Height;
+                State.Lock.IsActive = TRUE;
+
+                return &State.Lock.State;
+            }
+            case GRAPHICS_BITS_PER_PIXEL_24:
+            {
+                State.Lock.Surface = surface;
+
+                State.Lock.State.Data = rect.pBits;
+                State.Lock.State.Stride = rect.Pitch;
+                State.Lock.State.Format = RENDERER_PIXEL_FORMAT_R8G8B8;
+                State.Lock.State.Width = desc.Width;
+                State.Lock.State.Height = desc.Height;
+                State.Lock.IsActive = TRUE;
+
+                return &State.Lock.State;
+            }
+            case GRAPHICS_BITS_PER_PIXEL_32:
+            {
+                State.Lock.Surface = surface;
+
+                State.Lock.State.Data = rect.pBits;
+                State.Lock.State.Stride = rect.Pitch;
+                State.Lock.State.Format = RENDERER_PIXEL_FORMAT_A8R8G8B8;
+                State.Lock.State.Width = desc.Width;
+                State.Lock.State.Height = desc.Height;
+                State.Lock.IsActive = TRUE;
+
+                return &State.Lock.State;
+            }
+            }
+
+            surface->UnlockRect();
+        }
+
+        if (State.Lambdas.Lambdas.LockWindow != NULL) { State.Lambdas.Lambdas.LockWindow(FALSE); }
 
         return NULL;
     }
@@ -886,9 +961,7 @@ namespace RendererModule
     // a.k.a. THRASH_readrect
     DLLAPI u32 STDCALLAPI ReadRectangle(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels)
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return ReadRectangles(x, y, width, height, pixels, 0);
     }
 
     // 0x60004a80

@@ -149,7 +149,6 @@ namespace RendererModule
 
                 u32 Bits; // 0x6001dfc0
 
-                IDirect3DSurface8* Window; // 0x6001de1c
                 IDirect3DSurface8* Surfaces[MAX_ACTIVE_SURFACE_COUNT]; // 0x6001de20
             } Surfaces;
         } DX;
@@ -224,6 +223,10 @@ namespace RendererModule
         struct
         {
             BOOL IsActive; // 0x6001da98
+
+            RendererModuleWindowLock State; // 0x6001da68
+
+            IDirect3DSurface8* Surface; // 0x6001da9c
         } Lock;
 
         struct
@@ -276,6 +279,10 @@ namespace RendererModule
             } Parent;
 
             HWND HWND; // 0x6001de40
+
+            u32 Index; // 0x6001de4c
+
+            IDirect3DSurface8* Surface; // 0x6001de1c
         } Window;
 
         RendererModuleWindow Windows[MAX_WINDOW_COUNT]; // 0x6003e4c0

@@ -231,6 +231,10 @@ namespace RendererModule
         struct
         {
             BOOL IsActive; // 0x6001da80
+
+            RendererModuleWindowLock State; // 0z6001da68
+
+            IDirect3DSurface8* Surface; // 0x6001da8c
         } Lock;
 
         struct
