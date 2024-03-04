@@ -2821,17 +2821,17 @@ namespace RendererModule
 
         tex->Width = width;
         tex->Height = height;
-        tex->FormatIndex = State.Textures.Formats.Indexes[format];
-        tex->UnknownFormatIndexValue = UnknownFormatValues[format];
-        tex->Stage = MAKETEXTURESTAGEVALUE(state);
         tex->FormatIndexValue = format & 0xff;
+        tex->Options = options;
 
         tex->MipMapCount = MAKETEXTUREMIPMAPVALUE(state) != 0 ? (MAKETEXTUREMIPMAPVALUE(state) + 1) : 0;
+        tex->Stage = MAKETEXTURESTAGEVALUE(state);
+        
+        tex->UnknownFormatIndexValue = UnknownFormatValues[format];
+        tex->FormatIndex = State.Textures.Formats.Indexes[format];
 
-        tex->Is16Bit = (format == RENDERER_PIXEL_FORMAT_R5G5B5 || format == RENDERER_PIXEL_FORMAT_R4G4B4);
-
-        tex->Options = options;
         tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
+        tex->Is16Bit = (format == RENDERER_PIXEL_FORMAT_R5G5B5 || format == RENDERER_PIXEL_FORMAT_R4G4B4);
 
         tex->Surface = NULL;
         tex->Texture = NULL;

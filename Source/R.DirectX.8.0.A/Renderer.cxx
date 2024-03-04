@@ -1530,4 +1530,84 @@ namespace RendererModule
 
         return State.DX.Device->Clear(1, &rect, options, RendererClearColor, RendererClearDepth, 0) == D3D_OK;
     }
+
+    // 0x600070d0
+    RendererTexture* AllocateRendererDepthTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination)
+    {
+        if (State.Textures.Illegal) { return NULL; }
+
+        if (!IsRendererTextureDepthFormatAllowed(format)) { return NULL; }
+
+        RendererTexture* tex = InitializeRendererTexture();
+
+        tex->Width = width;
+        tex->Height = height;
+        tex->FormatIndexValue = format & 0xff;
+        tex->Options = 0;
+
+        tex->MipMapCount = MAKETEXTUREMIPMAPVALUE(state) != 0 ? (MAKETEXTUREMIPMAPVALUE(state) + 1) : 0;
+        tex->Stage = MAKETEXTURESTAGEVALUE(state);
+        
+        tex->UnknownFormatIndexValue = UnknownFormatValues[format];
+        tex->FormatIndex = AcquireRendererTextureDepthFormatIndex(format);
+        
+        tex->Surface = NULL;
+        tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
+        tex->Unk11 = 0;
+        tex->Unk13 = 0xffff; // TODO
+
+        tex->Colors = 0;
+
+        if (State.DX.Device->CreateRenderTarget(width, height, (D3DFORMAT)(format & 0xff), D3DMULTISAMPLE_NONE, TRUE, &tex->Surface) != D3D_OK)
+        {
+            ReleaseTexture(tex);
+
+            return NULL;
+        }
+
+        tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY;
+        tex->Unk13 = 0xffff; // TODO
+
+        tex->Previous = State.Textures.Current;
+        State.Textures.Current = tex;
+
+        return tex;
+    }
+
+    // 0x60007240
+    BOOL IsRendererTextureDepthFormatAllowed(const u32 format)
+    {
+        return (RENDERER_PIXEL_FORMAT_D16 <= format && format <= RENDERER_PIXEL_FORMAT_D24X4S4);
+    }
+
+    // 0x600070c0
+    RendererTexture* InitializeRendererTexture(void)
+    {
+        return (RendererTexture*)AllocateRendererTexture(sizeof(RendererTexture));
+    }
+
+    // 0x60007f90
+    RendererTexture* AllocateRendererTexture(const u32 size)
+    {
+        if (State.Lambdas.AllocateMemory != NULL) { return (RendererTexture*)State.Lambdas.AllocateMemory(size); }
+
+        return (RendererTexture*)malloc(size);
+    }
+
+    // 0x60007260
+    D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format)
+    {
+        switch (format)
+        {
+        case RENDERER_PIXEL_FORMAT_D16: { return D3DFMT_D16; }
+        case RENDERER_PIXEL_FORMAT_D24S8: { return D3DFMT_D24S8; }
+        case RENDERER_PIXEL_FORMAT_D16L: { return D3DFMT_D16_LOCKABLE; }
+        case RENDERER_PIXEL_FORMAT_D32: { return D3DFMT_D32; }
+        case RENDERER_PIXEL_FORMAT_D15S1: { return D3DFMT_D15S1; }
+        case RENDERER_PIXEL_FORMAT_D24X8: { return D3DFMT_D24X8; }
+        case RENDERER_PIXEL_FORMAT_D24X4S4: { return D3DFMT_D24X4S4; }
+        }
+
+        return D3DFMT_UNKNOWN;
+    }
 }

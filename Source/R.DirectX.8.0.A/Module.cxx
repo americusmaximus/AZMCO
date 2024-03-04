@@ -115,9 +115,30 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI CreateGameWindow(const u32 width, const u32 height, const u32 format, const u32 options)
     {
-        // TODO NOT IMPLEMENTED
+        u32 indx = State.Window.Count + MIN_WINDOW_INDEX;
 
-        return RENDERER_MODULE_FAILURE;
+        if (State.Device.Capabilities.Unk32 == 0) { return RENDERER_MODULE_FAILURE; }
+
+        RendererTexture* surface = AllocateTexture(width, height, format, 0, 0);
+
+        if (surface == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        State.Windows[indx].Surface = surface;
+
+        RendererTexture* depth = AllocateRendererDepthTexture(width, height, RENDERER_PIXEL_FORMAT_D16L, 0, 0, TRUE);
+
+        if (depth == NULL)
+        {
+            DestroyGameWindow(indx);
+
+            return RENDERER_MODULE_FAILURE;
+        }
+
+        State.Windows[indx].Depth = depth;
+
+        State.Window.Count = State.Window.Count + 1;
+
+        return indx;
     }
 
     // 0x60001810
@@ -125,9 +146,16 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI DestroyGameWindow(const u32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        if ((MIN_WINDOW_INDEX - 1) < indx && indx < (State.Window.Count + MIN_WINDOW_INDEX))
+        {
+            if (State.Windows[indx].Depth != NULL) { ReleaseTexture(State.Windows[indx].Depth); }
+            if (State.Windows[indx].Surface != NULL) { ReleaseTexture(State.Windows[indx].Surface); }
 
-        return RENDERER_MODULE_FAILURE;
+            State.Windows[indx].Depth = NULL;
+            State.Windows[indx].Surface = NULL;
+        }
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60002940
@@ -773,9 +801,7 @@ namespace RendererModule
     // a.k.a. THRASH_getwindowtexture
     DLLAPI RendererTexture* STDCALLAPI AcquireGameWindowTexture(const u32 indx)
     {
-        // TODO NOT IMPLEMENTED
-
-        return NULL;
+        return ((MIN_WINDOW_INDEX - 1) < indx && indx < MAX_WINDOW_TEXTURE_COUNT) ? State.Windows[indx].Surface : NULL;
     }
 
     // 0x60008750

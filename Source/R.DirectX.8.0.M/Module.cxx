@@ -111,9 +111,65 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI CreateGameWindow(const u32 width, const u32 height, const u32 format, const u32 options)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.DX.Device == NULL) { return RENDERER_MODULE_FAILURE; }
+        if ((MAX_WINDOW_COUNT - 1) < (State.Window.Count + MIN_WINDOW_INDEX)) { return RENDERER_MODULE_FAILURE; }
+        if (State.Device.Capabilities.Unk32 == 0) { return RENDERER_MODULE_FAILURE; }
 
-        return RENDERER_MODULE_FAILURE;
+        D3DFORMAT sformat = State.Device.Presentation.BackBufferFormat;
+        D3DFORMAT tformat = AcquireRendererTextureFormat(format);
+        D3DFORMAT aformat = (D3DFORMAT)format;
+
+        D3DFORMAT stformat = D3DFMT_D16;
+
+        if (options & 1) // TODO
+        {
+            aformat = (D3DFORMAT)AcquireRendererDeviceFormat(sformat);
+            tformat = sformat;
+            stformat = State.Device.Presentation.AutoDepthStencilFormat;
+        }
+
+        if (options & 2) { stformat = D3DFMT_UNKNOWN; } // TODO
+
+        if (State.DX.Instance->CheckDeviceFormat(0, D3DDEVTYPE_HAL, sformat, D3DUSAGE_RENDERTARGET, D3DRTYPE_TEXTURE, tformat) != D3D_OK) { return RENDERER_MODULE_FAILURE; }
+
+        if (stformat != D3DFMT_UNKNOWN)
+        {
+            if (State.DX.Instance->CheckDeviceFormat(0, D3DDEVTYPE_HAL, sformat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, stformat) != D3D_OK) { return RENDERER_MODULE_FAILURE; }
+        }
+
+        IDirect3DTexture8* tex = NULL;
+        if (State.DX.Device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, tformat, D3DPOOL_DEFAULT, &tex) != D3D_OK) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 indx = State.Window.Count + MIN_WINDOW_INDEX;
+
+        State.Window.Count = State.Window.Count + 1;
+
+        State.Windows[indx].Surface = tex;
+
+        if (stformat != D3DFMT_UNKNOWN)
+        {
+            IDirect3DSurface8* stencil = NULL;
+            if (State.DX.Device->CreateDepthStencilSurface(width, height, stformat, D3DMULTISAMPLE_NONE, &stencil) != D3D_OK)
+            {
+                DestroyGameWindow(indx);
+
+                return RENDERER_MODULE_FAILURE;
+            }
+
+            State.Windows[indx].Stencil = stencil;
+        }
+
+        ZeroMemory(&State.Windows[indx].Texture, sizeof(RendererTexture));
+
+        State.Windows[indx].Texture.Width = width;
+        State.Windows[indx].Texture.Height = height;
+        State.Windows[indx].Texture.Unk03 = aformat;
+        State.Windows[indx].Texture.Unk08 = AcquireRendererDeviceFormatSize(tformat, RendererDeviceFormatSizeBytes);
+        State.Windows[indx].Texture.Unk09 = tformat;
+        State.Windows[indx].Texture.Texture = State.Windows[indx].Surface;
+        State.Windows[indx].Texture.Unk13 = 0xffff; // TODO
+
+        return indx;
     }
 
     // 0x60001840
@@ -121,7 +177,28 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI DestroyGameWindow(const u32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.DX.Device == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        if ((MIN_WINDOW_INDEX - 1) < indx && indx < (State.Window.Count + MIN_WINDOW_INDEX))
+        {
+            if (State.Windows[indx].Stencil != NULL)
+            {
+                while (State.Windows[indx].Stencil->Release() != D3D_OK) { }
+
+                State.Windows[indx].Stencil = NULL;
+            }
+
+            if (State.Windows[indx].Surface != NULL)
+            {
+                while (State.Windows[indx].Surface->Release() != D3D_OK) {}
+
+                State.Windows[indx].Surface = NULL;
+
+                ZeroMemory(&State.Windows[indx].Texture, sizeof(RendererTexture));
+            }
+
+            return RENDERER_MODULE_SUCCESS;
+        }
 
         return RENDERER_MODULE_FAILURE;
     }
@@ -769,11 +846,14 @@ namespace RendererModule
     // a.k.a. THRASH_getwindowtexture
     DLLAPI RendererTexture* STDCALLAPI AcquireGameWindowTexture(const u32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        if ((MIN_WINDOW_INDEX - 1) < indx && indx < (State.Window.Count + MIN_WINDOW_INDEX))
+        {
+            if (State.Windows[indx].Surface != NULL) {  &State.Windows[indx].Texture; }
+        }
 
         return NULL;
     }
-
+    
     // 0x60003060
     // a.k.a. THRASH_idle
     DLLAPI void STDCALLAPI Idle(void) { return; }
@@ -812,10 +892,10 @@ namespace RendererModule
 
         for (u32 x = 0; x < MAX_WINDOW_COUNT; x++)
         {
-            State.Windows[x].Texture = NULL;
+            State.Windows[x].Surface = NULL;
             State.Windows[x].Stencil = NULL;
 
-            ZeroMemory(&State.Windows[x].Details, sizeof(RendererModuleWindowDetail));
+            ZeroMemory(&State.Windows[x].Texture, sizeof(RendererTexture));
         }
 
         State.DX.IsInit = TRUE;

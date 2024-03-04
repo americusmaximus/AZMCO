@@ -60,7 +60,24 @@ inline void LOGMESSAGE(...) { }
 
 namespace Renderer
 {
-
+    struct RendererTexture
+    {
+        s32 Unk00; // TODO
+        u32 Width;
+        u32 Height;
+        D3DFORMAT Unk03; // TODO
+        s32 Unk04; // TODO
+        s32 Unk05; // TODO
+        s32 Unk06; // TODO
+        s32 Unk07; // TODO
+        s32 Unk08; // TODO
+        D3DFORMAT Unk09; // TODO
+        s32 Unk10; // TODO
+        s32 Unk11; // TODO
+        IDirect3DTexture8* Texture;
+        s32 Unk13; // TODO
+        s32 Unk14; // TODO
+    };
 }
 
 namespace RendererModule
@@ -108,30 +125,11 @@ namespace RendererModule
         s32 Unk12; // TODO
     };
 
-    struct RendererModuleWindowDetail
-    {
-        s32 Unk00; // TODO
-        u32 Width;
-        u32 Height;
-        D3DFORMAT Unk03; // TODO
-        s32 Unk04; // TODO
-        s32 Unk05; // TODO
-        s32 Unk06; // TODO
-        s32 Unk07; // TODO
-        s32 Unk08; // TODO
-        D3DFORMAT Unk09; // TODO
-        s32 Unk10; // TODO
-        s32 Unk11; // TODO
-        IDirect3DTexture8* Texture;
-        s32 Unk13; // TODO
-        s32 Unk14; // TODO
-    };
-
     struct RendererModuleWindow
     {
-        IDirect3DTexture8* Texture;
+        IDirect3DTexture8* Surface;
         IDirect3DSurface8* Stencil;
-        RendererModuleWindowDetail Details;
+        Renderer::RendererTexture Texture;
     };
 
     struct RendererModuleState

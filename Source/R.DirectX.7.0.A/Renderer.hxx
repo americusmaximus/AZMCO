@@ -90,7 +90,7 @@ namespace Renderer
         u32 Height;
         s32 FormatIndexValue; // TODO
         u32 Options;
-        s32 MipMapCount;
+        u32 MipMapCount;
         u32 Stage;
         RendererTexture* Previous;
         u32 UnknownFormatIndexValue; // TODO

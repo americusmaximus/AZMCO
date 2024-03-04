@@ -63,4 +63,9 @@ namespace RendererModuleValues
     u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
 
     BOOL IsRendererToggleLambdaActive = TRUE;
+
+    u32 UnknownFormatValues[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT] =
+    {
+           0, 1, 1, 2, 2, 3, 4, 2, 1, 2, 2, 2, 8, 16, 16, 0, 0, 0, 0, 2, 3, 0, 0, 2, 4, 2, 4, 2, 4, 4, 0, 0, 0, 0
+    }; // TODO
 }

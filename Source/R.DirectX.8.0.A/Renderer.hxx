@@ -42,8 +42,11 @@ SOFTWARE.
 #define MAX_TEXTURE_FORMAT_COUNT 34
 #define MAX_TEXTURE_STAGE_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
+#define MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT 34
 #define MAX_VERTEX_BUFFER_SIZE 2621400
 #define MAX_VERTEX_COUNT 65535
+#define MAX_WINDOW_COUNT 1024
+#define MAX_WINDOW_TEXTURE_COUNT 65535
 #define MIN_ACTUAL_DEVICE_CAPABILITIES_INDEX 8
 #define MIN_SIMULTANEOUS_TEXTURE_COUNT 1
 #define MIN_WINDOW_INDEX 8
@@ -60,7 +63,24 @@ inline void LOGMESSAGE(...) { }
 
 namespace Renderer
 {
-
+    struct RendererTexture
+    {
+        s32 Unk00; // TODO
+        u32 Width;
+        u32 Height;
+        s32 FormatIndexValue; // TODO
+        u32 Options;
+        u32 MipMapCount;
+        u32 Stage;
+        RendererTexture* Previous;
+        u32 UnknownFormatIndexValue; // TODO
+        s32 FormatIndex; // TODO
+        u32 MemoryType;
+        u32 Unk11; // TODO
+        IDirect3DSurface8* Surface;
+        u32 Unk13; // TODO
+        u32 Colors;
+    };
 }
 
 namespace RendererModule
@@ -100,6 +120,12 @@ namespace RendererModule
         D3DPRIMITIVETYPE PrimitiveType;
         u32 PrimitiveCount;
         u32 StartIndex;
+    };
+
+    struct RendererModuleWindow
+    {
+        Renderer::RendererTexture* Surface;
+        Renderer::RendererTexture* Depth;
     };
 
     struct RendererModuleState
@@ -221,6 +247,10 @@ namespace RendererModule
 
         struct
         {
+            BOOL Illegal; // 0x6001dedc
+
+            Renderer::RendererTexture* Current; // 0x6001e004
+
             D3DFORMAT Formats[MAX_TEXTURE_FORMAT_COUNT]; // 0x6001efa0
 
             TextureStage Stages[MAX_TEXTURE_STAGE_COUNT]; // 0x6001f140
@@ -247,6 +277,8 @@ namespace RendererModule
 
             HWND HWND; // 0x6001de40
         } Window;
+
+        RendererModuleWindow Windows[MAX_WINDOW_COUNT]; // 0x6003e4c0
     };
 
     extern RendererModuleState State;
@@ -260,7 +292,12 @@ namespace RendererModule
     BOOL AttemptRenderPackets(void);
     BOOL BeginRendererScene(void);
     BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
+    BOOL IsRendererTextureDepthFormatAllowed(const u32 format);
+    D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format);
     inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
+    Renderer::RendererTexture* AllocateRendererDepthTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination);
+    Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
+    Renderer::RendererTexture* InitializeRendererTexture(void);
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
     s32 AcquireTextureStateStageIndex(const u32 state);
     u32 AcquireRendererDeviceCount(void);
