@@ -115,7 +115,7 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI CreateGameWindow(const u32 width, const u32 height, const u32 format, const u32 options)
     {
-        u32 indx = State.Window.Count + MIN_WINDOW_INDEX;
+        const u32 indx = State.Window.Count + MIN_WINDOW_INDEX;
 
         if (State.Device.Capabilities.Unk32 == 0) { return RENDERER_MODULE_FAILURE; }
 
@@ -896,6 +896,7 @@ namespace RendererModule
                 State.Lock.State.Format = RENDERER_PIXEL_FORMAT_R5G6B5;
                 State.Lock.State.Width = desc.Width;
                 State.Lock.State.Height = desc.Height;
+
                 State.Lock.IsActive = TRUE;
 
                 return &State.Lock.State;
@@ -909,6 +910,7 @@ namespace RendererModule
                 State.Lock.State.Format = RENDERER_PIXEL_FORMAT_R8G8B8;
                 State.Lock.State.Width = desc.Width;
                 State.Lock.State.Height = desc.Height;
+
                 State.Lock.IsActive = TRUE;
 
                 return &State.Lock.State;
@@ -922,6 +924,7 @@ namespace RendererModule
                 State.Lock.State.Format = RENDERER_PIXEL_FORMAT_A8R8G8B8;
                 State.Lock.State.Width = desc.Width;
                 State.Lock.State.Height = desc.Height;
+
                 State.Lock.IsActive = TRUE;
 
                 return &State.Lock.State;
@@ -1195,7 +1198,7 @@ namespace RendererModule
 
             State.Lock.State.Data = NULL;
             State.Lock.State.Stride = 0;
-            State.Lock.State.Format = 0;
+            State.Lock.State.Format = RENDERER_PIXEL_FORMAT_NONE;
             State.Lock.State.Width = 0;
             State.Lock.State.Height = 0;
 

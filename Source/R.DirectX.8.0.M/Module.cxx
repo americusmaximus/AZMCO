@@ -1211,7 +1211,7 @@ namespace RendererModule
 
             State.Lock.State.Data = NULL;
             State.Lock.State.Stride = 0;
-            State.Lock.State.Format = 0;
+            State.Lock.State.Format = RENDERER_PIXEL_FORMAT_NONE;
             State.Lock.State.Width = 0;
             State.Lock.State.Height = 0;
 
