@@ -1029,9 +1029,27 @@ namespace RendererModule
     // a.k.a. THRASH_selectdisplay
     DLLAPI u32 STDCALLAPI SelectDevice(const s32 indx)
     {
-        // TODO NOT IMPLEMENTED
+        if (!State.Device.IsInit)
+        {
+            s32 actual = indx;
 
-        return RENDERER_MODULE_FAILURE;
+            if (State.Lambdas.Lambdas.AcquireWindow != NULL || State.Window.HWND != NULL)
+            {
+                const char* value = getenv(RENDERER_MODULE_DISPLAY_ENVIRONMENT_PROPERTY_NAME);
+
+                if (value != NULL) { actual = atoi(value); }
+            }
+
+            State.Device.Index = DEFAULT_DEVICE_INDEX;
+
+            if ((DEFAULT_DEVICE_INDEX - 1) < indx && indx < State.Devices.Count) { State.Device.Index = indx; }
+
+            strncpy(ModuleDescriptor.DeviceName, State.Devices.Enumeration.Names[indx], MAX_RENDERER_MODULE_DEVICE_LONG_NAME_LENGTH);
+
+            State.Device.IsInit = TRUE;
+        }
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60005490

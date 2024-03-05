@@ -194,6 +194,8 @@ namespace RendererModule
 
         struct
         {
+            BOOL IsInit; // 0x6001ed6c
+
             u32 Index; // 0x6001ed60
 
             u32 SubType; // 0x6001eec4
