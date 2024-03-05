@@ -1748,11 +1748,72 @@ namespace RendererModule
     }
 
     // 0x600092b0
-    s32 AcquireTexturePalette()
+    u32 AcquireTexturePalette()
+    {
+        if (IsTexturePaletteInactive)
+        {
+            InitializeTexturePalette();
+
+            IsTexturePaletteInactive = FALSE;
+        }
+
+        if (TexturePaletteValues[0] == 0) { return U32_MAX; }
+
+        u32 i = 0;
+        u32 bits = 1;
+        u32 value = 0;
+        u32 indx = 1;
+        u32 iteration = 9;
+
+        while (TRUE)
+        {
+            i = (value - 1) + indx;
+
+            for (u32 x = value; x < indx; x = x + 1)
+            {
+                if (TexturePaletteValues[i] != 0)
+                {
+                    TexturePaletteValues[i] = TexturePaletteValues[i] - 1;
+
+                    value = x * 2;
+
+                    break;
+                }
+
+                i = i + 1;
+            }
+
+            indx = indx << 1;
+            iteration = iteration - 1;
+
+            if (iteration == 0)
+            {
+                if (TexturePaletteIndexes[value] == 0) { value = value + 1; }
+
+                indx = 0;
+
+                do
+                {
+                    if ((bits & TexturePaletteIndexes[value]) != 0)
+                    {
+                        TexturePaletteIndexes[value] = ~bits & TexturePaletteIndexes[value];
+
+                        return value * 0x20 + indx;
+                    }
+
+                    bits = bits << 1;
+                    indx = indx + 1;
+                } while (indx < 0x20);
+
+                return value * 0x20 + indx;
+            }
+        }
+    }
+
+    // 0x60009210
+    void InitializeTexturePalette(void)
     {
         // TODO NOT IMPLEMENTED
-
-        return -1;
     }
 
     // 0x60009250

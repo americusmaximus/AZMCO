@@ -42,6 +42,7 @@ SOFTWARE.
 #define MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT 5
 #define MAX_RENDERER_DEVICE_FORMAT_COUNT 2
 #define MAX_TEXTURE_FORMAT_COUNT 34
+#define MAX_TEXTURE_PALETTE_INDEX_COUNT 512
 #define MAX_TEXTURE_STAGE_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
 #define MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT 34
@@ -86,7 +87,7 @@ namespace Renderer
             IDirect3DTexture8* Texture;
             IDirect3DSurface8* Surface;
         };
-        s32 Palette;
+        u32 Palette;
         u32 Colors;
     };
 }
@@ -317,11 +318,11 @@ namespace RendererModule
     Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
     Renderer::RendererTexture* AllocateRendererTexture(void);
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
-    s32 AcquireTexturePalette();
     s32 AcquireTextureStateStageIndex(const u32 state);
     u32 AcquireRendererDeviceCount(void);
     u32 AcquireRendererDeviceFormat(const D3DFORMAT format);
     u32 AcquireRendererDeviceFormatSize(const D3DFORMAT format);
+    u32 AcquireTexturePalette();
     u32 ClearRendererViewPort(const u32 x0, const u32 y0, const u32 x1, const u32 y1, const BOOL window);
     u32 DisposeRendererTexture(Renderer::RendererTexture* tex);
     u32 SelectBasicRendererState(const u32 state, void* value);
@@ -336,6 +337,7 @@ namespace RendererModule
     void InitializeRendererModuleState(const u32 mode, const u32 pending, const u32 depth, const char* section);
     void InitializeRendererState(void);
     void InitializeRenderState55(void);
+    void InitializeTexturePalette(void);
     void InitializeTextureStateStates(void);
     void InitializeVertexBuffer(void);
     void InitializeViewPort(void);

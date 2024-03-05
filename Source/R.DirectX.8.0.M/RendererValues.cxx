@@ -71,4 +71,9 @@ namespace RendererModuleValues
     {
            0, 1, 1, 2, 2, 3, 4, 2, 1, 2, 2, 2, 8, 16, 16, 0, 0, 0, 0, 2, 3, 0, 0, 2, 4, 2, 4, 2, 4, 4, 0, 0, 0, 0
     }; // Size in Bytes
+
+    BOOL IsTexturePaletteInactive = TRUE;
+
+    u32 TexturePaletteIndexes[MAX_TEXTURE_PALETTE_INDEX_COUNT];
+    u32 TexturePaletteValues[MAX_TEXTURE_PALETTE_INDEX_COUNT];
 }

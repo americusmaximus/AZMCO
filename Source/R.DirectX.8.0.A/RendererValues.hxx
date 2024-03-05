@@ -52,4 +52,9 @@ namespace RendererModuleValues
     extern BOOL IsRendererToggleLambdaActive; // 0x6001c044
 
     extern u32 PixelFormatSizes[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT]; // 0x6001c198
+
+    extern BOOL IsTexturePaletteInactive; // 0x6001c220
+
+    extern u32 TexturePaletteIndexes[MAX_TEXTURE_PALETTE_INDEX_COUNT]; // 0x6001e140
+    extern u32 TexturePaletteValues[MAX_TEXTURE_PALETTE_INDEX_COUNT]; // 0x6001e940
 }
