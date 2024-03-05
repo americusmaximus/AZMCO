@@ -1187,9 +1187,26 @@ namespace RendererModule
     // a.k.a. THRASH_unlockwindow
     DLLAPI u32 STDCALLAPI UnlockGameWindow(const RendererModuleWindowLock* state)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Lock.IsActive && State.Lock.Surface != NULL)
+        {
+            if (State.Lock.Surface->UnlockRect() != D3D_OK) { return RENDERER_MODULE_FAILURE; }
 
-        return RENDERER_MODULE_FAILURE;
+            State.Lock.Surface = NULL;
+
+            State.Lock.State.Data = NULL;
+            State.Lock.State.Stride = 0;
+            State.Lock.State.Format = 0;
+            State.Lock.State.Width = 0;
+            State.Lock.State.Height = 0;
+
+            State.Lock.IsActive = FALSE;
+
+            if (State.Lambdas.Lambdas.LockWindow != NULL) { State.Lambdas.Lambdas.LockWindow(FALSE); }
+
+            BeginRendererScene();
+        }
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60001160
@@ -1205,9 +1222,7 @@ namespace RendererModule
     // a.k.a. THRASH_writerect
     DLLAPI u32 STDCALLAPI WriteRectangle(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels)
     {
-        // TODO NOT IMPLEMENTED
-
-        return RENDERER_MODULE_FAILURE;
+        return WriteRectangles(x, y, width, height, pixels, 0);
     }
 
     // 0x60004b20
