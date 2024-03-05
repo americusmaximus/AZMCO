@@ -2817,18 +2817,18 @@ namespace RendererModule
         if (State.DX.Active.Instance == NULL) { return NULL; }
         if (State.Textures.Illegal) { return NULL; }
 
-        RendererTexture* tex = InitializeRendererTexture();
+        RendererTexture* tex = AllocateRendererTexture();
 
         tex->Width = width;
         tex->Height = height;
-        tex->FormatIndexValue = format & 0xff;
+        tex->PixelFormat = MAKEPIXELFORMAT(format);
         tex->Options = options;
 
         tex->MipMapCount = MAKETEXTUREMIPMAPVALUE(state) != 0 ? (MAKETEXTUREMIPMAPVALUE(state) + 1) : 0;
         tex->Stage = MAKETEXTURESTAGEVALUE(state);
         
-        tex->UnknownFormatIndexValue = UnknownFormatValues[format];
-        tex->FormatIndex = State.Textures.Formats.Indexes[format];
+        tex->PixelSize = PixelFormatSizes[format];
+        tex->TextureFormat = State.Textures.Formats.Indexes[format];
 
         tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
         tex->Is16Bit = (format == RENDERER_PIXEL_FORMAT_R5G5B5 || format == RENDERER_PIXEL_FORMAT_R4G4B4);
@@ -2859,7 +2859,7 @@ namespace RendererModule
     }
 
     // 0x60009210
-    RendererTexture* InitializeRendererTexture(void)
+    RendererTexture* AllocateRendererTexture(void)
     {
         RendererTexture* result = (RendererTexture*)AllocateRendererTexture(sizeof(RendererTexture));
 
@@ -2886,7 +2886,7 @@ namespace RendererModule
         }
 
         DDSURFACEDESC2 desc;
-        CopyMemory(&desc, &State.Textures.Formats.Formats[tex->FormatIndex].Descriptor, sizeof(DDSURFACEDESC2));
+        CopyMemory(&desc, &State.Textures.Formats.Formats[tex->TextureFormat].Descriptor, sizeof(DDSURFACEDESC2));
 
         desc.dwSize = sizeof(DDSURFACEDESC2);
 
@@ -2910,23 +2910,23 @@ namespace RendererModule
             desc.dwHeight = tex->Height;
             desc.dwWidth = tex->Width;
 
-            if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1 || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+            if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
                 desc.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
                 desc.ddpfPixelFormat.dwFlags = DDPF_FOURCC;
 
-                if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1)
+                if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1)
                 {
                     desc.ddpfPixelFormat.dwFourCC = FOURCC_DXT1;
                 }
-                else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                 {
                     desc.ddpfPixelFormat.dwFourCC = FOURCC_DXT3;
                 }
             }
-            else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_V8U8)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_V8U8)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -2937,7 +2937,7 @@ namespace RendererModule
                 desc.ddpfPixelFormat.dwGBitMask = 0xff00;
                 desc.ddpfPixelFormat.dwBBitMask = 0;
             }
-            else if (tex->FormatIndex == RENDERER_PIXEL_FORMAT_17)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_17)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -2948,7 +2948,7 @@ namespace RendererModule
                 desc.ddpfPixelFormat.dwGBitMask = 0xff00;
                 desc.ddpfPixelFormat.dwBBitMask = 0xff0000;
             }
-            else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_BUMPDUDV_1)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_BUMPDUDV_1)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -3003,23 +3003,23 @@ namespace RendererModule
 
             if (destination) { desc.ddsCaps.dwCaps = desc.ddsCaps.dwCaps | DDSCAPS_3DDEVICE; }
 
-            if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1 || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+            if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
                 desc.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
                 desc.ddpfPixelFormat.dwFlags = DDPF_FOURCC;
 
-                if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1)
+                if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1)
                 {
                     desc.ddpfPixelFormat.dwFourCC = FOURCC_DXT1;
                 }
-                else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                 {
                     desc.ddpfPixelFormat.dwFourCC = FOURCC_DXT3;
                 }
             }
-            else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_V8U8)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_V8U8)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -3030,7 +3030,7 @@ namespace RendererModule
                 desc.ddpfPixelFormat.dwGBitMask = 0xff00;
                 desc.ddpfPixelFormat.dwBBitMask = 0;
             }
-            else if (tex->FormatIndex == RENDERER_PIXEL_FORMAT_17)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_17)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -3041,7 +3041,7 @@ namespace RendererModule
                 desc.ddpfPixelFormat.dwGBitMask = 0xff00;
                 desc.ddpfPixelFormat.dwBBitMask = 0xff0000;
             }
-            else if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_BUMPDUDV_1)
+            else if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_BUMPDUDV_1)
             {
                 ZeroMemory(&desc.ddpfPixelFormat, sizeof(DDPIXELFORMAT));
 
@@ -3165,7 +3165,7 @@ namespace RendererModule
 
             desc.dwSize = sizeof(DDSURFACEDESC2);
 
-            if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1 || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3) { desc.dwFlags = DDSD_LINEARSIZE; }
+            if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3) { desc.dwFlags = DDSD_LINEARSIZE; }
 
             if (surface->GetSurfaceDesc(&desc) != DD_OK)
             {
@@ -3394,7 +3394,7 @@ namespace RendererModule
             tex->Descriptor.dwFlags = DDSD_LPSURFACE;
 
             tex->Descriptor.lpSurface =
-                (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1 || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                 ? (void*)((addr)pixels + (addr)8) : (void*)pixels;
 
             if (tex->Surface->SetSurfaceDesc(&tex->Descriptor, 0) != DD_OK) { return FALSE; }
@@ -3449,8 +3449,8 @@ namespace RendererModule
 
         desc.dwSize = sizeof(DDSURFACEDESC2);
 
-        u32 offset = (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1
-            || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3) ? 8 : 0; // TODO
+        u32 offset = (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1
+            || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3) ? 8 : 0; // TODO
 
         void* allocated = NULL;
         u32* data = NULL;
@@ -3461,8 +3461,8 @@ namespace RendererModule
             {
                 s1->GetSurfaceDesc(&desc);
 
-                if (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1
-                    || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1
+                    || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                 {
                     desc.lPitch = desc.lPitch / desc.dwHeight;
                 }
@@ -3491,8 +3491,8 @@ namespace RendererModule
 
                 tex->Descriptor.dwFlags = DDSD_LPSURFACE;
 
-                const u32 pitch = (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1
-                    || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                const u32 pitch = (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1
+                    || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                     ? tex->Descriptor.lPitch
                     : (tex->Descriptor.ddpfPixelFormat.dwRGBBitCount * ((tex->Descriptor.dwWidth + 7) >> 3));
 
@@ -3551,7 +3551,7 @@ namespace RendererModule
             tex->Descriptor.dwFlags = DDSD_LPSURFACE;
 
             tex->Descriptor.lpSurface =
-                (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1 || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                 ? (void*)((addr)pixels + (addr)8) : (void*)pixels;
 
             if (tex->Descriptor.lPitch != size)
@@ -3559,8 +3559,8 @@ namespace RendererModule
                 void* allocated = _alloca((tex->Descriptor.lPitch * height + 3) & 0xfffffffc);
                 memset(allocated, 0xff, (tex->Descriptor.lPitch * height + 3) & 0xfffffffc);
 
-                tex->Descriptor.lpSurface = (tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT1
-                    || tex->FormatIndexValue == RENDERER_PIXEL_FORMAT_DXT3)
+                tex->Descriptor.lpSurface = (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1
+                    || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
                     ? (void*)((addr)allocated + (addr)8) : allocated;
 
                 for (u32 xx = 0; xx < height; xx++)

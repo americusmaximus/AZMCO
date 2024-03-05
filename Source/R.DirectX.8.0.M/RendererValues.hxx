@@ -49,5 +49,7 @@ namespace RendererModuleValues
 
     extern u32 RendererClearColor; // 0x6001c03c
 
-    extern BOOL IsRendererToggleLambdaActive; // 0z6001c040
+    extern BOOL IsRendererToggleLambdaActive; // 0x6001c040
+
+    extern u32 PixelFormatSizes[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT]; // 0x6001c198
 }

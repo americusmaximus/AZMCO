@@ -71,6 +71,8 @@ SOFTWARE.
 #define MIN_DEVICE_AVAIABLE_VIDEO_MEMORY (16 * 1024 * 1024) /* ORIGINAL: 0x200000 (2 MB) */
 #define MIN_WINDOW_INDEX 8
 
+#define MAKEPIXELFORMAT(x) (x & 0xff)
+
 #if !defined(__WATCOMC__) && _MSC_VER <= 1200
 inline void LOGERROR(...) { }
 inline void LOGWARNING(...) { }
@@ -85,16 +87,16 @@ namespace Renderer
 {
     struct RendererTexture
     {
-        s32 Unk00; // TODO
+        DWORD Handle;
         u32 Width;
         u32 Height;
-        s32 FormatIndexValue; // TODO
+        u32 PixelFormat;
         u32 Options;
         u32 MipMapCount;
         u32 Stage;
         RendererTexture* Previous;
-        u32 UnknownFormatIndexValue; // TODO
-        s32 FormatIndex; // TODO
+        u32 PixelSize;
+        s32 TextureFormat;
         u32 MemoryType;
         BOOL Is16Bit;
         IDirectDrawSurface7* Surface;
@@ -478,7 +480,7 @@ namespace RendererModule
     inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
     Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
     Renderer::RendererTexture* AllocateRendererTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination);
-    Renderer::RendererTexture* InitializeRendererTexture(void);
+    Renderer::RendererTexture* AllocateRendererTexture(void);
     RendererModuleWindowLock* RendererLock(const u32 mode);
     s32 AcquireMinimumRendererDeviceResolutionModeIndex(const u32 width, const u32 height, const u32 bpp);
     s32 AcquireRendererDeviceResulutionModeScore(const RendererModuleDescriptorDeviceCapabilities* caps, const u32 width, const u32 height, const u32 bpp);

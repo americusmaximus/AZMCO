@@ -450,11 +450,11 @@ namespace RendererModule
 
             BeginRendererScene();
 
-            State.DX.Device->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &State.DX.Surfaces.Surfaces[2]);
+            State.DX.Device->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &State.DX.Surfaces.Surfaces[2]); // TODO
 
-            State.DX.Surfaces.Surfaces[2]->Release();
+            State.DX.Surfaces.Surfaces[2]->Release(); // TODO
 
-            State.DX.Surfaces.Surfaces[3] = NULL;
+            State.DX.Surfaces.Surfaces[3] = NULL; // TODO
 
             State.Device.Capabilities.IsDepthAvailable = FALSE;
 
@@ -462,8 +462,8 @@ namespace RendererModule
             {
                 State.Device.Capabilities.IsDepthAvailable = TRUE;
 
-                State.DX.Device->GetDepthStencilSurface(&State.DX.Surfaces.Surfaces[3]);
-                State.DX.Surfaces.Surfaces[3]->Release();
+                State.DX.Device->GetDepthStencilSurface(&State.DX.Surfaces.Surfaces[3]); // TODO
+                State.DX.Surfaces.Surfaces[3]->Release(); // TODO
             }
 
             State.DX.Surfaces.Width = width;
@@ -637,16 +637,16 @@ namespace RendererModule
     // 0x60003b80
     void ReleaseRendererObjects(void)
     {
-        if (State.DX.Surfaces.Surfaces[3] != NULL)
+        if (State.DX.Surfaces.Surfaces[3] != NULL) // TODO
         {
-            State.DX.Surfaces.Surfaces[3]->Release();
-            State.DX.Surfaces.Surfaces[3] = NULL;
+            State.DX.Surfaces.Surfaces[3]->Release(); // TODO
+            State.DX.Surfaces.Surfaces[3] = NULL; // TODO
         }
 
-        if (State.DX.Surfaces.Surfaces[2] != NULL)
+        if (State.DX.Surfaces.Surfaces[2] != NULL) // TODO
         {
-            State.DX.Surfaces.Surfaces[2]->Release();
-            State.DX.Surfaces.Surfaces[2] = NULL;
+            State.DX.Surfaces.Surfaces[2]->Release(); // TODO
+            State.DX.Surfaces.Surfaces[2] = NULL; // TODO
         }
 
         for (s32 x = (MAX_ACTIVE_SURFACE_COUNT - 1); x >= 0; x--)
@@ -904,7 +904,7 @@ namespace RendererModule
     {
         ModuleDescriptor.MemorySize = State.DX.Device->GetAvailableTextureMem();
 
-        ModuleDescriptor.MemoryType = 0;
+        ModuleDescriptor.MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
 
         if (MIN_SIMULTANEOUS_TEXTURE_COUNT < MaxRendererSimultaneousTextures)
         {
@@ -956,8 +956,8 @@ namespace RendererModule
 
         State.Scene.IsActive = FALSE;
 
-        State.DX.Surfaces.Surfaces[2] = NULL;
-        State.DX.Surfaces.Surfaces[3] = NULL;
+        State.DX.Surfaces.Surfaces[2] = NULL; // TODO
+        State.DX.Surfaces.Surfaces[3] = NULL; // TODO
 
         State.Device.Index = DEFAULT_DEVICE_INDEX;
 
@@ -1538,35 +1538,32 @@ namespace RendererModule
 
         if (!IsRendererTextureDepthFormatAllowed(format)) { return NULL; }
 
-        RendererTexture* tex = InitializeRendererTexture();
+        RendererTexture* tex = AllocateRendererTexture();
 
         tex->Width = width;
         tex->Height = height;
-        tex->FormatIndexValue = format & 0xff;
-        tex->Options = 0;
+        tex->PixelFormat = MAKEPIXELFORMAT(format);
+        tex->Options = 0; // TODO
 
         tex->MipMapCount = MAKETEXTUREMIPMAPVALUE(state) != 0 ? (MAKETEXTUREMIPMAPVALUE(state) + 1) : 0;
         tex->Stage = MAKETEXTURESTAGEVALUE(state);
         
-        tex->UnknownFormatIndexValue = UnknownFormatValues[format];
-        tex->FormatIndex = AcquireRendererTextureDepthFormatIndex(format);
-        
-        tex->Surface = NULL;
-        tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
-        tex->Unk11 = 0;
-        tex->Unk13 = 0xffff; // TODO
+        tex->Texture = NULL;
 
+        tex->PixelSize = PixelFormatSizes[format];
+        tex->TextureFormat = AcquireRendererTextureDepthFormatIndex(format);
+        tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY;
+
+        tex->Is16Bit = FALSE;
+        tex->Palette = INVALID_TEXTURE_PALETTE_VALUE;
         tex->Colors = 0;
 
-        if (State.DX.Device->CreateRenderTarget(width, height, (D3DFORMAT)(format & 0xff), D3DMULTISAMPLE_NONE, TRUE, &tex->Surface) != D3D_OK)
+        if (State.DX.Device->CreateRenderTarget(width, height, (D3DFORMAT)MAKEPIXELFORMAT(format), D3DMULTISAMPLE_NONE, TRUE, &tex->Surface) != D3D_OK)
         {
             ReleaseTexture(tex);
 
             return NULL;
         }
-
-        tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY;
-        tex->Unk13 = 0xffff; // TODO
 
         tex->Previous = State.Textures.Current;
         State.Textures.Current = tex;
@@ -1581,7 +1578,7 @@ namespace RendererModule
     }
 
     // 0x600070c0
-    RendererTexture* InitializeRendererTexture(void)
+    RendererTexture* AllocateRendererTexture(void)
     {
         return (RendererTexture*)AllocateRendererTexture(sizeof(RendererTexture));
     }
@@ -1609,5 +1606,63 @@ namespace RendererModule
         }
 
         return D3DFMT_UNKNOWN;
+    }
+
+    // 0x600018b0
+    void SelectObjectReferenceCount(IUnknown* object, const u32 count)
+    {
+        if (object == NULL) { return; }
+
+        u32 actual = object->AddRef() - 1;
+
+        object->Release();
+
+        if (actual != count)
+        {
+            while (actual < count) { actual = object->AddRef(); }
+            while (count < actual) { actual = object->Release(); }
+        }
+    }
+
+    // 0x60008730
+    void InitializeRenderState55(void)
+    {
+        SelectBasicRendererState(RENDERER_MODULE_STATE_55, (void*)(DAT_6001dfcc + 1));
+        SelectState(RENDERER_MODULE_STATE_SELECT_TEXTURE, NULL);
+    }
+
+    // 0x60007fb0
+    u32 DisposeRendererTexture(RendererTexture* tex)
+    {
+        if (State.Lambdas.ReleaseMemory != NULL) { return State.Lambdas.ReleaseMemory(tex); }
+
+        free(tex);
+
+        return RENDERER_MODULE_SUCCESS;
+    }
+
+    // 0x60007620
+    HRESULT InitializeRendererTexture(RendererTexture* tex)
+    {
+        const HRESULT result = State.DX.Device->CreateTexture(tex->Width, tex->Height,
+            tex->MipMapCount + 1, D3DUSAGE_NONE, tex->TextureFormat, D3DPOOL_MANAGED, &tex->Texture);
+
+        if (result == D3D_OK) { tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY; }
+
+        return result;
+    }
+
+    // 0x60008910
+    s32 AcquireTexturePalette()
+    {
+        // TODO NOT IMPLEMENTED
+
+        return -1;
+    }
+
+    // 0x600088b0
+    void ReleaseTexturePalette(const s32 palette)
+    {
+        // TODO NOT IMPLEMENTED
     }
 }

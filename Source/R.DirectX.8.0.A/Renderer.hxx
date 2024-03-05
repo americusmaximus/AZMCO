@@ -27,7 +27,9 @@ SOFTWARE.
 
 #define CLEAR_DEPTH_VALUE (1.0f)
 #define DEFAULT_DEVICE_INDEX 0
+#define DEFAULT_TEXTURE_PALETTE_VALUE 0
 #define ENVIRONMENT_SECTION_NAME "DX8"
+#define INVALID_TEXTURE_PALETTE_VALUE 0xffff
 #define MAX_ACTIVE_SURFACE_COUNT 8
 #define MAX_ACTIVE_UNKNOWN_COUNT 11
 #define MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT 34
@@ -51,6 +53,8 @@ SOFTWARE.
 #define MIN_SIMULTANEOUS_TEXTURE_COUNT 1
 #define MIN_WINDOW_INDEX 8
 
+#define MAKEPIXELFORMAT(x) (x & 0xff)
+
 #if !defined(__WATCOMC__) && _MSC_VER <= 1200
 inline void LOGERROR(...) { }
 inline void LOGWARNING(...) { }
@@ -65,20 +69,24 @@ namespace Renderer
 {
     struct RendererTexture
     {
-        s32 Unk00; // TODO
+        DWORD Handle;
         u32 Width;
         u32 Height;
-        s32 FormatIndexValue; // TODO
+        u32 PixelFormat;
         u32 Options;
         u32 MipMapCount;
         u32 Stage;
         RendererTexture* Previous;
-        u32 UnknownFormatIndexValue; // TODO
-        s32 FormatIndex; // TODO
+        u32 PixelSize;
+        D3DFORMAT TextureFormat;
         u32 MemoryType;
-        u32 Unk11; // TODO
-        IDirect3DSurface8* Surface;
-        u32 Unk13; // TODO
+        BOOL Is16Bit;
+        union
+        {
+            IDirect3DTexture8* Texture;
+            IDirect3DSurface8* Surface;
+        };
+        s32 Palette;
         u32 Colors;
     };
 }
@@ -125,7 +133,7 @@ namespace RendererModule
     struct RendererModuleWindow
     {
         Renderer::RendererTexture* Surface;
-        Renderer::RendererTexture* Depth;
+        Renderer::RendererTexture* Stencil;
     };
 
     struct RendererModuleState
@@ -303,16 +311,19 @@ namespace RendererModule
     BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
     BOOL IsRendererTextureDepthFormatAllowed(const u32 format);
     D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format);
+    HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
     inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
     Renderer::RendererTexture* AllocateRendererDepthTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination);
     Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
-    Renderer::RendererTexture* InitializeRendererTexture(void);
+    Renderer::RendererTexture* AllocateRendererTexture(void);
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);
+    s32 AcquireTexturePalette();
     s32 AcquireTextureStateStageIndex(const u32 state);
     u32 AcquireRendererDeviceCount(void);
     u32 AcquireRendererDeviceFormat(const D3DFORMAT format);
     u32 AcquireRendererDeviceFormatSize(const D3DFORMAT format);
     u32 ClearRendererViewPort(const u32 x0, const u32 y0, const u32 x1, const u32 y1, const BOOL window);
+    u32 DisposeRendererTexture(Renderer::RendererTexture* tex);
     u32 SelectBasicRendererState(const u32 state, void* value);
     u32 SelectRendererTransforms(const f32 zNear, const f32 zFar);
     u32 STDCALLAPI InitializeRendererDeviceExecute(const void*, const HWND hwnd, const u32 msg, const u32 wp, const u32 lp, HRESULT* result);
@@ -324,14 +335,17 @@ namespace RendererModule
     void AcquireRendererTextureFormats(void);
     void InitializeRendererModuleState(const u32 mode, const u32 pending, const u32 depth, const char* section);
     void InitializeRendererState(void);
+    void InitializeRenderState55(void);
     void InitializeTextureStateStates(void);
     void InitializeVertexBuffer(void);
     void InitializeViewPort(void);
     void ReleaseRendererModule(void);
     void ReleaseRendererObjects(void);
     void ReleaseRendererWindows(void);
+    void ReleaseTexturePalette(const s32 palette);
     void RenderAllPackets(void);
     void RenderPackets(void);
+    void SelectObjectReferenceCount(IUnknown* object, const u32 count);
     void SelectRendererStateValue(const u32 state, void* value);
     void UpdateVertexValues(Renderer::RTLVX2* vertex);
 }

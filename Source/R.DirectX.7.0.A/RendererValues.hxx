@@ -72,5 +72,5 @@ namespace RendererModuleValues
 
     extern s32 UnknownArray06[MAX_UNKNOWN_COUNT]; // 0x60017068 // TODO
 
-    extern u32 UnknownFormatValues[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT]; // 0x60017210
+    extern u32 PixelFormatSizes[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT]; // 0x60017210
 }

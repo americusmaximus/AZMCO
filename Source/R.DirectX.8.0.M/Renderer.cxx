@@ -586,15 +586,15 @@ namespace RendererModule
 
             BeginRendererScene();
 
-            State.DX.Device->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &State.DX.Surfaces.Surfaces[2]);
+            State.DX.Device->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &State.DX.Surfaces.Surfaces[2]); // TODO
 
-            State.DX.Surfaces.Surfaces[2]->Release();
+            State.DX.Surfaces.Surfaces[2]->Release(); // TODO
 
-            State.Window.Surface = State.DX.Surfaces.Surfaces[2];
+            State.Window.Surface = State.DX.Surfaces.Surfaces[2]; // TODO
 
-            State.Window.Index = 2;
+            State.Window.Index = 2; // TODO
 
-            State.DX.Surfaces.Surfaces[3] = NULL;
+            State.DX.Surfaces.Surfaces[3] = NULL; // TODO
             State.Window.Stencil = NULL;
 
             State.Device.Capabilities.IsDepthAvailable = FALSE;
@@ -603,14 +603,14 @@ namespace RendererModule
             {
                 State.Device.Capabilities.IsDepthAvailable = TRUE;
 
-                State.DX.Device->GetDepthStencilSurface(&State.DX.Surfaces.Surfaces[3]);
-                State.DX.Surfaces.Surfaces[3]->Release();
+                State.DX.Device->GetDepthStencilSurface(&State.DX.Surfaces.Surfaces[3]); // TODO
+                State.DX.Surfaces.Surfaces[3]->Release(); // TODO
             }
 
             State.DX.Surfaces.Width = width;
             State.DX.Surfaces.Height = height;
 
-            State.Window.Stencil = State.DX.Surfaces.Surfaces[3];
+            State.Window.Stencil = State.DX.Surfaces.Surfaces[3]; // TODO
 
             if (State.DX.Formats.Back != State.Device.Presentation.BackBufferFormat)
             {
@@ -788,16 +788,16 @@ namespace RendererModule
     // 0x60004250
     void ReleaseRendererObjects(void)
     {
-        if (State.DX.Surfaces.Surfaces[3] != NULL)
+        if (State.DX.Surfaces.Surfaces[3] != NULL) // TODO
         {
-            State.DX.Surfaces.Surfaces[3]->Release();
-            State.DX.Surfaces.Surfaces[3] = NULL;
+            State.DX.Surfaces.Surfaces[3]->Release(); // TODO
+            State.DX.Surfaces.Surfaces[3] = NULL; // TODO
         }
 
-        if (State.DX.Surfaces.Surfaces[2] != NULL)
+        if (State.DX.Surfaces.Surfaces[2] != NULL) // TODO
         {
-            State.DX.Surfaces.Surfaces[2]->Release();
-            State.DX.Surfaces.Surfaces[2] = NULL;
+            State.DX.Surfaces.Surfaces[2]->Release(); // TODO
+            State.DX.Surfaces.Surfaces[2] = NULL; // TODO
         }
 
         for (s32 x = (MAX_ACTIVE_SURFACE_COUNT - 1); x >= 0; x--)
@@ -1056,7 +1056,7 @@ namespace RendererModule
     {
         ModuleDescriptor.MemorySize = State.DX.Device->GetAvailableTextureMem();
 
-        ModuleDescriptor.MemoryType = 0;
+        ModuleDescriptor.MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
 
         if (MIN_SIMULTANEOUS_TEXTURE_COUNT < MaxRendererSimultaneousTextures)
         {
@@ -1108,8 +1108,8 @@ namespace RendererModule
 
         State.Scene.IsActive = FALSE;
 
-        State.DX.Surfaces.Surfaces[2] = NULL;
-        State.DX.Surfaces.Surfaces[3] = NULL;
+        State.DX.Surfaces.Surfaces[2] = NULL; // TODO
+        State.DX.Surfaces.Surfaces[3] = NULL; // TODO
 
         State.Device.Index = DEFAULT_DEVICE_INDEX;
 
@@ -1687,5 +1687,77 @@ namespace RendererModule
         }
 
         return State.DX.Device->Clear(1, &rect, options, RendererClearColor, RendererClearDepth, 0) == D3D_OK;
+    }
+
+    // 0x60001910
+    void SelectObjectReferenceCount(IUnknown* object, const u32 count)
+    {
+        if (object == NULL) { return; }
+
+        u32 actual = object->AddRef() - 1;
+
+        object->Release();
+
+        if (actual != count)
+        {
+            while (actual < count) { actual = object->AddRef(); }
+            while (count < actual) { actual = object->Release(); }
+        }
+    }
+
+    // 0x600090d0
+    void InitializeRenderState55(void)
+    {
+        SelectBasicRendererState(RENDERER_MODULE_STATE_55, (void*)(DAT_6001eedc + 1));
+        SelectState(RENDERER_MODULE_STATE_SELECT_TEXTURE, NULL);
+    }
+
+    // 0x600087e0
+    u32 DisposeRendererTexture(RendererTexture* tex)
+    {
+        if (State.Lambdas.ReleaseMemory != NULL) { return State.Lambdas.ReleaseMemory(tex); }
+
+        free(tex);
+
+        return RENDERER_MODULE_SUCCESS;
+    }
+
+    // 0x60007af0
+    RendererTexture* AllocateRendererTexture(void)
+    {
+        return (RendererTexture*)AllocateRendererTexture(sizeof(RendererTexture));
+    }
+
+    // 0x600087c0
+    RendererTexture* AllocateRendererTexture(const u32 size)
+    {
+        if (State.Lambdas.AllocateMemory != NULL) { return (RendererTexture*)State.Lambdas.AllocateMemory(size); }
+
+        return (RendererTexture*)malloc(size);
+    }
+
+    // 0x60007e60
+    HRESULT InitializeRendererTexture(RendererTexture* tex)
+    {
+        const HRESULT result = State.DX.Device->CreateTexture(tex->Width, tex->Height,
+            tex->MipMapCount + 1, D3DUSAGE_NONE, tex->TextureFormat, D3DPOOL_MANAGED, &tex->Texture);
+
+        if (result == D3D_OK) { tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_NON_LOCAL_VIDEO_MEMORY; }
+
+        return result;
+    }
+
+    // 0x600092b0
+    s32 AcquireTexturePalette()
+    {
+        // TODO NOT IMPLEMENTED
+
+        return -1;
+    }
+
+    // 0x60009250
+    void ReleaseTexturePalette(const s32 palette)
+    {
+        // TODO NOT IMPLEMENTED
     }
 }
