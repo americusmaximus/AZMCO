@@ -30,8 +30,8 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 ### Other Modules
 
 #### Implode
-PKWARE DCL Implode is a compressed data format associated with PKWARE Data Compression Library (DCL), a commercial data compression software product. It is not the only format supported by DCL, but it is possibly the most notable one.
-The game uses the library version 1.11, which is identifiable by the following `PKWARE Data Compression Library for Win32\r\nCopyright 1989-1995 PKWARE Inc.  All Rights Reserved.\r\nPatent No. 5,051,745\r\nPKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
+The game uses implode.dll module for data compression.
+PKWARE DCL Implode is a compressed data format associated with PKWARE Data Compression Library (DCL). The game uses the library version 1.11, which is identifiable by the following string: `PKWARE Data Compression Library for Win32\r\nCopyright 1989-1995 PKWARE Inc.  All Rights Reserved.\r\nPatent No. 5,051,745\r\nPKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
 
 ## Similar & Related Projects
 ### Predecessors
