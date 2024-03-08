@@ -27,7 +27,11 @@ SOFTWARE.
 
 #define CLEAR_DEPTH_VALUE (1.0f)
 #define DEFAULT_DEVICE_INDEX 0
+#define DEFAULT_FOG_COLOR 0x00FFFFFF
+#define DEFAULT_FOG_END (1.0f)
 #define DEFAULT_TEXTURE_PALETTE_VALUE 0
+#define DEFAULT_VERTEX_MAX_DEPTH (65535.0f)
+#define DEFAULT_VERTEX_MIN_DEPTH (1.0f)
 #define ENVIRONMENT_SECTION_NAME "DX8"
 #define INVALID_TEXTURE_PALETTE_VALUE 0xffff
 #define MAX_ACTIVE_SURFACE_COUNT 8
@@ -251,6 +255,11 @@ namespace RendererModule
         {
             BOOL IsWindowMode; // 0x6001de44
 
+            BOOL IsFogStateActive; // 0x6001dec0
+            BOOL IsFogActive; // 0x6001dec4
+            f32 FogStart; // 0x6001dec8
+            f32 FogDensity; // 0x6001decc
+
             u32 Cull; // 0x6001dff4
         } Settings;
 
@@ -311,6 +320,9 @@ namespace RendererModule
     BOOL BeginRendererScene(void);
     BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
     BOOL IsRendererTextureDepthFormatAllowed(const u32 format);
+    BOOL RestoreRendererSurfaces(void);
+    BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
+    BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
     D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format);
     HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
     inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
@@ -348,6 +360,8 @@ namespace RendererModule
     void RenderAllPackets(void);
     void RenderPackets(void);
     void SelectObjectReferenceCount(IUnknown* object, const u32 count);
+    void SelectRendererFogAlphas(const u8* input, u8* output);
+    void SelectRendererMaterial(const u32 color);
     void SelectRendererStateValue(const u32 state, void* value);
     void UpdateVertexValues(Renderer::RTLVX2* vertex);
 }

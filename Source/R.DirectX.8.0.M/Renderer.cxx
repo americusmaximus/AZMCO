@@ -1813,12 +1813,48 @@ namespace RendererModule
     // 0x60009210
     void InitializeTexturePalette(void)
     {
-        // TODO NOT IMPLEMENTED
+        u32 bits = 1;
+        u32 value = 0x4000; // TODO
+
+        u32* values = TexturePaletteValues;
+
+        for (u32 x = 9; x != 0; x--) // TODO
+        {
+            if (bits != 0)
+            {
+                for (u32 xx = bits; xx != 0; xx--)
+                {
+                    values[xx] = value;
+                }
+
+                values = (u32*)((addr)values + (addr)bits);
+            }
+
+            value = value >> 1;
+            bits = bits << 1;
+        }
+
+        for (u32 x = 0; x < MAX_TEXTURE_PALETTE_INDEX_COUNT; x++)
+        {
+            TexturePaletteIndexes[x] = U32_MAX;
+        }
     }
 
     // 0x60009250
     void ReleaseTexturePalette(const s32 palette)
     {
-        // TODO NOT IMPLEMENTED
+        u32 bits = 1;
+        u32 value = 0x4000; // TODO
+
+        for (u32 x = 9; x != 0; x--) // TODO
+        {
+            value = value >> 1;
+            const u32 indx = (palette / value - 1) + bits;
+            bits = bits << 1;
+
+            TexturePaletteValues[indx] = TexturePaletteValues[indx] + 1;
+        }
+
+        TexturePaletteIndexes[palette / value] = TexturePaletteIndexes[palette / value] | 1 << ((byte)palette & 0x1f);
     }
 }

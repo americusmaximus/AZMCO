@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 #include "Graphics.Basic.hxx"
+#include "Mathematics.Basic.hxx"
 #include "Renderer.hxx"
 #include "RendererValues.hxx"
 
@@ -31,6 +32,7 @@ SOFTWARE.
 
 #define MAX_SETTINGS_BUFFER_LENGTH 80
 
+using namespace Mathematics;
 using namespace Renderer;
 using namespace RendererModuleValues;
 
@@ -1718,12 +1720,124 @@ namespace RendererModule
     // 0x60008870
     void InitializeTexturePalette(void)
     {
-        // TODO NOT IMPLEMENTED
+        u32 bits = 1;
+        u32 value = 0x4000; // TODO
+
+        u32* values = TexturePaletteValues;
+
+        for (u32 x = 9; x != 0; x--) // TODO
+        {
+            if (bits != 0)
+            {
+                for (u32 xx = bits; xx != 0; xx--)
+                {
+                    values[xx] = value;
+                }
+
+                values = (u32*)((addr)values + (addr)bits);
+            }
+
+            value = value >> 1;
+            bits = bits << 1;
+        }
+
+        for (u32 x = 0; x < MAX_TEXTURE_PALETTE_INDEX_COUNT; x++)
+        {
+            TexturePaletteIndexes[x] = U32_MAX;
+        }
     }
 
     // 0x600088b0
     void ReleaseTexturePalette(const s32 palette)
     {
-        // TODO NOT IMPLEMENTED
+        u32 bits = 1;
+        u32 value = 0x4000; // TODO
+
+        for (u32 x = 9; x != 0; x--) // TODO
+        {
+            value = value >> 1;
+            const u32 indx = (palette / value - 1) + bits;
+            bits = bits << 1;
+
+            TexturePaletteValues[indx] = TexturePaletteValues[indx] + 1;
+        }
+
+        TexturePaletteIndexes[palette / value] = TexturePaletteIndexes[palette / value] | 1 << ((byte)palette & 0x1f);
+    }
+
+    // 0x60001ae0
+    BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value)
+    {
+        BeginRendererScene();
+
+        RenderPackets();
+
+        return State.DX.Device->SetRenderState(type, value) == D3D_OK;
+    }
+
+    // 0x60001be0
+    void SelectRendererMaterial(const u32 color)
+    {
+        D3DMATERIAL8 material;
+        ZeroMemory(&material, sizeof(D3DMATERIAL8));
+
+        RendererClearColor = color;
+
+        const f32 red = RGBA_GETRED(color) / 255.0f;
+        const f32 green = RGBA_GETGREEN(color) / 255.0f;
+        const f32 blue = RGBA_GETBLUE(color) / 255.0f;
+
+        material.Diffuse.r = red;
+        material.Diffuse.g = green;
+        material.Diffuse.b = blue;
+
+        material.Ambient.r = red;
+        material.Ambient.g = green;
+        material.Ambient.b = blue;
+
+        State.DX.Device->SetMaterial(&material);
+    }
+
+    // 0x60001ab0
+    BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value)
+    {
+        BeginRendererScene();
+
+        RenderPackets();
+
+        return State.DX.Device->SetTextureStageState(stage, type, value) == D3D_OK;
+    }
+
+    // 0x60006cb0
+    void SelectRendererFogAlphas(const u8* input, u8* output)
+    {
+        if (input == NULL || output == NULL) { return; }
+
+        for (u32 x = 0; x < MAX_INPUT_FOG_ALPHA_COUNT; x++)
+        {
+            u8 current = input[x];
+            u8 next = input[Clamp<u32>(x + 1, 0, MAX_INPUT_FOG_ALPHA_COUNT - 1)];
+
+            output[x * 4 + 0] = current;
+            output[x * 4 + 1] = (u8)((s32)current + (s32)(0.33f * (next - current)));
+            output[x * 4 + 2] = (u8)((s32)current + (s32)(0.67f * (next - current)));
+            output[x * 4 + 3] = next;
+        }
+    }
+
+    // 0x60002da0
+    BOOL RestoreRendererSurfaces(void)
+    {
+        BOOL result = FALSE;
+
+        for (u32 x = 0; x < 4; x++)
+        {
+            const HRESULT res = State.DX.Device->TestCooperativeLevel();
+
+            if (res == D3DERR_DEVICENOTRESET || res == D3D_OK) { break; }
+            else { Sleep(100); }
+        }
+
+        return result;
     }
 }

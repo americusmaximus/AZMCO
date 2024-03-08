@@ -32,7 +32,13 @@ namespace RendererModuleValues
     u32 RendererVertexSize = sizeof(RTLVX);
     u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
     f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
-
+    u32 RendererFogState = RENDERER_MODULE_FOG_ACTIVE_LINEAR;
+    u32 RendererFogColor = DEFAULT_FOG_COLOR;
+    f32 RendererFogEnd = DEFAULT_FOG_END;
+    f32 RendererMinVertexDepth = DEFAULT_VERTEX_MIN_DEPTH;
+    f32 RendererMaxVertexDepth = DEFAULT_VERTEX_MAX_DEPTH;
+    D3DCMPFUNC RendererDepthFunction = D3DCMP_LESSEQUAL;
+    D3DCMPFUNC RendererAlphaFunction = D3DCMP_GREATER;
     u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
     u32 RendererVersion = RENDERER_MODULE_VERSION_114;
 
@@ -60,6 +66,7 @@ namespace RendererModuleValues
         0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0
     }; // TODO
 
+    u32 RendererShadeMode = RENDERER_MODULE_SHADE_GOURAUD;
     u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
 
     BOOL IsRendererToggleLambdaActive = TRUE;

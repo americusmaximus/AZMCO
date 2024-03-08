@@ -21,10 +21,12 @@ SOFTWARE.
 */
 
 #include "Graphics.Basic.hxx"
+#include "Mathematics.Basic.hxx"
 #include "Module.hxx"
 #include "RendererValues.hxx"
 #include "Settings.hxx"
 
+using namespace Mathematics;
 using namespace Renderer;
 using namespace RendererModuleValues;
 using namespace Settings;
@@ -1044,9 +1046,1324 @@ namespace RendererModule
     // a.k.a. THRASH_setstate
     DLLAPI u32 STDCALLAPI SelectState(const u32 state, void* value)
     {
-        // TODO NOT IMPLEMENTED
+        const u32 actual = state & RENDERER_MODULE_SELECT_STATE_MASK;
+        const u32 stage = MAKETEXTURESTAGEVALUE(state);
 
-        return RENDERER_MODULE_FAILURE;
+        u32 result = RENDERER_MODULE_FAILURE;
+
+        switch (actual)
+        {
+        case RENDERER_MODULE_STATE_NONE:
+        case RENDERER_MODULE_STATE_49:
+        case RENDERER_MODULE_STATE_50:
+        case RENDERER_MODULE_STATE_51: { return RENDERER_MODULE_FAILURE; }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE:
+        {
+            SelectTexture((RendererTexture*)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_CULL_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_CULL_NONE:
+            {
+                SelectRendererState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+                State.Settings.Cull = 1; // TODO
+
+                break;
+            }
+            case RENDERER_MODULE_CULL_COUNTER_CLOCK_WISE:
+            {
+                SelectRendererState(D3DRS_CULLMODE, D3DCULL_CCW);
+
+                State.Settings.Cull = 0x80000000; // TODO
+
+                break;
+            }
+            case RENDERER_MODULE_CULL_CLOCK_WISE:
+            {
+                SelectRendererState(D3DRS_CULLMODE, D3DCULL_CW);
+
+                State.Settings.Cull = 0; // TODO
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_MATERIAL:
+        {
+            SelectRendererMaterial((u32)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DEPTH_STATE:
+        {
+            if (!State.Device.Capabilities.IsDepthAvailable) { return RENDERER_MODULE_FAILURE; }
+            if (State.DX.Surfaces.Bits == 0) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_DEPTH_INACTIVE:
+            {
+                SelectRendererState(D3DRS_ZWRITEENABLE, FALSE);
+                SelectRendererState(D3DRS_ZENABLE, D3DZB_FALSE);
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_ACTIVE:
+            {
+                SelectRendererState(D3DRS_ZWRITEENABLE, TRUE);
+                SelectRendererState(D3DRS_ZENABLE, D3DZB_TRUE);
+                SelectRendererState(D3DRS_ZFUNC, RendererDepthFunction);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_ACTIVE_W:
+            {
+                if (State.Device.Capabilities.IsWBufferAvailable)
+                {
+                    SelectRendererState(D3DRS_ZENABLE, D3DZB_TRUE);
+                    SelectRendererState(D3DRS_ZWRITEENABLE, TRUE);
+                    SelectRendererState(D3DRS_ZFUNC, RendererDepthFunction);
+                    SelectRendererState(D3DRS_ZENABLE, D3DZB_USEW);
+                }
+                else
+                {
+                    SelectRendererState(D3DRS_ZWRITEENABLE, TRUE);
+                    SelectRendererState(D3DRS_ZENABLE, D3DZB_TRUE);
+                    SelectRendererState(D3DRS_ZFUNC, RendererDepthFunction);
+
+                    return RENDERER_MODULE_FAILURE;
+                }
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DITHER_STATE:
+        {
+            SelectRendererState(D3DRS_DITHERENABLE, ((u32)value) != 0 ? TRUE : FALSE);
+
+            if (!State.Device.Capabilities.IsDitherAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            result = State.Device.Capabilities.IsDitherAvailable; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_SHADE_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_SHADE_FLAT:
+            case RENDERER_MODULE_SHADE_GOURAUD:
+            {
+                if ((u32)value == RENDERER_MODULE_SHADE_FLAT && SettingsState.FlatShading)
+                {
+                    SelectRendererState(D3DRS_SHADEMODE, D3DSHADE_FLAT);
+                    SelectRendererState(D3DRS_SPECULARENABLE, FALSE);
+
+                    RendererShadeMode = RENDERER_MODULE_SHADE_FLAT;
+                }
+                else
+                {
+                    SelectRendererState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
+                    SelectRendererState(D3DRS_SPECULARENABLE, FALSE);
+
+                    RendererShadeMode = RENDERER_MODULE_SHADE_GOURAUD;
+                }
+
+                break;
+            }
+            case RENDERER_MODULE_SHADE_GOURAUD_SPECULAR:
+            {
+                if (!State.Device.Capabilities.IsSpecularGouraudBlending) { return RENDERER_MODULE_FAILURE; }
+
+                SelectRendererState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
+                SelectRendererState(D3DRS_SPECULARENABLE, TRUE);
+
+                RendererShadeMode = RENDERER_MODULE_SHADE_GOURAUD;
+
+                break;
+            }
+            case RENDERER_MODULE_SHADE_3: { break; }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_FILTER_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_FILTER_POINT:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_POINT);
+                SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_POINT);
+
+                break;
+            }
+            case RENDERER_MODULE_TEXTURE_FILTER_LENEAR:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+                SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+
+                break;
+            }
+            case RENDERER_MODULE_TEXTURE_FILTER_ANISOTROPY:
+            {
+                if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
+
+                SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_ANISOTROPIC);
+                SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_ANISOTROPIC);
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_MIP_MAP_LOD_BIAS_STATE:
+        {
+            if (!State.Device.Capabilities.IsMipMapBiasAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            SelectRendererTextureStage(stage, D3DTSS_MIPMAPLODBIAS, (DWORD)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_ALPHA_BLEND_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_ALPHA_BLEND_NONE: { SelectRendererState(D3DRS_ALPHABLENDENABLE, FALSE); break; }
+            case RENDERER_MODULE_ALPHA_BLEND_UNKNOWN_1:
+            case RENDERER_MODULE_ALPHA_BLEND_UNKNOWN_3: { break; }
+            case RENDERER_MODULE_ALPHA_BLEND_ACTIVE: { SelectRendererState(D3DRS_ALPHABLENDENABLE, TRUE); break; }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_MIP_FILTER_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_MIP_FILTER_NONE: { SelectRendererTextureStage(stage, D3DTSS_MIPFILTER, D3DTEXF_NONE); break; }
+            case RENDERER_MODULE_TEXTURE_MIP_FILTER_POINT: { SelectRendererTextureStage(stage, D3DTSS_MIPFILTER, D3DTEXF_POINT); break; }
+            case RENDERER_MODULE_TEXTURE_MIP_FILTER_LINEAR:
+            {
+                if (!State.Device.Capabilities.IsInterpolationAvailable) { return RENDERER_MODULE_FAILURE; }
+
+                SelectRendererTextureStage(stage, D3DTSS_MIPFILTER, D3DTEXF_LINEAR);
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_CHROMATIC_COLOR:
+        case RENDERER_MODULE_STATE_SELECT_LINE_WIDTH:
+        case RENDERER_MODULE_STATE_SELECT_FLAT_FANS_STATE:
+        case RENDERER_MODULE_STATE_SELECT_TOGGLE_STATE: { result = RENDERER_MODULE_SUCCESS; break; }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_ADDRESS_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_ADDRESS_CLAMP:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+
+                break;
+            }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_WRAP:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+
+                break;
+            }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_MIRROR:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_MIRROR);
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_MIRROR);
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_DENSITY:
+        {
+            State.Settings.FogDensity = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_COLOR:
+        {
+            RendererFogColor = ((u32)value) & RENDERER_MODULE_FOG_COLOR_MASK;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_WINDOW_MODE_STATE:
+        {
+            State.Settings.IsWindowMode = (BOOL)value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_LAMBDAS:
+        {
+            if (value == NULL)
+            {
+                ZeroMemory(&State.Lambdas.Lambdas, sizeof(RendererModuleLambdaContainer));
+            }
+            else
+            {
+                const RendererModuleLambdaContainer* lambdas = (RendererModuleLambdaContainer*)value;
+
+                State.Lambdas.Log = lambdas->Log;
+
+                CopyMemory(&State.Lambdas.Lambdas, lambdas, sizeof(RendererModuleLambdaContainer));
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_ALPHAS:
+        case RENDERER_MODULE_STATE_SELECT_FOG_ALPHAS_ALTERNATIVE:
+        {
+            if (value != NULL) { SelectRendererFogAlphas((u8*)value, RendererFogAlphas); }
+
+            State.Settings.IsFogActive = TRUE;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_FOG_INACTIVE:
+            {
+                State.Settings.IsFogStateActive = FALSE;
+
+                SelectRendererState(D3DRS_FOGENABLE, FALSE);
+                SelectRendererState(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+
+                break;
+            }
+            case RENDERER_MODULE_FOG_ACTIVE:
+            {
+                State.Settings.IsFogStateActive = TRUE;
+
+                SelectRendererState(D3DRS_FOGENABLE, FALSE);
+                SelectRendererState(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+
+                break;
+            }
+            case RENDERER_MODULE_FOG_ACTIVE_LINEAR:
+            {
+                State.Settings.IsFogActive = FALSE;
+                RendererFogState = RENDERER_MODULE_FOG_ACTIVE_LINEAR;
+
+                break;
+            }
+            case RENDERER_MODULE_FOG_ACTIVE_EXP:
+            {
+                State.Settings.IsFogActive = FALSE;
+                RendererFogState = RENDERER_MODULE_FOG_ACTIVE_EXP;
+
+                break;
+            }
+            case RENDERER_MODULE_FOG_ACTIVE_EXP2:
+            {
+                State.Settings.IsFogActive = FALSE;
+                RendererFogState = RENDERER_MODULE_FOG_ACTIVE_EXP2;
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_START:
+        {
+            State.Settings.FogStart = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_FOG_END:
+        {
+            RendererFogEnd = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DEPTH_BIAS_STATE:
+        case RENDERER_MODULE_STATE_SELECT_DEPTH_BIAS_STATE_ALTERNATIVE:
+        {
+            SelectRendererState(D3DRS_ZBIAS, ((long)value < 16 ? 16 : (long)value));
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_WINDOW:
+        {
+            State.Window.HWND = (HWND)value;
+
+            SelectBasicRendererState(RENDERER_MODULE_STATE_SELECT_WINDOW, value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_RESTORE_RENDERER_SURFACES:
+        {
+            if (!RestoreRendererSurfaces()) { return RENDERER_MODULE_FAILURE; }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_ALPHA_TEST_STATE:
+        {
+            if ((u32)value == RENDERER_MODULE_ALPHA_TEST_0)
+            {
+                SelectRendererState(D3DRS_ALPHATESTENABLE, FALSE);
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_ALWAYS);
+            }
+            else
+            {
+                SelectRendererState(D3DRS_ALPHATESTENABLE, TRUE);
+                SelectRendererState(D3DRS_ALPHAFUNC, RendererAlphaFunction);
+                SelectRendererState(D3DRS_ALPHAREF, (DWORD)value);
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELCT_DEPTH_FUNCTION:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_DEPTH_FUNCTION_NEVER:
+            {
+                RendererDepthFunction = D3DCMP_NEVER;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_NEVER);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_LESS:
+            {
+                RendererDepthFunction = D3DCMP_LESS;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_LESS);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_EQUAL:
+            {
+                RendererDepthFunction = D3DCMP_EQUAL;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_EQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_LESS_EQUAL:
+            {
+                RendererDepthFunction = D3DCMP_LESSEQUAL;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_GREATER:
+            {
+                RendererDepthFunction = D3DCMP_GREATER;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_GREATER);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_NOT_EQUAL:
+            {
+                RendererDepthFunction = D3DCMP_NOTEQUAL;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_NOTEQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_GREATER_EQUAL:
+            {
+                RendererDepthFunction = D3DCMP_GREATEREQUAL;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_GREATEREQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_DEPTH_FUNCTION_ALWAYS:
+            {
+                RendererDepthFunction = D3DCMP_ALWAYS;
+
+                SelectRendererState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+
+                break;
+            }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_STAGE_BLEND_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_NORMAL:
+            {
+                if (stage == RENDERER_TEXTURE_STAGE_0)
+                {
+                    if (!State.Device.Capabilities.IsModulateBlending)
+                    {
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                    }
+                    else
+                    {
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+                    }
+                }
+                else if (State.Device.Capabilities.MaximumSimultaneousTextures < 2)
+                {
+                    SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_DISABLE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+                }
+                else
+                {
+                    SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+                }
+
+                result = RENDERER_MODULE_SUCCESS; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_ADD:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_ADD);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_ADD);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+
+                result = State.Textures.Stages[stage].Unk01; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_DISABLE:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_DISABLE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+
+                result = RENDERER_MODULE_SUCCESS; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_MODULATE:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+
+                result = State.Textures.Stages[stage].Unk03; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_SUBTRACT:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_SUBTRACT);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+
+                result = State.Textures.Stages[stage].Unk02; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_ARG2:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_SELECTARG2);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_ADDSIGNED);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_COMPLEMENT | D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+
+                result = State.Textures.Stages[stage].Unk07; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_MODULATE_2X:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_MODULATE2X);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_MODULATE2X);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+
+                result = State.Textures.Stages[stage].Unk04; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_MODULATE_4X:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_MODULATE4X);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_MODULATE4X);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+
+                result = State.Textures.Stages[stage].Unk05; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_TEXTURE_ALPHA:
+            {
+                if (stage == RENDERER_TEXTURE_STAGE_0)
+                {
+                    if (!State.Device.Capabilities.IsModulateBlending)
+                    {
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                    }
+                    else
+                    {
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                        SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+                    }
+
+                    result = State.Textures.Stages[RENDERER_TEXTURE_STAGE_0].Unk09;
+                }
+                else
+                {
+                    SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_BLENDTEXTUREALPHA);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+
+                    result = State.Textures.Stages[stage].Unk09;
+                }
+
+                break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_ADD_SIGNED:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_ADDSIGNED);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+
+                result = State.Textures.Stages[stage].Unk08; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_DOT_PRODUCT_3:
+            {
+                if (stage == RENDERER_TEXTURE_STAGE_0)
+                {
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_DOTPRODUCT3);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_TFACTOR);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                }
+                else
+                {
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_CURRENT);
+                }
+
+                result = State.Textures.Stages[stage].Unk10; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_BUMP_ENV_MAP:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_BUMPENVMAP);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+                result = State.Textures.Stages[stage].Unk11; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_BUMP_ENV_MAP_LUMINANCE:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_BUMPENVMAPLUMINANCE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, (stage != RENDERER_TEXTURE_STAGE_0) ? D3DTA_CURRENT : D3DTA_DIFFUSE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+                result = State.Textures.Stages[stage].Unk12; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_ADD_BLEND_FACTOR_ALPHA:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_ADD);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_BLENDFACTORALPHA);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_TFACTOR);
+
+                result = RENDERER_MODULE_SUCCESS; break;
+            }
+            case RENDERER_MODULE_TEXTURE_STAGE_BLEND_BLEND_FACTOR_ALPHA_ARG1:
+            {
+                SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_BLENDFACTORALPHA);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+                SelectRendererTextureStage(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+
+                result = RENDERER_MODULE_SUCCESS; break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            if (result == RENDERER_MODULE_FAILURE) { return RENDERER_MODULE_FAILURE; }
+
+            break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_VERTEX_TYPE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_VERTEX_TYPE_RTLVX:
+            {
+                RendererVertexSize = sizeof(RTLVX);
+                RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
+
+                State.DX.Device->SetVertexShader(D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+
+                SelectState(RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE, (void*)0);
+                SelectState(MAKETEXTURESTAGEMASK(RENDERER_TEXTURE_STAGE_1) | RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE, (void*)0);
+
+                break;
+            }
+            case RENDERER_MODULE_VERTEX_TYPE_RTLVX2:
+            {
+                RendererVertexSize = sizeof(RTLVX2);
+                RendererCurrentShader = D3DFVF_TEX2 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
+
+                State.DX.Device->SetVertexShader(D3DFVF_TEX2 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+
+                SelectState(RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE, (void*)0);
+                SelectState(MAKETEXTURESTAGEMASK(RENDERER_TEXTURE_STAGE_1) | RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE, (void*)1);
+
+                break;
+            }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_GAMMA_CONTROL_STATE:
+        case RENDERER_MODULE_STATE_SELECT_GAMMA_CONTROL_STATE_ALTERNATIVE:
+        {
+            if (!State.Device.Capabilities.IsGammaAvailable) { return RENDERER_MODULE_FAILURE; }
+            if (State.DX.Device == NULL) { return RENDERER_MODULE_FAILURE; }
+            if (State.Settings.IsWindowMode) { return RENDERER_MODULE_FAILURE; }
+
+            const f32 actual = *(f32*)&value;
+
+            f32 modifier = 0.0f;
+            
+            if ((actual < 0.0f) == (actual == 0.0f))
+            {
+                modifier = (actual < 4.0f) ? (actual * 257.0f) : 1028.0f;
+            }
+
+            D3DGAMMARAMP gamma;
+
+            for (u32 x = 0; x < 256; x++)
+            {
+                gamma.red[x] = (u16)Clamp<u32>((u32)(State.DX.State.Gamma.red[x] * modifier + 0.5f), U16_MIN, U16_MAX);
+                gamma.green[x] = (u16)Clamp<u32>((u32)(State.DX.State.Gamma.green[x] * modifier + 0.5f), U16_MIN, U16_MAX);
+                gamma.blue[x] = (u16)Clamp<u32>((u32)(State.DX.State.Gamma.blue[x] * modifier + 0.5f), U16_MIN, U16_MAX);
+            }
+
+            State.DX.Device->SetGammaRamp(0, &gamma);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_STENCIL_STATE:
+        {
+            if (!State.Device.Capabilities.IsStencilBufferAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_STENCIL_INACTIVE: { SelectRendererState(D3DRS_STENCILENABLE, FALSE); break; }
+            case RENDERER_MODULE_STENCIL_ACTIVE: { SelectRendererState(D3DRS_STENCILENABLE, TRUE); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_STENCIL_FUNCTION:
+        {
+            if (!State.Device.Capabilities.IsStencilBufferAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_STENCIL_FUNCTION_NEVER: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_NEVER); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_LESS: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_LESS); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_EQUAL: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_EQUAL); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_LESS_EQUAL: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_GREATER: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_GREATER); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_NOT_EQUAL: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_NOTEQUAL); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_GREATER_EQUAL: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_GREATEREQUAL); break; }
+            case RENDERER_MODULE_STENCIL_FUNCTION_ALWAYS: { SelectRendererState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_STENCIL_FAIL_STATE:
+        {
+            if (!State.Device.Capabilities.IsStencilBufferAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_STENCIL_FAIL_KEEP: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_ZERO: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_ZERO); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_REPLACE: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_REPLACE); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_INCREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_INCRSAT); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_DECREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_DECRSAT); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_INVERT: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_INVERT); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_INCREMENT: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_INCR); break; }
+            case RENDERER_MODULE_STENCIL_FAIL_DECREMENT: { SelectRendererState(D3DRS_STENCILFAIL, D3DSTENCILOP_DECR); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_STENCIL_DEPTH_FAIL_STATE:
+        {
+            if (!State.Device.Capabilities.IsStencilBufferAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_KEEP: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_ZERO: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_ZERO); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_REPLACE: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_REPLACE); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_INCREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_INCRSAT); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_DECREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_DECRSAT); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_INVERT: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_INVERT); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_INCREMENT: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_INCR); break; }
+            case RENDERER_MODULE_STENCIL_DEPTH_FAIL_DECREMENT: { SelectRendererState(D3DRS_STENCILZFAIL, D3DSTENCILOP_DECR); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_STENCIL_PASS_STATE:
+        {
+            if (!State.Device.Capabilities.IsStencilBufferAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_STENCIL_PASS_KEEP: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP); break; }
+            case RENDERER_MODULE_STENCIL_PASS_ZERO: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_ZERO); break; }
+            case RENDERER_MODULE_STENCIL_PASS_REPLACE: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE); break; }
+            case RENDERER_MODULE_STENCIL_PASS_INCREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_INCRSAT); break; }
+            case RENDERER_MODULE_STENCIL_PASS_DECREMENT_CLAMP: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_DECRSAT); break; }
+            case RENDERER_MODULE_STENCIL_PASS_INVERT: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_INVERT); break; }
+            case RENDERER_MODULE_STENCIL_PASS_INCREMENT: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_INCR); break; }
+            case RENDERER_MODULE_STENCIL_PASS_DECREMENT: { SelectRendererState(D3DRS_STENCILPASS, D3DSTENCILOP_DECR); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_BLEND_STATE:
+        case RENDERER_MODULE_STATE_SELECT_BLEND_STATE_ALTERNATIVE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_ALPHA_BLEND_SOURCE_INVERSE_SOURCE:
+            {
+                SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+                SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_BLEND_SOURCE_ONE:
+            {
+                SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+                SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_BLEND_ZERO_INVERSE_SOURCE:
+            {
+                SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+                SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_BLEND_DESTINATION_COLOR_ZERO:
+            {
+                SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_DESTCOLOR);
+                SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DEPTH_BUFFER_WRITE_STATE:
+        case RENDERER_MODULE_STATE_SELECT_DEPTH_BUFFER_WRITE_STATE_ALTERNATIVE:
+        {
+            SelectRendererState(D3DRS_ZWRITEENABLE, (u32)value == 0 ? FALSE : TRUE);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_ACQUIRE_GUARD_BANDS:
+        {
+            if (value != NULL)
+            {
+                const s32 left = (s32)State.Device.Capabilities.GuardBandLeft;
+                const s32 right = (s32)State.Device.Capabilities.GuardBandRight;
+                const s32 top = (s32)State.Device.Capabilities.GuardBandTop;
+                const s32 bottom = (s32)State.Device.Capabilities.GuardBandBottom;
+
+                if (left != 0 && right != 0 && top != 0 && bottom != 0)
+                {
+                    RendererModuleGuardBands* output = (RendererModuleGuardBands*)value;
+
+                    output->Left = left;
+                    output->Right = right;
+                    output->Top = top;
+                    output->Bottom = bottom;
+
+                    return RENDERER_MODULE_SUCCESS;
+                }
+            }
+
+            return RENDERER_MODULE_FAILURE;
+        }
+        case RENDERER_MODULE_STATE_SELCT_ALPHA_FUNCTION:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_ALPHA_FUNCTION_NEVER:
+            {
+                RendererAlphaFunction = D3DCMP_NEVER;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_NEVER);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_LESS:
+            {
+                RendererAlphaFunction = D3DCMP_LESS;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_LESS);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_EQUAL:
+            {
+                RendererAlphaFunction = D3DCMP_EQUAL;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_EQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_LESS_EQUAL:
+            {
+                RendererAlphaFunction = D3DCMP_LESSEQUAL;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_LESSEQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_GREATER:
+            {
+                RendererAlphaFunction = D3DCMP_GREATER;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_NOT_EQUAL:
+            {
+                RendererAlphaFunction = D3DCMP_NOTEQUAL;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_NOTEQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_GREATER_EQUAL:
+            {
+                RendererAlphaFunction = D3DCMP_GREATEREQUAL;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+
+                break;
+            }
+            case RENDERER_MODULE_ALPHA_FUNCTION_ALWAYS:
+            {
+                RendererAlphaFunction = D3DCMP_ALWAYS;
+
+                SelectRendererState(D3DRS_ALPHAFUNC, D3DCMP_ALWAYS);
+
+                break;
+            }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_ADDRESS_STATE_U:
+        {
+            if (!State.Device.Capabilities.IsTextureIndependentUVs) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_ADDRESS_CLAMP: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP); break; }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_WRAP: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP); break; }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_MIRROR: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_MIRROR); break; }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_ADDRESS_STATE_V:
+        {
+            if (!State.Device.Capabilities.IsTextureIndependentUVs) { return RENDERER_MODULE_FAILURE; }
+
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_ADDRESS_CLAMP: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP); break; }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_WRAP: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP); break; }
+            case RENDERER_MODULE_TEXTURE_ADDRESS_MIRROR: { SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_MIRROR); break; }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_CLEAR_DEPTH_STATE:
+        {
+            RendererClearDepth = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE:
+        {
+            SelectRendererTextureStage(stage, D3DTSS_TEXCOORDINDEX, (DWORD)value);
+
+            return RENDERER_MODULE_FAILURE;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_MIN_FILTER_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_FILTER_POINT: { SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_POINT); break; }
+            case RENDERER_MODULE_TEXTURE_FILTER_LENEAR: { SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_LINEAR); break; }
+            case RENDERER_MODULE_TEXTURE_FILTER_ANISOTROPY:
+            {
+                if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
+
+                SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_ANISOTROPIC);
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_MAG_FILTER_STATE:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_TEXTURE_FILTER_POINT: { SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_POINT); break; }
+            case RENDERER_MODULE_TEXTURE_FILTER_LENEAR: { SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_LINEAR); break; }
+            case RENDERER_MODULE_TEXTURE_FILTER_ANISOTROPY:
+            {
+                if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
+
+                SelectRendererTextureStage(stage, D3DTSS_MAGFILTER, D3DTEXF_ANISOTROPIC);
+
+                break;
+            }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_VERTEX_MIN_DEPTH:
+        {
+            RendererMinVertexDepth = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_VERTEX_MAX_DEPTH:
+        {
+            RendererMaxVertexDepth = *(f32*)&value;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_ACQUIRE_DEVICE_CAPABILITIES_DX8:
+        {
+            if (value == NULL) { return RENDERER_MODULE_FAILURE; }
+
+            memcpy(value, &State.Device.Capabilities, sizeof(RendererModuleDeviceCapabilities8));
+
+            return (u32)value;
+        }
+        case RENDERER_MODULE_STATE_SELECT_SOURCE_BLEND_STATE_DX8:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_BLEND_ONE: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_ONE); break; }
+            case RENDERER_MODULE_BLEND_ZERO: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_ZERO); break; }
+            case RENDERER_MODULE_BLEND_SOURCE_ALPHA: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_SOURCE_ALPHA: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_INVSRCALPHA); break; }
+            case RENDERER_MODULE_BLEND_DESTINATION_ALPHA: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_DESTALPHA); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_DESTINATION_ALPHA: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_INVDESTALPHA); break; }
+            case RENDERER_MODULE_BLEND_SOURCE_COLOR: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_SRCCOLOR); break; }
+            case RENDERER_MODULE_BLEND_DESTINATION_COLOR: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_DESTCOLOR); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_SOURCE_COLOR: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_INVSRCCOLOR); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_DESTINATION_COLOR: { SelectRendererState(D3DRS_SRCBLEND, D3DBLEND_INVDESTCOLOR); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DESTINATION_BLEND_STATE_DX8:
+        {
+            switch ((u32)value)
+            {
+            case RENDERER_MODULE_BLEND_ONE: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_ONE); break; }
+            case RENDERER_MODULE_BLEND_ZERO: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_ZERO); break; }
+            case RENDERER_MODULE_BLEND_SOURCE_ALPHA: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_SOURCE_ALPHA: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA); break; }
+            case RENDERER_MODULE_BLEND_DESTINATION_ALPHA: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_DESTALPHA); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_DESTINATION_ALPHA: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVDESTALPHA); break; }
+            case RENDERER_MODULE_BLEND_SOURCE_COLOR: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR); break; }
+            case RENDERER_MODULE_BLEND_DESTINATION_COLOR: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_DESTCOLOR); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_SOURCE_COLOR: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR); break; }
+            case RENDERER_MODULE_BLEND_INVERSE_DESTINATION_COLOR: { SelectRendererState(D3DRS_DESTBLEND, D3DBLEND_INVDESTCOLOR); break; }
+            }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_FACTOR_DX8:
+        {
+            SelectRendererState(D3DRS_TEXTUREFACTOR, (DWORD)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_DESTINATION_BLEND_STATE:
+        {
+            if (value == NULL) { return RENDERER_MODULE_FAILURE; }
+
+            const RendererModuleTextureStageBumpMappingMatrix* matrix = (RendererModuleTextureStageBumpMappingMatrix*)value;
+
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVMAT00, *(DWORD*)&matrix->M00);
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVMAT01, *(DWORD*)&matrix->M01);
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVMAT10, *(DWORD*)&matrix->M10);
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVMAT11, *(DWORD*)&matrix->M11);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_BUMP_MAPPING_LUMINANCE_SCALE_DX8:
+        {
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVLSCALE, (DWORD)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_BUMP_MAPPING_LUMINANCE_OFFSET_DX8:
+        {
+            SelectRendererTextureStage(stage, D3DTSS_BUMPENVLOFFSET, (DWORD)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_RENDER_PACKET_DX8:
+        {
+            BeginRendererScene();
+
+            const RendererModulePacket* packet = (RendererModulePacket*)value;
+
+            u32 count = 0;
+
+            switch (packet->Type)
+            {
+            case RendererModulePrimitiveTypePointList: { count = packet->VertexCount; break; }
+            case RendererModulePrimitiveTypeLineList: { count = packet->VertexCount / 2; break; }
+            case RendererModulePrimitiveTypeLineStrip: { count = packet->VertexCount - 1; break; }
+            case RendererModulePrimitiveTypeTriangleList: { count = packet->VertexCount / 3; break; }
+            case RendererModulePrimitiveTypeTriangleStrip:
+            case RendererModulePrimitiveTypeTriangleFan: { count = packet->VertexCount - 2; break; }
+            default: { return RENDERER_MODULE_FAILURE; }
+            }
+
+            State.DX.Device->SetVertexShader(packet->FVF);
+
+            if (packet->Indexes == NULL || packet->IndexCount == 0)
+            {
+                result = State.DX.Device->DrawPrimitiveUP((D3DPRIMITIVETYPE)packet->Type,
+                    count, packet->Vertexes, sizeof(RTLVX)) == D3D_OK;
+            }
+            else
+            {
+                result = State.DX.Device->DrawIndexedPrimitiveUP((D3DPRIMITIVETYPE)packet->Type,
+                    0, packet->IndexCount + 1, count, packet->Indexes, D3DFMT_INDEX16,
+                    packet->Vertexes, sizeof(RTLVX)) == D3D_OK;
+            }
+
+            if (result == RENDERER_MODULE_FAILURE) { return RENDERER_MODULE_FAILURE; }
+
+            break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_TEXTURE_COORDINATE_INDEX_STATE_DX8:
+        {
+            if (RendererCurrentShader & D3DFVF_TEX1)
+            {
+                SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_TEXCOORDINDEX, 0);
+                SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_1, D3DTSS_TEXCOORDINDEX, 0);
+            }
+            else if (RendererCurrentShader & D3DFVF_TEX2)
+            {
+                SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_TEXCOORDINDEX, 0);
+                SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_1, D3DTSS_TEXCOORDINDEX, 1);
+            }
+
+            return RENDERER_MODULE_FAILURE;
+        }
+        case RENDERER_MODULE_STATE_ACQUIRE_MAX_ANISOTROPY_DX8:
+        {
+            if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            *(u32*)value = State.Device.Capabilities.MaxAnisotropy;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_MAX_ANISOTROPY_DX8:
+        {
+            if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
+
+            SelectRendererTextureStage(stage, D3DTSS_MAXANISOTROPY,
+                State.Device.Capabilities.MaxAnisotropy < (u32)value
+                ? State.Device.Capabilities.MaxAnisotropy : (u32)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_RENDERER_ACTIVE_LAMBDA_DX8:
+        {
+            if (value != NULL) { State.Lambdas.RendererActiveLambda = (RENDERERACTIVELAMBDA)value; }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_RENDERER_INACTIVE_LAMBDA_DX8:
+        {
+            if (value != NULL) { State.Lambdas.RendererInactiveLambda = (RENDERERINACTIVELAMBDA)value; }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_RENDERER_INACTIVE_LAMBDA_VALUE_DX8:
+        {
+            if (value != NULL) { State.Lambdas.RendererInactiveLambdaValue = value; }
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_430_DX8:
+        {
+            ((u32*)value)[6] = 0; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_431_DX8:
+        {
+            ((u32*)value)[6] = 1; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_432_DX8:
+        {
+            ((u32*)value)[6] = 2; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_433_DX8:
+        {
+            ((u32*)value)[6] = 3; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_434_DX8:
+        {
+            ((u32*)value)[6] = 4; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_435_DX8:
+        {
+            ((u32*)value)[6] = 5; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_436_DX8:
+        {
+            ((u32*)value)[6] = 6; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_437_DX8:
+        {
+            ((u32*)value)[6] = 7; // TODO
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_ACQUIRE_RENDERER_DEVICE_DX8:
+        {
+            if (value == NULL) { return RENDERER_MODULE_FAILURE; }
+
+            *(IDirect3DDevice8**)value = State.DX.Device;
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        case RENDERER_MODULE_STATE_SELECT_CLIPPING_STATE_DX8:
+        {
+            RenderPackets();
+
+            State.DX.Device->SetRenderState(D3DRS_CLIPPING, (DWORD)value);
+
+            result = RENDERER_MODULE_SUCCESS; break;
+        }
+        default: { return SelectBasicRendererState(actual, value); }
+        }
+
+        SelectRendererStateValue(actual, value);
+
+        return result;
     }
 
     // 0x600019f0
@@ -1449,6 +2766,8 @@ namespace RendererModule
 
                     SelectObjectReferenceCount(State.DX.Surfaces.Surfaces[2], 1); // TODO
                     SelectObjectReferenceCount(State.DX.Surfaces.Surfaces[3], 1); // TODO
+
+                    return RENDERER_MODULE_SUCCESS;
                 }
 
                 break;
