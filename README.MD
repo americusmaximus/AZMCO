@@ -27,7 +27,13 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 
 1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original, however it is fully functional for predecessor games such as Neer For Speed Hot Pursuit and High Stakes.
 
-## Similar Projects
+### Other Modules
+
+#### Implode
+PKWARE DCL Implode is a compressed data format associated with PKWARE Data Compression Library (DCL), a commercial data compression software product. It is not the only format supported by DCL, but it is possibly the most notable one.
+The game uses the library version 1.11, which is identifiable by the following `PKWARE Data Compression Library for Win32\r\nCopyright 1989-1995 PKWARE Inc.  All Rights Reserved.\r\nPatent No. 5,051,745\r\nPKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
+
+## Similar & Related Projects
 ### Predecessors
 1. [AutoZone High Stakes](https://github.com/americusmaximus/AZHS)
 2. [AutoZone Hot Pursuit](https://github.com/americusmaximus/AZHP)
@@ -37,6 +43,7 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 
 ## Thanks
 1. [Reddit](https://www.reddit.com/) for providing [Motor City Online](https://www.reddit.com/r/needforspeed/comments/12xz4ce/do_you_guys_remember_motor_city_online_and_if_so/) and the offline patch.
+2. [Ladislav Zezula](https://github.com/ladislav-zezula) for the implementation of PkWare's implode algorithm within his [StormLib](https://github.com/ladislav-zezula/StormLib).
 
 ## Legal
 1. This is not a complete game. Please purchase software you like!

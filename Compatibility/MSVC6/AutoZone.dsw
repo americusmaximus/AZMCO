@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "AZX"=".\AZX\AZX.dsp" - Package Owner=<4>
+Project: "AZX"=.\AZX\AZX.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -15,7 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "DX7A"=".\R.DirectX.7.0.A\R.DirectX.7.0.A.dsp" - Package Owner=<4>
+Project: "DX7A"=.\R.DirectX.7.0.A\R.DirectX.7.0.A.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -30,7 +30,19 @@ Package=<4>
 
 ###############################################################################
 
-Project: "Watcom"=".\Watcom\Watcom.dsp" - Package Owner=<4>
+Project: "Implode"=.\Implode\Implode.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Watcom"=.\Watcom\Watcom.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

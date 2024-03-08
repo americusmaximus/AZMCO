@@ -1,0 +1,5 @@
+LIBRARY
+EXPORTS
+	crc32		@1
+	explode		@2
+	implode		@3

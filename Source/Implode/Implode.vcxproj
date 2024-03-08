@@ -18,33 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="App.Resources.hxx" />
-    <ClInclude Include="DirectX.hxx" />
-    <ClInclude Include="Module.hxx" />
-    <ClInclude Include="Renderer.hxx" />
-    <ClInclude Include="RendererValues.hxx" />
-    <ClInclude Include="Settings.hxx" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="App.Resources.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Renderer.Module.MSVC.def" />
-    <None Include="Renderer.Module.Watcom.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Main.cxx" />
-    <ClCompile Include="Module.cxx" />
-    <ClCompile Include="Renderer.cxx" />
-    <ClCompile Include="RendererValues.cxx" />
-    <ClCompile Include="Settings.cxx" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{9bad50ba-19de-46f2-a5c3-d59c5114ba1e}</ProjectGuid>
-    <RootNamespace>RDirectX80A</RootNamespace>
+    <ProjectGuid>{079d1e61-4b8a-4f48-84b9-5b03162b29ad}</ProjectGuid>
+    <RootNamespace>Implode</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -92,30 +70,29 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX;..\..\SDK\DX80\Include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX</IncludePath>
     <TargetName>$(ProjectName).x86</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\..\SDK\DX80\Lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX;..\..\SDK\DX80\Include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX</IncludePath>
     <TargetName>$(ProjectName).x86</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\..\SDK\DX80\Lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Bin\x64\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Obj\x64\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX;..\..\SDK\DX80\Include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX</IncludePath>
     <TargetName>$(ProjectName).x64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Bin\x64\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Obj\x64\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX;..\..\SDK\DX80\Include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\AZX</IncludePath>
     <TargetName>$(ProjectName).x64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -130,7 +107,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -139,13 +115,10 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>Renderer.Module.Watcom.def</ModuleDefinitionFile>
-      <AdditionalDependencies>%(AdditionalDependencies);dxguid.lib;d3d8.lib</AdditionalDependencies>
+      <DefinitionFile>Module.def</DefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ModuleDefinitionFile>Module.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>$(SolutionDir)Bin\x86\$(Configuration)\watcom.x86.exe $(SolutionDir)Bin\x86\$(Configuration)\$(ProjectName).x86.dll</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -159,7 +132,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -170,13 +142,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>Renderer.Module.Watcom.def</ModuleDefinitionFile>
-      <AdditionalDependencies>%(AdditionalDependencies);dxguid.lib;d3d8.lib</AdditionalDependencies>
+      <DefinitionFile>Module.def</DefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ModuleDefinitionFile>Module.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>$(SolutionDir)Bin\x86\$(Configuration)\watcom.x86.exe $(SolutionDir)Bin\x86\$(Configuration)\$(ProjectName).x86.dll</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -190,7 +159,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6335;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -199,13 +167,10 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>Renderer.Module.MSVC.def</ModuleDefinitionFile>
-      <AdditionalDependencies>%(AdditionalDependencies);dxguid.lib;d3d8.lib</AdditionalDependencies>
+      <DefinitionFile>Module.def</DefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ModuleDefinitionFile>Module.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>$(SolutionDir)Bin\x64\$(Configuration)\watcom.x64.exe $(SolutionDir)Bin\x64\$(Configuration)\$(ProjectName).x64.dll</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -218,7 +183,6 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6335;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ExceptionHandling>false</ExceptionHandling>
@@ -229,14 +193,23 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>Renderer.Module.MSVC.def</ModuleDefinitionFile>
-      <AdditionalDependencies>%(AdditionalDependencies);dxguid.lib;d3d8.lib</AdditionalDependencies>
+      <DefinitionFile>Module.def</DefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ModuleDefinitionFile>Module.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>$(SolutionDir)Bin\x64\$(Configuration)\watcom.x64.exe $(SolutionDir)Bin\x64\$(Configuration)\$(ProjectName).x64.dll</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\SDK\Implode\crc32.c" />
+    <ClCompile Include="..\..\SDK\Implode\explode.c" />
+    <ClCompile Include="..\..\SDK\Implode\implode.c" />
+    <ClCompile Include="Main.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\SDK\Implode\pklib.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Module.def" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
