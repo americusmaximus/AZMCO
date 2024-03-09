@@ -1288,8 +1288,8 @@ namespace RendererModule
             }
             case RENDERER_MODULE_TEXTURE_ADDRESS_WRAP:
             {
-                SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-                SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
+                SelectRendererTextureStage(stage, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
 
                 break;
             }
@@ -1701,11 +1701,11 @@ namespace RendererModule
                 }
                 else
                 {
-                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_COLORARG2, D3DTA_CURRENT);
-                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-                    SelectRendererTextureStage(RENDERER_TEXTURE_STAGE_0, D3DTSS_ALPHAARG1, D3DTA_CURRENT);
+                    SelectRendererTextureStage(stage, D3DTSS_COLOROP, D3DTOP_MODULATE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+                    SelectRendererTextureStage(stage, D3DTSS_COLORARG2, D3DTA_CURRENT);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+                    SelectRendererTextureStage(stage, D3DTSS_ALPHAARG1, D3DTA_CURRENT);
                 }
 
                 result = State.Textures.Stages[stage].Unk10; break;
@@ -2094,6 +2094,8 @@ namespace RendererModule
                 if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
 
                 SelectRendererTextureStage(stage, D3DTSS_MINFILTER, D3DTEXF_ANISOTROPIC);
+
+                break;
             }
             default: { return RENDERER_MODULE_FAILURE; }
             }
@@ -2137,7 +2139,7 @@ namespace RendererModule
 
             memcpy(value, &State.Device.Capabilities, sizeof(RendererModuleDeviceCapabilities8));
 
-            return (u32)value;
+            return (addr)value;
         }
         case RENDERER_MODULE_STATE_SELECT_SOURCE_BLEND_STATE_DX8:
         {
@@ -2270,9 +2272,7 @@ namespace RendererModule
         {
             if (!State.Device.Capabilities.IsAnisotropyAvailable) { return RENDERER_MODULE_FAILURE; }
 
-            SelectRendererTextureStage(stage, D3DTSS_MAXANISOTROPY,
-                State.Device.Capabilities.MaxAnisotropy < (u32)value
-                ? State.Device.Capabilities.MaxAnisotropy : (u32)value);
+            SelectRendererTextureStage(stage, D3DTSS_MAXANISOTROPY, Min(State.Device.Capabilities.MaxAnisotropy, (u32)value));
 
             result = RENDERER_MODULE_SUCCESS; break;
         }

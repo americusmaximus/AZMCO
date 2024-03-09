@@ -27,13 +27,18 @@ SOFTWARE.
 
 #define CLEAR_DEPTH_VALUE (1.0f)
 #define DEFAULT_DEVICE_INDEX 0
+#define DEFAULT_FOG_COLOR 0x00FFFFFF
+#define DEFAULT_FOG_END (1.0f)
 #define DEFAULT_TEXTURE_PALETTE_VALUE 0
+#define DEFAULT_VERTEX_MAX_DEPTH (65535.0f)
+#define DEFAULT_VERTEX_MIN_DEPTH (1.0f)
 #define ENVIRONMENT_SECTION_NAME "DX8"
 #define INVALID_TEXTURE_PALETTE_VALUE 0xffff
 #define MAX_ACTIVE_SURFACE_COUNT 8
 #define MAX_ACTIVE_UNKNOWN_COUNT 10
 #define MAX_DEVICE_CAPABILITIES_COUNT 256
 #define MAX_ENUMERATE_DEVICE_NAME_COUNT 60 /* ORIGINAL: 10 */
+#define MAX_INPUT_FOG_ALPHA_COUNT 64
 #define MAX_OUTPUT_FOG_ALPHA_COUNT 256
 #define MAX_OUTPUT_FOG_ALPHA_VALUE 255
 #define MAX_RENDER_PACKET_COUNT 10000
@@ -264,6 +269,11 @@ namespace RendererModule
 
             BOOL IsWindowMode; // 0x6001ed50
 
+            BOOL IsFogStateActive; // 0x6001edd0
+            BOOL IsFogActive; // 0x6001edd4
+            f32 FogStart; // 0x6001edd8
+            f32 FogDensity; // 0x6001eddc
+
             u32 Cull; // 0x6001ef04
         } Settings;
 
@@ -319,6 +329,9 @@ namespace RendererModule
     BOOL AttemptRenderPackets(void);
     BOOL BeginRendererScene(void);
     BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
+    BOOL RestoreRendererSurfaces(void);
+    BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
+    BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
     D3DFORMAT AcquireRendererTextureFormat(const u32 indx);
     HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
     inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
@@ -355,6 +368,8 @@ namespace RendererModule
     void RenderAllPackets(void);
     void RenderPackets(void);
     void SelectObjectReferenceCount(IUnknown* object, const u32 count);
+    void SelectRendererFogAlphas(const u8* input, u8* output);
+    void SelectRendererMaterial(const u32 color);
     void SelectRendererStateValue(const u32 state, void* value);
     void UpdateVertexValues(Renderer::RTLVX2* vertex);
 }

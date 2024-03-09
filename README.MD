@@ -28,10 +28,18 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original, however it is fully functional for predecessor games such as Neer For Speed Hot Pursuit and High Stakes.
 
 ### Other Modules
+The game also contains Compress and Implode modules, functionality of each is described below.
+
+#### Compress
+The Compress.dll module is not used by the game. This module is a wrapper around the implode.dll with some quality of life additions.
 
 #### Implode
-The game uses implode.dll module for data compression.
-PKWARE DCL Implode is a compressed data format associated with PKWARE Data Compression Library (DCL). The game uses the library version 1.11, which is identifiable by the following string: `PKWARE Data Compression Library for Win32\r\nCopyright 1989-1995 PKWARE Inc.  All Rights Reserved.\r\nPatent No. 5,051,745\r\nPKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
+The game uses Implode.dll module for data compression.
+
+PKWARE DCL Implode is a compressed data format associated with PKWARE Data Compression Library (DCL). The game uses the library version 1.11, which is identifiable by the following string:
+`PKWARE Data Compression Library for Win32\r\nCopyright 1989-1995 PKWARE Inc. All Rights Reserved.
+Patent No. 5,051,745
+PKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
 
 ## Similar & Related Projects
 ### Predecessors
