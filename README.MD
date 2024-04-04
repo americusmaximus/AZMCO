@@ -1,4 +1,5 @@
 # AutoZone Motor City Online
+![Auto Zone](./Extras/Logo.png)
 
 ## Project
 AZMCO is an open source implementation of Electronic Arts' [Motor City Online](https://en.wikipedia.org/wiki/Motor_City_Online) from 2001 as well as its offline launcher.
