@@ -544,15 +544,16 @@ namespace RendererModule
 
         if (state == NULL) { return RENDERER_MODULE_FAILURE; }
 
-        const u32 multiplier = (state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8)
-            ? 4 : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8) ? 3 : 2; // TODO
+        const u32 multiplier = (state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8) ? (GRAPHICS_BITS_PER_PIXEL_32 >> 3)
+            : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8) ? (GRAPHICS_BITS_PER_PIXEL_24 >> 3) : (GRAPHICS_BITS_PER_PIXEL_16 >> 3);
+
         const u32 length = stride == 0 ? multiplier * width : stride;
 
         for (u32 xx = 0; xx < height; xx++)
         {
-            const addr address = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
 
-            CopyMemory((void*)((addr)state->Data + address), &pixels[xx * length], multiplier * width);
+            CopyMemory(&pixels[xx * length], (void*)((addr)state->Data + (addr)offset), length);
         }
 
         return UnlockGameWindow(state);
@@ -2756,16 +2757,16 @@ namespace RendererModule
 
         if (state == NULL) { return RENDERER_MODULE_FAILURE; }
 
-        const u32 multiplier = (state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8)
-            ? 4 : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8) ? 3 : 2; // TODO
+        const u32 multiplier = (state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8) ? (GRAPHICS_BITS_PER_PIXEL_32 >> 3)
+            : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8) ? (GRAPHICS_BITS_PER_PIXEL_24 >> 3) : (GRAPHICS_BITS_PER_PIXEL_16 >> 3);
 
         const u32 length = stride == 0 ? multiplier * width : stride;
 
         for (u32 xx = 0; xx < height; xx++)
         {
-            const addr address = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
 
-            CopyMemory((void*)((addr)state->Data + address), &pixels[xx * length], multiplier * width);
+            CopyMemory((void*)((addr)state->Data + (addr)offset), &pixels[xx * length], multiplier * width);
         }
 
         return UnlockGameWindow(state);
