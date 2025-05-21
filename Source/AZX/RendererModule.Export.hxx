@@ -56,7 +56,7 @@ namespace RendererModule
     DLLAPI u32 STDCALLAPI Init(void);
     DLLAPI u32 STDCALLAPI Is(void);
     DLLAPI RendererModuleWindowLock* STDCALLAPI LockGameWindow(void);
-    DLLAPI u32 STDCALLAPI ToggleGameWindow(void);
+    DLLAPI void STDCALLAPI ToggleGameWindow(void);
     DLLAPI u32 STDCALLAPI ReadRectangle(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels);
     DLLAPI u32 STDCALLAPI ReadRectangles(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels, const u32 stride);
     DLLAPI u32 STDCALLAPI RestoreGameWindow(void);
@@ -65,7 +65,7 @@ namespace RendererModule
     DLLAPI u32 STDCALLAPI SelectTexture(Renderer::RendererTexture* tex);
     DLLAPI u32 STDCALLAPI SelectVideoMode(const u32 mode, const u32 pending, const u32 depth);
     DLLAPI u32 STDCALLAPI SyncGameWindow(const u32 type);
-    DLLAPI Renderer::RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state);
+    DLLAPI Renderer::RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 palette, const u32 state);
     DLLAPI u32 STDCALLAPI ReleaseTexture(Renderer::RendererTexture* tex);
     DLLAPI u32 STDCALLAPI ResetTextures(void);
     DLLAPI Renderer::RendererTexture* STDCALLAPI UpdateTexture(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette);

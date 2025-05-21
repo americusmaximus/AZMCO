@@ -520,13 +520,13 @@ namespace RendererModule
 
     // 0x60001330
     // a.k.a. THRASH_pageflip
-    DLLAPI u32 STDCALLAPI ToggleGameWindow(void)
+    DLLAPI void STDCALLAPI ToggleGameWindow(void)
     {
         EndRendererScene();
 
         if (State.Lock.IsActive) { LOGERROR("D3D pageflip called in while locked\n"); }
 
-        return ToggleRenderer();
+        ToggleRenderer();
     }
 
     // 0x60001d60
@@ -2539,13 +2539,10 @@ namespace RendererModule
     // a.k.a. THRASH_sync
     DLLAPI u32 STDCALLAPI SyncGameWindow(const u32 type)
     {
-        if (type == 0) // TODO
+        switch (type)
         {
-            UnlockGameWindow(RendererLock(LOCK_WRITE));
-        }
-        else if (type == 2) // TODO
-        {
-            State.DX.Active.Instance->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
+        case RENDERER_MODULE_SYNC_NORMAL: { UnlockGameWindow(RendererLock(LOCK_WRITE)); break; }
+        case RENDERER_MODULE_SYNC_VBLANK: { State.DX.Active.Instance->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL); break; }
         }
 
         return RENDERER_MODULE_FAILURE;
@@ -2553,13 +2550,13 @@ namespace RendererModule
 
     // 0x60008e70
     // a.k.a. THRASH_talloc
-    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state)
+    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 palette, const u32 state)
     {
         if (State.DX.Active.Instance != NULL)
         {
             if (State.DX.Active.Instance->TestCooperativeLevel() == DD_OK)
             {
-                return AllocateRendererTexture(width, height, format, options, state, FALSE);
+                return AllocateRendererTexture(width, height, format, palette, state, FALSE);
             }
         }
 
@@ -2610,7 +2607,7 @@ namespace RendererModule
         if (State.Scene.IsActive)
         {
             FlushGameWindow();
-            SyncGameWindow(0);
+            SyncGameWindow(RENDERER_MODULE_SYNC_NORMAL);
             Idle();
 
             State.Scene.IsActive = FALSE;

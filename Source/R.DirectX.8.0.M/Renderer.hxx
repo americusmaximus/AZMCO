@@ -45,6 +45,7 @@ SOFTWARE.
 #define MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT 5
 #define MAX_RENDERER_DEVICE_FORMAT_COUNT 2
 #define MAX_TEXTURE_FORMAT_COUNT 34
+#define MAX_TEXTURE_PALETTE_COLOR_COUNT 256
 #define MAX_TEXTURE_PALETTE_INDEX_COUNT 512
 #define MAX_TEXTURE_STAGE_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
@@ -56,6 +57,10 @@ SOFTWARE.
 #define MIN_ACTUAL_DEVICE_CAPABILITIES_INDEX 13
 #define MIN_SIMULTANEOUS_TEXTURE_COUNT 1
 #define MIN_WINDOW_INDEX 8
+
+#define RENDERER_CULL_MODE_CLOCK_WISE           0x00000000
+#define RENDERER_CULL_MODE_NONE                 0x00000001
+#define RENDERER_CULL_MODE_COUNTER_CLOCK_WISE   0x80000000
 
 #define MAKEPIXELFORMAT(x) (x & 0xff)
 
@@ -77,7 +82,7 @@ namespace Renderer
         u32 Width;
         u32 Height;
         u32 PixelFormat;
-        u32 Options;
+        u32 PaletteMode;
         u32 MipMapCount;
         u32 Stage;
         RendererTexture* Previous;
@@ -332,9 +337,11 @@ namespace RendererModule
     BOOL RestoreRendererSurfaces(void);
     BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
     BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
+    BOOL UpdateRendererTexture(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette);
+    BOOL UpdateRendererTexturePalette(Renderer::RendererTexture* tex, const u32* palette);
     D3DFORMAT AcquireRendererTextureFormat(const u32 indx);
     HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
-    inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
+    inline u32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { const s32 value = (s32)((b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y)); return *(u32*)&value; }
     Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
     Renderer::RendererTexture* AllocateRendererTexture(void);
     s32 AcquireSettingsValue(const s32 value, const char* section, const char* name);

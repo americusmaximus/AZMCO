@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 #include "Graphics.Basic.hxx"
+#include "Images.hxx"
 #include "Mathematics.Basic.hxx"
 #include "Renderer.hxx"
 #include "RendererValues.hxx"
@@ -32,6 +33,7 @@ SOFTWARE.
 
 #define MAX_SETTINGS_BUFFER_LENGTH 80
 
+using namespace Images;
 using namespace Mathematics;
 using namespace Renderer;
 using namespace RendererModuleValues;
@@ -376,7 +378,7 @@ namespace RendererModule
             if (State.Scene.IsActive)
             {
                 ToggleGameWindow();
-                SyncGameWindow(0);
+                SyncGameWindow(RENDERER_MODULE_SYNC_NORMAL);
             }
 
             ResetTextures();
@@ -1109,7 +1111,7 @@ namespace RendererModule
             {
             case RENDERER_MODULE_CULL_NONE:
             {
-                State.Settings.Cull = 1; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_NONE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_NONE);
 
@@ -1117,7 +1119,7 @@ namespace RendererModule
             }
             case RENDERER_MODULE_CULL_COUNTER_CLOCK_WISE:
             {
-                State.Settings.Cull = 0x80000000; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_COUNTER_CLOCK_WISE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_COUNTER_CLOCK_WISE);
 
@@ -1125,7 +1127,7 @@ namespace RendererModule
             }
             case RENDERER_MODULE_CULL_CLOCK_WISE:
             {
-                State.Settings.Cull = 0; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_CLOCK_WISE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_CLOCK_WISE);
 
@@ -1545,7 +1547,7 @@ namespace RendererModule
         tex->Width = width;
         tex->Height = height;
         tex->PixelFormat = MAKEPIXELFORMAT(format);
-        tex->Options = 0; // TODO
+        tex->PaletteMode = RENDERER_MODULE_PALETTE_NONE;
 
         tex->MipMapCount = MAKETEXTUREMIPMAPVALUE(state) != 0 ? (MAKETEXTUREMIPMAPVALUE(state) + 1) : 0;
         tex->Stage = MAKETEXTURESTAGEVALUE(state);
@@ -1839,5 +1841,233 @@ namespace RendererModule
         }
 
         return result;
+    }
+
+    // 0x600072c0
+    BOOL UpdateRendererTexture(RendererTexture* tex, const u32* pixels, const u32* palette)
+    {
+        if (tex == NULL) { return FALSE; }
+        if (pixels == NULL && palette == NULL) { return FALSE; }
+
+        if (palette != NULL) { if (!UpdateRendererTexturePalette(tex, palette)) { return FALSE; } }
+
+        if (pixels == NULL) { return TRUE; }
+
+        u32* px = (u32*)pixels;
+
+        if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
+        {
+            const u8 v0 = (*(u8*)((addr)px + (addr)0));
+            const u8 v1 = (*(u8*)((addr)px + (addr)1));
+
+            if ((v0 == 24 && v1 == 251) || (v0 == 26 && v1 == 251)) // TODO
+            {
+                px = (u32*)((addr)px + (addr)(2 * sizeof(u32)));
+            }
+        }
+
+        for (u32 x = 0; x < tex->MipMapCount; x++)
+        {
+            IDirect3DSurface8* surface = NULL;
+            tex->Texture->GetSurfaceLevel(x, &surface);
+
+            D3DSURFACE_DESC desc;
+            ZeroMemory(&desc, sizeof(D3DSURFACE_DESC));
+
+            surface->GetDesc(&desc);
+
+            D3DLOCKED_RECT lock;
+            ZeroMemory(&lock, sizeof(D3DLOCKED_RECT));
+
+            surface->LockRect(&lock, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+            surface->UnlockRect();
+
+            D3DRECT rect;
+
+            rect.x1 = 0;
+            rect.x2 = desc.Width;
+
+            rect.y1 = 0;
+            rect.y2 = desc.Height;
+
+            if (UpdateRendererTextureSurface(surface, NULL, &rect, px, tex->TextureFormat, lock.Pitch,
+                NULL, &rect, IMAGE_CONTAINER_OPTIONS_COLOR, GRAPCHICS_COLOR_BLACK) != D3D_OK)
+            {
+                surface->Release(); return FALSE;
+            }
+
+            surface->Release();
+
+            px = (u32*)((addr)px + (addr)(lock.Pitch * desc.Height));
+        }
+
+        return TRUE;
+    }
+
+    // 0x600087a0
+    BOOL UpdateRendererTexturePalette(RendererTexture* tex, const u32* palette)
+    {
+        if (tex == NULL || palette == NULL) { return FALSE; }
+        if (RendererTextureFormatStates[2] != 1) { return FALSE; } // TODO
+        if (tex->PaletteMode != RENDERER_MODULE_PALETTE_ACQUIRE) { return FALSE; }
+
+        if (tex->Palette != INVALID_TEXTURE_PALETTE_VALUE)
+        {
+            PALETTEENTRY entries[MAX_TEXTURE_PALETTE_COLOR_COUNT];
+
+            for (u32 x = 0; x < MAX_TEXTURE_PALETTE_COLOR_COUNT; x++)
+            {
+                entries[x].peRed = RGBA_GETRED(palette[x]);
+                entries[x].peGreen = RGBA_GETGREEN(palette[x]);
+                entries[x].peBlue = RGBA_GETBLUE(palette[x]);
+                entries[x].peFlags = RGBA_GETALPHA(palette[x]);
+            }
+
+            if (State.DX.Device->SetPaletteEntries(tex->Palette, entries) != D3D_OK) { return FALSE; }
+
+            return State.DX.Device->SetCurrentTexturePalette(tex->Palette) == D3D_OK;
+        }
+
+        return FALSE;
+    }
+
+    // 0x60008f1a
+    HRESULT UpdateRendererTextureSurface(IDirect3DSurface8* surface,
+        const u8* dpal, const D3DRECT* drect,
+        const u32* pixels, const D3DFORMAT format, const u32 pitch,
+        const u8* spal, const D3DRECT* srect, const u32 options, const u32 color)
+    {
+        ImageContainer img;
+
+        InitializeImageContainer(&img);
+
+        if (surface == NULL || pixels == NULL || srect == NULL)
+        {
+            ReleaseImageContainer(&img);
+
+            return D3DERR_INVALIDCALL;
+        }
+
+        D3DSURFACE_DESC desc;
+        ZeroMemory(&desc, sizeof(D3DSURFACE_DESC));
+
+        surface->GetDesc(&desc);
+
+        RECT rect;
+
+        if (drect == NULL)
+        {
+            rect.left = 0;
+            rect.top = 0;
+            rect.right = desc.Width;
+            rect.bottom = desc.Height;
+        }
+        else
+        {
+            rect.left = drect->x1;
+            rect.top = drect->y1;
+            rect.right = drect->x2;
+            rect.bottom = drect->y2;
+
+            if (rect.left < 0 || desc.Width < rect.right || rect.right < rect.left || rect.top < 0 || desc.Height < rect.bottom || rect.bottom < rect.top)
+            {
+                ReleaseImageContainer(&img);
+
+                return D3DERR_INVALIDCALL;
+            }
+        }
+
+        D3DLOCKED_RECT lock;
+        ZeroMemory(&lock, sizeof(D3DLOCKED_RECT));
+
+        if (desc.Format == D3DFMT_DXT1 || desc.Format == D3DFMT_DXT2 || desc.Format == D3DFMT_YUY2
+            || desc.Format == D3DFMT_DXT3 || desc.Format == D3DFMT_DXT4 || desc.Format == D3DFMT_DXT5 || desc.Format == D3DFMT_UYVY)
+        {
+            const HRESULT result = surface->LockRect(&lock, NULL, D3DLOCK_NONE);
+
+            if (result != D3D_OK)
+            {
+                ReleaseImageContainer(&img);
+
+                return result;
+            }
+        }
+        else
+        {
+            const HRESULT result = surface->LockRect(&lock, &rect, D3DLOCK_NONE);
+
+            if (result != D3D_OK)
+            {
+                ReleaseImageContainer(&img);
+
+                return result;
+            }
+
+            rect.left = 0;
+            rect.top = 0;
+            rect.right = rect.right - rect.left;
+            rect.bottom = rect.bottom - rect.top;
+        }
+
+        ImageContainerArgs dsti;
+        ZeroMemory(&dsti, sizeof(ImageContainerArgs));
+
+        dsti.Format = desc.Format;
+        dsti.Pixels = lock.pBits;
+        dsti.Stride = lock.Pitch;
+
+        dsti.Width = desc.Width;
+        dsti.Height = desc.Height;
+
+        dsti.Unk08 = 0;
+        dsti.Unk09 = 1;
+
+        dsti.Dimensions.Left = rect.left;
+        dsti.Dimensions.Top = rect.top;
+        dsti.Dimensions.Right = rect.right;
+        dsti.Dimensions.Bottom = rect.bottom;
+        dsti.Dimensions.Min = 0;
+        dsti.Dimensions.Max = 1;
+
+        dsti.Color = GRAPCHICS_COLOR_BLACK;
+        dsti.Palette = dpal;
+
+        ImageContainerArgs srci;
+        ZeroMemory(&srci, sizeof(ImageContainerArgs));
+
+        srci.Format = format;
+        srci.Pixels = (void*)pixels;
+        srci.Stride = pitch;
+
+        srci.Dimensions.Left = srect->x1;
+        srci.Dimensions.Top = srect->y1;
+        srci.Dimensions.Right = srect->x2;
+        srci.Dimensions.Bottom = srect->y2;
+        srci.Dimensions.Min = 0;
+        srci.Dimensions.Max = 1;
+
+        srci.Color = color;
+        srci.Palette = spal;
+
+        const HRESULT result = InitializeImageContainer(&img, &dsti, &srci, options == IMAGE_CONTAINER_OPTIONS_INVALID
+            ? (AcquireImageFormatDescriptor(format)->Format == IMAGE_FORMAT_DESCRIPTOR_TYPE_BUMPMAP
+                ? (IMAGE_CONTAINER_OPTIONS_GRADIENT | IMAGE_CONTAINER_OPTIONS_BUMP_MAP) : (IMAGE_CONTAINER_OPTIONS_GRADIENT | IMAGE_CONTAINER_OPTIONS_UNKNOWN_4)) : options);
+
+        surface->UnlockRect();
+
+        ReleaseImageContainer(&img);
+
+        return result;
+    }
+
+    // 0x60008ef6
+    ImageFormatDescriptor* AcquireImageFormatDescriptor(const D3DFORMAT format)
+    {
+        for (u32 x = 0; x < MAX_IMAGE_FORMAT_DESCRIPTOR_COUNT; x++)
+        {
+            if (ImageFormatDescriptors[x].Format == format) { return &ImageFormatDescriptors[x]; }
+        }
+
+        return NULL;
     }
 }

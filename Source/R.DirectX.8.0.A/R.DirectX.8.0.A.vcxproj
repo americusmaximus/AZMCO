@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClInclude Include="App.Resources.hxx" />
     <ClInclude Include="DirectX.hxx" />
+    <ClInclude Include="FPU.hxx" />
+    <ClInclude Include="Images.hxx" />
     <ClInclude Include="Module.hxx" />
     <ClInclude Include="Renderer.hxx" />
     <ClInclude Include="RendererValues.hxx" />
@@ -34,6 +36,8 @@
     <None Include="Renderer.Module.Watcom.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FPU.cxx" />
+    <ClCompile Include="Images.cxx" />
     <ClCompile Include="Main.cxx" />
     <ClCompile Include="Module.cxx" />
     <ClCompile Include="Renderer.cxx" />
@@ -130,7 +134,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4229;4996;6031;6335;6385;6386;6387;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -159,7 +163,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4229;4996;6031;6335;6385;6386;6387;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -190,7 +194,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeaderOutputFile />
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4229;4996;6031;6335;6385;6386;6387;</DisableSpecificWarnings>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
@@ -218,7 +222,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <DisableSpecificWarnings>4018;4229;4996;6031;6255;6263;6335;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4018;4229;4996;6031;6335;6385;6386;6387;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ExceptionHandling>false</ExceptionHandling>

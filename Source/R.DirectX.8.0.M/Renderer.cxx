@@ -511,7 +511,7 @@ namespace RendererModule
             if (State.Scene.IsActive)
             {
                 ToggleGameWindow();
-                SyncGameWindow(0);
+                SyncGameWindow(RENDERER_MODULE_SYNC_NORMAL);
             }
 
             ResetTextures();
@@ -1261,7 +1261,7 @@ namespace RendererModule
             {
             case RENDERER_MODULE_CULL_NONE:
             {
-                State.Settings.Cull = 1; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_NONE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_NONE);
 
@@ -1269,7 +1269,7 @@ namespace RendererModule
             }
             case RENDERER_MODULE_CULL_COUNTER_CLOCK_WISE:
             {
-                State.Settings.Cull = 0x80000000; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_COUNTER_CLOCK_WISE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_COUNTER_CLOCK_WISE);
 
@@ -1277,7 +1277,7 @@ namespace RendererModule
             }
             case RENDERER_MODULE_CULL_CLOCK_WISE:
             {
-                State.Settings.Cull = 0; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_CLOCK_WISE;
 
                 SelectRendererStateValue(state, (void*)RENDERER_MODULE_CULL_CLOCK_WISE);
 
@@ -1934,5 +1934,94 @@ namespace RendererModule
         }
 
         return result;
+    }
+
+    // 0x60007b00
+    BOOL UpdateRendererTexture(RendererTexture* tex, const u32* pixels, const u32* palette)
+    {
+        if (tex == NULL) { return FALSE; }
+        if (pixels == NULL && palette == NULL) { return FALSE; }
+
+        if (palette != NULL) { if (!UpdateRendererTexturePalette(tex, palette)) { return FALSE; } }
+
+        if (pixels == NULL) { return TRUE; }
+
+        u32* px = (u32*)pixels;
+
+        if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
+        {
+            const u8 v0 = (*(u8*)((addr)px + (addr)0));
+            const u8 v1 = (*(u8*)((addr)px + (addr)1));
+
+            if ((v0 == 24 && v1 == 251) || (v0 == 26 && v1 == 251))
+            {
+                px = (u32*)((addr)px + (addr)(2 * sizeof(u32)));
+            }
+        }
+
+        for (u32 x = 0; x < tex->MipMapCount; x++)
+        {
+            IDirect3DSurface8* surface = NULL;
+            tex->Texture->GetSurfaceLevel(x, &surface);
+
+            D3DSURFACE_DESC desc;
+            ZeroMemory(&desc, sizeof(D3DSURFACE_DESC));
+
+            surface->GetDesc(&desc);
+
+            D3DLOCKED_RECT lock;
+            ZeroMemory(&lock, sizeof(D3DLOCKED_RECT));
+
+            surface->LockRect(&lock, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+            surface->UnlockRect();
+
+            D3DRECT rect;
+
+            rect.x1 = 0;
+            rect.x2 = desc.Width;
+
+            rect.y1 = 0;
+            rect.y2 = desc.Height;
+
+            if (FUN_6000989a(surface, 0, &rect, px, tex->TextureFormat, lock.Pitch, 0, &rect, 1, 0) != 0)
+            {
+                surface->Release();
+
+                return FALSE;
+            }
+
+            surface->Release();
+
+            px = (u32*)((addr)px + (addr)(lock.Pitch * desc.Height));
+        }
+
+        return TRUE;
+    }
+
+    // 0x60009140
+    BOOL UpdateRendererTexturePalette(RendererTexture* tex, const u32* palette)
+    {
+        if (tex == NULL || palette == NULL) { return FALSE; }
+        if (RendererTextureFormatStates[2] != 1) { return FALSE; } // TODO
+        if (tex->PaletteMode != RENDERER_MODULE_PALETTE_ACQUIRE) { return FALSE; }
+
+        if (tex->Palette != INVALID_TEXTURE_PALETTE_VALUE)
+        {
+            PALETTEENTRY entries[MAX_TEXTURE_PALETTE_COLOR_COUNT];
+
+            for (u32 x = 0; x < MAX_TEXTURE_PALETTE_COLOR_COUNT; x++)
+            {
+                entries[x].peRed = (palette[x] >> 16) & 0xff;
+                entries[x].peGreen = (palette[x] >> 8) & 0xff;
+                entries[x].peBlue = (palette[x] >> 0) & 0xff;
+                entries[x].peFlags = (palette[x] >> 24) & 0xff;
+            }
+
+            if (State.DX.Device->SetPaletteEntries(tex->Palette, entries) != D3D_OK) { return FALSE; }
+
+            return State.DX.Device->SetCurrentTexturePalette(tex->Palette) == D3D_OK;
+        }
+
+        return FALSE;
     }
 }

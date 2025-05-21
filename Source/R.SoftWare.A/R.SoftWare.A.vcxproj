@@ -24,7 +24,6 @@
     <ClInclude Include="Module.hxx" />
     <ClInclude Include="Renderer.hxx" />
     <ClInclude Include="RendererValues.hxx" />
-    <ClInclude Include="Settings.hxx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="App.Resources.rc" />
@@ -34,7 +33,6 @@
     <ClCompile Include="Module.cxx" />
     <ClCompile Include="Renderer.cxx" />
     <ClCompile Include="RendererValues.cxx" />
-    <ClCompile Include="Settings.cxx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Renderer.Module.MSVC.def" />
@@ -43,8 +41,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{6caf06f5-80e5-4ce4-9a1c-c8b8cb160818}</ProjectGuid>
-    <RootNamespace>RDirectX70A</RootNamespace>
+    <ProjectGuid>{1b0b4bb0-4fab-49ed-9322-69844f91d4f1}</ProjectGuid>
+    <RootNamespace>RSoftWareA</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

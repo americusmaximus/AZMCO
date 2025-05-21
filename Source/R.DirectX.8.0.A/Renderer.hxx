@@ -23,6 +23,7 @@ SOFTWARE.
 #pragma once
 
 #include "DirectX.hxx"
+#include "Images.hxx"
 #include "RendererModule.Export.hxx"
 
 #define CLEAR_DEPTH_VALUE (1.0f)
@@ -39,6 +40,7 @@ SOFTWARE.
 #define MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT 34
 #define MAX_DEVICE_CAPABILITIES_COUNT 256
 #define MAX_ENUMERATE_DEVICE_NAME_COUNT 60 /* ORIGINAL: 10 */
+#define MAX_IMAGE_FORMAT_DESCRIPTOR_COUNT 30
 #define MAX_INPUT_FOG_ALPHA_COUNT 64
 #define MAX_OUTPUT_FOG_ALPHA_COUNT 256
 #define MAX_OUTPUT_FOG_ALPHA_VALUE 255
@@ -46,6 +48,7 @@ SOFTWARE.
 #define MAX_RENDERER_DEVICE_DEPTH_FORMAT_COUNT 5
 #define MAX_RENDERER_DEVICE_FORMAT_COUNT 2
 #define MAX_TEXTURE_FORMAT_COUNT 34
+#define MAX_TEXTURE_PALETTE_COLOR_COUNT 256
 #define MAX_TEXTURE_PALETTE_INDEX_COUNT 512
 #define MAX_TEXTURE_STAGE_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
@@ -57,6 +60,10 @@ SOFTWARE.
 #define MIN_ACTUAL_DEVICE_CAPABILITIES_INDEX 8
 #define MIN_SIMULTANEOUS_TEXTURE_COUNT 1
 #define MIN_WINDOW_INDEX 8
+
+#define RENDERER_CULL_MODE_CLOCK_WISE           0x00000000
+#define RENDERER_CULL_MODE_NONE                 0x00000001
+#define RENDERER_CULL_MODE_COUNTER_CLOCK_WISE   0x80000000
 
 #define MAKEPIXELFORMAT(x) (x & 0xff)
 
@@ -78,7 +85,7 @@ namespace Renderer
         u32 Width;
         u32 Height;
         u32 PixelFormat;
-        u32 Options;
+        u32 PaletteMode;
         u32 MipMapCount;
         u32 Stage;
         RendererTexture* Previous;
@@ -323,9 +330,13 @@ namespace RendererModule
     BOOL RestoreRendererSurfaces(void);
     BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
     BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
+    BOOL UpdateRendererTexture(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette);
+    BOOL UpdateRendererTexturePalette(Renderer::RendererTexture* tex, const u32* palette);
     D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format);
     HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
-    inline f32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { return (b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y); };
+    HRESULT UpdateRendererTextureSurface(IDirect3DSurface8* surface, const u8* dpal, const D3DRECT* drect, const u32* pixels, const D3DFORMAT format, const u32 pitch, const u8* spal, const D3DRECT* srect, const u32 options, const u32 color);
+    Images::ImageFormatDescriptor* AcquireImageFormatDescriptor(const D3DFORMAT format);
+    inline u32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { const s32 value = (s32)((b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y)); return *(u32*)&value; }
     Renderer::RendererTexture* AllocateRendererDepthTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination);
     Renderer::RendererTexture* AllocateRendererTexture(const u32 size);
     Renderer::RendererTexture* AllocateRendererTexture(void);

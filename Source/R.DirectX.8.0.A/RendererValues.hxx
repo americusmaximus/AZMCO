@@ -22,6 +22,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "Images.hxx"
 #include "Renderer.hxx"
 
 namespace RendererModuleValues
@@ -62,6 +63,11 @@ namespace RendererModuleValues
 
     extern BOOL IsTexturePaletteInactive; // 0x6001c220
 
+    extern Images::ImageFormatDescriptor ImageFormatDescriptors[MAX_IMAGE_FORMAT_DESCRIPTOR_COUNT]; // 0x6001c230
+
     extern u32 TexturePaletteIndexes[MAX_TEXTURE_PALETTE_INDEX_COUNT]; // 0x6001e140
     extern u32 TexturePaletteValues[MAX_TEXTURE_PALETTE_INDEX_COUNT]; // 0x6001e940
+
+    extern f32 ImageLinearColorModifiers[MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT]; // 0x6001c6e8
+    extern f32 ImageGradientColorModifiers[MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT]; // 0x6001c768
 }

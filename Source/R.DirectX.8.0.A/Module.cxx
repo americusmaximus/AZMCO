@@ -574,8 +574,8 @@ namespace RendererModule
     // a.k.a. THRASH_drawtri
     DLLAPI void STDCALLAPI DrawTriangle(RVX* a, RVX* b, RVX* c)
     {
-        if (State.Settings.Cull == 1
-            || ((u32)AcquireNormal((f32x3*)a, (f32x3*)b, (f32x3*)c) & 0x80000000) != State.Settings.Cull) // TODO
+        if (State.Settings.Cull == RENDERER_CULL_MODE_NONE
+            || (AcquireNormal((f32x3*)a, (f32x3*)b, (f32x3*)c) & RENDERER_CULL_MODE_COUNTER_CLOCK_WISE) != State.Settings.Cull)
         {
             State.Data.Counters.Triangles = State.Data.Counters.Triangles + 1;
 
@@ -944,7 +944,7 @@ namespace RendererModule
 
     // 0x600013e0
     // a.k.a. THRASH_pageflip
-    DLLAPI u32 STDCALLAPI ToggleGameWindow(void)
+    DLLAPI void STDCALLAPI ToggleGameWindow(void)
     {
         Idle();
         FlushGameWindow();
@@ -960,7 +960,7 @@ namespace RendererModule
         State.Data.Counters.TriangleFans = 0;
         State.Data.Counters.Vertexes = 0;
 
-        return BeginRendererScene();
+        BeginRendererScene();
     }
 
     // 0x60002ed0
@@ -1071,7 +1071,7 @@ namespace RendererModule
             {
                 SelectRendererState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-                State.Settings.Cull = 1; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_NONE;
 
                 break;
             }
@@ -1079,7 +1079,7 @@ namespace RendererModule
             {
                 SelectRendererState(D3DRS_CULLMODE, D3DCULL_CCW);
 
-                State.Settings.Cull = 0x80000000; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_COUNTER_CLOCK_WISE;
 
                 break;
             }
@@ -1087,7 +1087,7 @@ namespace RendererModule
             {
                 SelectRendererState(D3DRS_CULLMODE, D3DCULL_CW);
 
-                State.Settings.Cull = 0; // TODO
+                State.Settings.Cull = RENDERER_CULL_MODE_CLOCK_WISE;
 
                 break;
             }
@@ -2483,12 +2483,15 @@ namespace RendererModule
     // a.k.a. THRASH_sync
     DLLAPI u32 STDCALLAPI SyncGameWindow(const u32 type)
     {
-        if (type == 0) // TODO
+        switch (type)
+        {
+        case RENDERER_MODULE_SYNC_NORMAL:
         {
             LockGameWindow();
             UnlockGameWindow(NULL);
+            break;
         }
-        else if (type == 2) // TODO
+        case RENDERER_MODULE_SYNC_VBLANK:
         {
             if (State.DX.Device != NULL)
             {
@@ -2500,6 +2503,9 @@ namespace RendererModule
                     if (status.InVBlank) { return RENDERER_MODULE_FAILURE; }
                 }
             }
+
+            break;
+        }
         }
 
         return RENDERER_MODULE_FAILURE;
@@ -2507,7 +2513,7 @@ namespace RendererModule
 
     // 0x60006d90
     // a.k.a. THRASH_talloc
-    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state)
+    DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 palette, const u32 state)
     {
         if (width == 0 || height == 0
             || State.Textures.Formats[format] == D3DFMT_UNKNOWN || State.Textures.Illegal) { return NULL; }
@@ -2529,7 +2535,7 @@ namespace RendererModule
         tex->Texture = NULL;
         
         tex->Is16Bit = tex->PixelFormat == RENDERER_PIXEL_FORMAT_R5G5B5 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_R4G4B4;
-        tex->Options = options;
+        tex->PaletteMode = palette;
         tex->MemoryType = RENDERER_MODULE_TEXTURE_LOCATION_SYSTEM_MEMORY;
         tex->Palette = INVALID_TEXTURE_PALETTE_VALUE;
         tex->Colors = 0;
@@ -2550,7 +2556,7 @@ namespace RendererModule
         tex->Previous = State.Textures.Current;
         State.Textures.Current = tex;
 
-        if (options == 4) { tex->Palette = AcquireTexturePalette(); } // TODO
+        if (palette == RENDERER_MODULE_PALETTE_ACQUIRE) { tex->Palette = AcquireTexturePalette(); }
 
         return tex;
     }
@@ -2637,7 +2643,9 @@ namespace RendererModule
     // a.k.a. THRASH_tupdate
     DLLAPI RendererTexture* STDCALLAPI UpdateTexture(RendererTexture* tex, const u32* pixels, const u32* palette)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Lock.IsActive) { UnlockGameWindow(NULL); }
+
+        if (tex != NULL && pixels != NULL) { return UpdateRendererTexture(tex, pixels, palette) ? tex : NULL; }
 
         return NULL;
     }

@@ -126,7 +126,7 @@ namespace RendererModule
     typedef const u32(STDCALLAPI* RENDERERINIT)(void);
     typedef const u32(STDCALLAPI* RENDERERIS)(void);
     typedef const RendererModuleWindowLock* (STDCALLAPI* RENDERERLOCKGAMEWINDOW)(void);
-    typedef const u32(STDCALLAPI* RENDERERTOGGLEGAMEWINDOW)(void);
+    typedef const void (STDCALLAPI* RENDERERTOGGLEGAMEWINDOW)(void);
     typedef const u32(STDCALLAPI* RENDERERREADRECTANGLE)(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels);
     typedef const u32(STDCALLAPI* RENDERERRESTOREGAMEWINDOW)(void);
     typedef const u32(STDCALLAPI* RENDERERSELECTDEVICE)(const s32 indx);
@@ -134,7 +134,7 @@ namespace RendererModule
     typedef const u32(STDCALLAPI* RENDERERSELECTTEXTURE)(Renderer::RendererTexture* tex);
     typedef const u32(STDCALLAPI* RENDERERSELECTVIDEOMODE)(const u32 mode, const u32 pending, const u32 depth);
     typedef const u32(STDCALLAPI* RENDERERSYNCGAMEWINDOW)(const u32);
-    typedef Renderer::RendererTexture* (STDCALLAPI* RENDERERALLOCATETEXTURE)(const u32 width, const u32 height, const u32 format, void*, const u32 options); // TODO
+    typedef Renderer::RendererTexture* (STDCALLAPI* RENDERERALLOCATETEXTURE)(const u32 width, const u32 height, const u32 format, const u32 palette, const u32 state);
     typedef const u32(STDCALLAPI* RENDERERRELEASETEXTURE)(Renderer::RendererTexture* tex);
     typedef const u32(STDCALLAPI* RENDERERRESETTEXTURES)(void);
     typedef Renderer::RendererTexture* (STDCALLAPI* RENDERERUPDATETEXTURE)(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette);
