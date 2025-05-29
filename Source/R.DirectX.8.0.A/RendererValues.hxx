@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,12 @@ SOFTWARE.
 
 namespace RendererModuleValues
 {
+    extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
+    extern u32 RendererShadeMode; // 0x6001c03c
+    extern u32 RendererClearColor; // 0x6001c040
+    extern BOOL IsRendererToggleLambdaActive; // 0x6001c044
+
+    extern RendererModule::MinMax MinMax[6]; // 0x6001c050
     extern BOOL IsRendererInit; // 0x6001c080
     extern u32 RendererVertexSize; // 0x6001c084
     extern u32 RendererCurrentShader; // 0x6001c088
@@ -49,15 +55,6 @@ namespace RendererModuleValues
     extern RendererModule::RendererModuleDescriptorDeviceCapabilities ModuleDescriptorDeviceCapabilities[MAX_DEVICE_CAPABILITIES_COUNT]; // 0x600405a0
 
     extern s32 RendererTextureFormatStates[MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT]; // 0x6001d9e0
-
-    extern RendererModule::MinMax MinMax[6]; // 0x6001c050
-
-    extern s32 UnknownArray06[MAX_ACTIVE_UNKNOWN_COUNT]; // 0x6001c010 // TODO
-
-    extern u32 RendererShadeMode; // 0x6001c03c
-    extern u32 RendererClearColor; // 0x6001c040
-
-    extern BOOL IsRendererToggleLambdaActive; // 0x6001c044
 
     extern u32 PixelFormatSizes[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT]; // 0x6001c198
 

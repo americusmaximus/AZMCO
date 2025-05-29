@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2024 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +23,31 @@ SOFTWARE.
 #include "Graphics.Basic.hxx"
 #include "RendererValues.hxx"
 
+// using namespace Images; // TODO
 using namespace Renderer;
 using namespace RendererModule;
 
 namespace RendererModuleValues
 {
+    BOOL IsRendererInit = TRUE;
+    u32 RendererVertexSize = sizeof(RTLVX);
+    u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
+    f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
     u32 RendererFogState = RENDERER_MODULE_FOG_ACTIVE_LINEAR;
     u32 RendererFogColor = DEFAULT_FOG_COLOR;
     f32 RendererFogEnd = DEFAULT_FOG_END;
-    f32 RendererMinVertexDepth = DEFAULT_VERTEX_MIN_DEPTH;
-    f32 RendererMaxVertexDepth = DEFAULT_VERTEX_MAX_DEPTH;
+
     D3DCMPFUNC RendererDepthFunction = D3DCMP_LESSEQUAL;
     D3DCMPFUNC RendererAlphaFunction = D3DCMP_GREATER;
-    u32 RendererVertexStride = sizeof(RTLVX);
+    u32 VertexStreamStride = sizeof(RTLVX);
     u32 MaxRendererSimultaneousTextures = MIN_SIMULTANEOUS_TEXTURE_COUNT;
     u32 RendererVersion = RENDERER_MODULE_VERSION_115;
 
     u32 RendererIndexSize = RENDERER_MODULE_INDEX_SIZE_4;
 
-    BOOL IsRendererInit = TRUE;
-    u32 RendererVertexSize = sizeof(RTLVX);
-    u32 RendererCurrentShader = D3DFVF_TEX1 | D3DFVF_SPECULAR | D3DFVF_DIFFUSE | D3DFVF_XYZRHW;
-    f32 RendererClearDepth = CLEAR_DEPTH_VALUE;
+    u32 RendererShadeMode = RENDERER_MODULE_SHADE_GOURAUD;
+    u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
+    BOOL RendererToggleState = TRUE;
 
     u8 RendererFogAlphas[MAX_OUTPUT_FOG_ALPHA_COUNT];
 
@@ -71,14 +74,11 @@ namespace RendererModuleValues
         0, 0, 0, 0, 4, 0, 0, 0, 0, 0
     }; // TODO
 
-    u32 RendererShadeMode = RENDERER_MODULE_SHADE_GOURAUD;
-    u32 RendererClearColor = GRAPCHICS_COLOR_WHITE;
-
     BOOL IsRendererToggleLambdaActive = TRUE;
 
     u32 PixelFormatSizes[MAX_USABLE_TEXTURE_FORMAT_INDEX_COUNT] =
     {
-           0, 1, 1, 2, 2, 3, 4, 2, 1, 2, 2, 2, 8, 16, 16, 0, 0, 0, 0, 2, 3, 0, 0, 2, 4, 2, 4, 2, 4, 4, 0, 0, 0, 0
+        0, 1, 1, 2, 2, 3, 4, 2, 1, 2, 2, 2, 8, 16, 16, 0, 0, 0, 0, 2, 3, 0, 0, 2, 4, 2, 4, 2, 4, 4, 0, 0, 0, 0
     }; // Size in Bytes
 
     BOOL IsTexturePaletteInactive = TRUE;

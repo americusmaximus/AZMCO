@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -60,23 +60,25 @@ namespace RendererModule
         ModuleDescriptor.Author = RENDERER_MODULE_AUTHOR;
         ModuleDescriptor.ActiveTextureFormatStatesCount = MAX_USABLE_TEXTURE_FORMAT_COUNT;
         ModuleDescriptor.TextureFormatStates = RendererTextureFormatStates;
+
         ModuleDescriptor.ActiveUnknownValuesCount = MAX_ACTIVE_UNKNOWN_COUNT;
         ModuleDescriptor.UnknownValues = UnknownArray06;
+
         ModuleDescriptor.Capabilities.Capabilities = ModuleDescriptorDeviceCapabilities;
 
         strcpy(ModuleDescriptor.Name, RENDERER_MODULE_NAME);
 
-        AcquireRendererModuleDescriptor((RendererModuleDescriptor*)&ModuleDescriptor, ENVIRONMENT_SECTION_NAME);
+        AcquireRendererModuleDescriptor(&ModuleDescriptor, ENVIRONMENT_SECTION_NAME);
 
-        return (RendererModuleDescriptor*)&ModuleDescriptor;
+        return &ModuleDescriptor;
     }
 
     // 0x600012d0
     // a.k.a. THRASH_clearwindow
     DLLAPI u32 STDCALLAPI ClearGameWindow(void)
     {
-        return ClearRendererViewPort(State.ViewPort.X0, State.ViewPort.Y0,
-            State.ViewPort.X1, State.ViewPort.Y1, State.Settings.IsWindow);
+        return ClearRendererViewPort(
+            State.ViewPort.X0, State.ViewPort.Y0, State.ViewPort.X1, State.ViewPort.Y1, State.Settings.IsWindow);
     }
 
     // 0x600013f0
@@ -211,29 +213,29 @@ namespace RendererModule
     {
         State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_LINELIST, 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_LINELIST, 2)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_LINELIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[1].StartIndex = 2;
+            State.Data.Packets.Packets[1].Type = D3DPT_LINELIST;
+            State.Data.Packets.Packets[1].Count = 1;
+            State.Data.Packets.Packets[1].Size = 2;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_LINELIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_LINELIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 2;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINELIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_LINELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 2;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -310,18 +312,13 @@ namespace RendererModule
 
         State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
 
-        u32 value = count & 0x80000001;
-        BOOL allowed = value == 0;
+        if ((count % 2) != 0) { return; }
 
-        if ((s32)value < 0) { allowed = (value - 1 | 0xfffffffe) == 0xffffffff; }
+        if (AreRenderPacketsComplete(D3DPT_LINESTRIP, count + 1)) { RenderAllPackets(); }
 
-        if (!allowed) { return; }
-
-        if (IsNotEnoughRenderPackets(D3DPT_LINESTRIP, count + 1)) { RenderAllPackets(); }
-
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINESTRIP;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 1;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_LINESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 1;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -359,29 +356,29 @@ namespace RendererModule
     {
         State.Data.Counters.Vertexes = State.Data.Counters.Vertexes + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_POINTLIST, 1)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_POINTLIST, 1)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_POINTLIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[1].StartIndex = 1;
+            State.Data.Packets.Packets[0].Type = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[0].Count = 1;
+            State.Data.Packets.Packets[0].Size = 1;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_POINTLIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_POINTLIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 1;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_POINTLIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 1;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -440,29 +437,29 @@ namespace RendererModule
     {
         State.Data.Counters.Quads = State.Data.Counters.Quads + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 6)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLELIST, 6)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 2;
-            State.Data.Packets.Packets[1].StartIndex = 6;
+            State.Data.Packets.Packets[0].Type = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[0].Count = 2;
+            State.Data.Packets.Packets[0].Size = 6;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_TRIANGLELIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 2;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 6;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 6;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 2;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 6;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 6;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -624,29 +621,29 @@ namespace RendererModule
         {
             State.Data.Counters.Triangles = State.Data.Counters.Triangles + 1;
 
-            if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 3)) { RenderAllPackets(); }
+            if (AreRenderPacketsComplete(D3DPT_TRIANGLELIST, 3)) { RenderAllPackets(); }
 
             if (State.Data.Packets.Count == 0)
             {
-                State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
-                State.Data.Packets.Packets[1].PrimitiveCount = 1;
-                State.Data.Packets.Packets[1].StartIndex = 3;
+                State.Data.Packets.Packets[0].Type = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[0].Count = 1;
+                State.Data.Packets.Packets[0].Size = 3;
 
                 State.Data.Packets.Count = 1;
             }
-            else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+            else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_TRIANGLELIST)
             {
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                    State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                    State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 3;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].Size + 3;
             }
             else
             {
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 3;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size = 3;
 
                 State.Data.Packets.Count = State.Data.Packets.Count + 1;
             }
@@ -694,13 +691,13 @@ namespace RendererModule
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFans(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        State.Data.Counters.TriangleFans = State.Data.Counters.TriangleFans + 1;
+        State.Data.Counters.Fans = State.Data.Counters.Fans + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLEFAN, count + 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLEFAN, count + 2)) { RenderAllPackets(); }
 
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLEFAN;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLEFAN;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 2;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -793,13 +790,13 @@ namespace RendererModule
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        State.Data.Counters.TriangleStrips = State.Data.Counters.TriangleStrips + 1;
+        State.Data.Counters.Strips = State.Data.Counters.Strips + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLESTRIP, count + 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLESTRIP, count + 2)) { RenderAllPackets(); }
 
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLESTRIP;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 2;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -969,8 +966,8 @@ namespace RendererModule
         State.Data.Counters.Triangles = 0;
         State.Data.Counters.Quads = 0;
         State.Data.Counters.Lines = 0;
-        State.Data.Counters.TriangleStrips = 0;
-        State.Data.Counters.TriangleFans = 0;
+        State.Data.Counters.Strips = 0;
+        State.Data.Counters.Fans = 0;
         State.Data.Counters.Vertexes = 0;
 
         BeginRendererScene();
@@ -2837,8 +2834,22 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI WriteRectangles(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels, const u32 stride)
     {
-        // TODO NOT IMPLEMENTED
+        RendererModuleWindowLock* state = LockGameWindow();
 
-        return RENDERER_MODULE_FAILURE;
+        if (state == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 multiplier = state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8
+            ? 4 : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8 ? 3 : 2);
+
+        const u32 length = multiplier * width;
+
+        for (u32 xx = 0; xx < height; xx++)
+        {
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+
+            CopyMemory((void*)((addr)state->Data + (addr)offset), &pixels[xx * length], length);
+        }
+
+        return UnlockGameWindow(NULL);
     }
 }

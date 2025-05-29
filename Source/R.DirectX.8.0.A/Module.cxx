@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,7 @@ namespace RendererModule
     DLLAPI u32 STDCALLAPI ClearGameWindow(void)
     {
         return ClearRendererViewPort(State.ViewPort.X0, State.ViewPort.Y0,
-            State.ViewPort.X1 + State.ViewPort.X0, State.ViewPort.Y0 + State.ViewPort.Y1,
+            State.ViewPort.X0 + State.ViewPort.X1, State.ViewPort.Y0 + State.ViewPort.Y1,
             State.Window.Surface == State.DX.Surfaces.Surfaces[3]); // TODO
     }
 
@@ -101,7 +101,7 @@ namespace RendererModule
         vp.X = x0;
         vp.Y = y0;
         vp.MinZ = 0.0f;
-        vp.MaxZ = 0.9999847f;
+        vp.MaxZ = 0.99998474f;
         vp.Width = x1 - x0;
         vp.Height = y1 - y0;
 
@@ -166,29 +166,29 @@ namespace RendererModule
     {
         State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_LINELIST, 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_LINELIST, 2)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_LINELIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[1].StartIndex = 2;
+            State.Data.Packets.Packets[0].Type = D3DPT_LINELIST;
+            State.Data.Packets.Packets[0].Count = 1;
+            State.Data.Packets.Packets[0].Size = 2;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_LINELIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_LINELIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 2;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINELIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_LINELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 2;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -197,8 +197,8 @@ namespace RendererModule
         State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
             RendererVertexSize * 2, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
 
-        memcpy(buffer, a, RendererVertexSize);
-        memcpy((void*)((addr)buffer + (addr)RendererVertexSize), b, RendererVertexSize);
+        CopyMemory(buffer, a, RendererVertexSize);
+        CopyMemory((void*)((addr)buffer + (addr)RendererVertexSize), b, RendererVertexSize);
 
         UpdateVertexValues((RTLVX2*)buffer);
         UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)RendererVertexSize));
@@ -216,32 +216,34 @@ namespace RendererModule
 
         State.Data.Counters.Lines = State.Data.Counters.Lines + count;
 
-        u32 a = 0;
-        u32 b = 0;
+        u32 indxA = 0, indxB = 0;
 
         for (u32 x = 0; x < count; x++)
         {
-            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 2));
+            switch (RendererIndexSize)
+            {
+            case RENDERER_MODULE_INDEX_SIZE_1:
+            {
+                indxA = ((u8*)indexes)[x * 2 + 0];
+                indxB = ((u8*)indexes)[x * 2 + 1]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8:
+            {
+                indxA = ((u16*)indexes)[x * 2 + 0];
+                indxB = ((u16*)indexes)[x * 2 + 1]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_4:
+            {
+                indxA = ((u32*)indexes)[x * 2 + 0];
+                indxB = ((u32*)indexes)[x * 2 + 1]; break;
+            }
+            }
 
-            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
-            {
-                a = ((u8*)indxs)[0];
-                b = ((u8*)indxs)[1];
-            }
-            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
-                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
-            {
-                a = ((u16*)indxs)[0];
-                b = ((u16*)indxs)[1];
-            }
-            else
-            {
-                a = ((u32*)indxs)[0];
-                b = ((u32*)indxs)[1];
-            }
+            RVX* a = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxA));
+            RVX* b = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxB));
 
-            DrawLine((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)));
+            DrawLine(a, b);
         }
     }
 
@@ -251,9 +253,9 @@ namespace RendererModule
     {
         if ((s32)count <= 0) { return; }
 
-        const RTLVX* vs = (RTLVX*)vertexes;
+        const RTLVX* points = (RTLVX*)vertexes;
 
-        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[x + 0], (RVX*)&vs[x + 1]); }
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&points[x + 0], (RVX*)&points[x + 1]); }
     }
 
     // 0x60002af0
@@ -265,18 +267,13 @@ namespace RendererModule
 
         State.Data.Counters.Lines = State.Data.Counters.Lines + 1;
 
-        u32 value = count & 0x80000001;
-        BOOL allowed = value == 0;
+        if ((count % 2) != 0) { return; }
 
-        if ((s32)value < 0) { allowed = (value - 1 | 0xfffffffe) == 0xffffffff; }
+        if (AreRenderPacketsComplete(D3DPT_LINESTRIP, count + 1)) { RenderAllPackets(); }
 
-        if (!allowed) { return; }
-
-        if (IsNotEnoughRenderPackets(D3DPT_LINESTRIP, count + 1)) { RenderAllPackets(); }
-
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_LINESTRIP;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 1;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_LINESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 1;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -288,17 +285,17 @@ namespace RendererModule
         {
             u32 indx = 0;
 
+            switch (RendererIndexSize)
             {
-                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
-
-                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
-                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
-                else { indx = ((u32*)indxs)[0]; }
+            case RENDERER_MODULE_INDEX_SIZE_1: { indx = ((u8*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8: { indx = ((u16*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_4: { indx = ((u32*)indexes)[x]; break; }
             }
 
             RVX* vertex = (RVX*)((addr)buffer + (addr)(indx * RendererVertexSize));
 
-            memcpy(vertex, (RVX*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+            CopyMemory(vertex, (RVX*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
 
             UpdateVertexValues((RTLVX2*)vertex);
         }
@@ -314,29 +311,29 @@ namespace RendererModule
     {
         State.Data.Counters.Vertexes = State.Data.Counters.Vertexes + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_POINTLIST, 1)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_POINTLIST, 1)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_POINTLIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[1].StartIndex = 1;
+            State.Data.Packets.Packets[0].Type = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[0].Count = 1;
+            State.Data.Packets.Packets[0].Size = 1;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_POINTLIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_POINTLIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 1;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_POINTLIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_POINTLIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 1;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -345,7 +342,7 @@ namespace RendererModule
         State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
             RendererVertexSize, (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
 
-        memcpy(buffer, vertex, RendererVertexSize);
+        CopyMemory(buffer, vertex, RendererVertexSize);
 
         UpdateVertexValues((RTLVX2*)buffer);
 
@@ -366,12 +363,12 @@ namespace RendererModule
         {
             u32 indx = 0;
 
+            switch (RendererIndexSize)
             {
-                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
-
-                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
-                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
-                else { indx = ((u32*)indxs)[0]; }
+            case RENDERER_MODULE_INDEX_SIZE_1: { indx = ((u8*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8: { indx = ((u16*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_4: { indx = ((u32*)indexes)[x]; break; }
             }
 
             DrawPoint((RVX*)((addr)vertexes + (addr)(indx * RendererVertexSize)));
@@ -384,9 +381,9 @@ namespace RendererModule
     {
         if ((s32)count <= 0) { return; }
 
-        const RTLVX* vs = (RTLVX*)vertexes;
+        RTLVX* points = (RTLVX*)vertexes;
 
-        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&vs[x + 0]); }
+        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&points[x]); }
     }
 
     // 0x600026b0
@@ -395,29 +392,29 @@ namespace RendererModule
     {
         State.Data.Counters.Quads = State.Data.Counters.Quads + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 6)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLELIST, 6)) { RenderAllPackets(); }
 
         if (State.Data.Packets.Count == 0)
         {
-            State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
-            State.Data.Packets.Packets[1].PrimitiveCount = 2;
-            State.Data.Packets.Packets[1].StartIndex = 6;
+            State.Data.Packets.Packets[0].Type = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[0].Count = 2;
+            State.Data.Packets.Packets[0].Size = 6;
 
             State.Data.Packets.Count = 1;
         }
-        else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+        else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_TRIANGLELIST)
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count + 2;
 
-            State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 6;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size + 6;
         }
         else
         {
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 2;
-            State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 6;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLELIST;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Count = 2;
+            State.Data.Packets.Packets[State.Data.Packets.Count].Size = 6;
 
             State.Data.Packets.Count = State.Data.Packets.Count + 1;
         }
@@ -428,37 +425,37 @@ namespace RendererModule
 
         // A
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 0)));
         }
 
         // B
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 1)));
         }
 
         // C
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 2)));
         }
 
         // A
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 3)), a, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 3)), a, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 3)));
         }
 
         // C
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 4)), c, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 4)), c, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 4)));
         }
 
         // D
         {
-            memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 5)), d, RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 5)), d, RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 5)));
         }
 
@@ -475,42 +472,42 @@ namespace RendererModule
 
         State.Data.Counters.Quads = State.Data.Counters.Quads + count;
 
-        u32 a = 0;
-        u32 b = 0;
-        u32 c = 0;
-        u32 d = 0;
+        u32 indxA = 0, indxB = 0, indxC = 0, indxD = 0;
 
         for (u32 x = 0; x < count; x++)
         {
-            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 4));
+            switch (RendererIndexSize)
+            {
+            case RENDERER_MODULE_INDEX_SIZE_1:
+            {
+                indxA = ((u8*)indexes)[x * 4 + 0];
+                indxB = ((u8*)indexes)[x * 4 + 1];
+                indxC = ((u8*)indexes)[x * 4 + 2];
+                indxD = ((u8*)indexes)[x * 4 + 3]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8:
+            {
+                indxA = ((u16*)indexes)[x * 4 + 0];
+                indxB = ((u16*)indexes)[x * 4 + 1];
+                indxC = ((u16*)indexes)[x * 4 + 2];
+                indxD = ((u16*)indexes)[x * 4 + 3]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_4:
+            {
+                indxA = ((u32*)indexes)[x * 4 + 0];
+                indxB = ((u32*)indexes)[x * 4 + 1];
+                indxC = ((u32*)indexes)[x * 4 + 2];
+                indxD = ((u32*)indexes)[x * 4 + 3]; break;
+            }
+            }
 
-            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
-            {
-                a = ((u8*)indxs)[0];
-                b = ((u8*)indxs)[1];
-                c = ((u8*)indxs)[2];
-                d = ((u8*)indxs)[3];
-            }
-            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
-                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
-            {
-                a = ((u16*)indxs)[0];
-                b = ((u16*)indxs)[1];
-                c = ((u16*)indxs)[2];
-                d = ((u16*)indxs)[3];
-            }
-            else
-            {
-                a = ((u32*)indxs)[0];
-                b = ((u32*)indxs)[1];
-                c = ((u32*)indxs)[2];
-                d = ((u32*)indxs)[3];
-            }
+            RVX* a = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxA));
+            RVX* b = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxB));
+            RVX* c = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxC));
+            RVX* d = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxD));
 
-            DrawQuad((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(c * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(d * RendererVertexSize)));
+            DrawQuad(a, b, c, d);
         }
     }
 
@@ -519,17 +516,16 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawSprite(RVX* a, RVX* b)
     {
-        RTLVX c;
-        memcpy(&c, b, RendererVertexSize);
+        RTLVX2 c, d;
+
+        CopyMemory(&c, b, RendererVertexSize);
+        CopyMemory(&d, b, RendererVertexSize);
 
         c.XYZ.Y = ((RTLVX*)a)->XYZ.Y;
-        c.UV.Y = ((RTLVX*)a)->UV.Y;
-
-        RTLVX d;
-        memcpy(&d, b, RendererVertexSize);
+        c.UV1.Y = ((RTLVX*)a)->UV.Y;
 
         d.XYZ.X = ((RTLVX*)a)->XYZ.X;
-        d.UV.X = ((RTLVX*)a)->XYZ.X;
+        d.UV1.X = ((RTLVX*)a)->UV.X;
 
         DrawQuad(a, (RVX*)&c, b, (RVX*)&d);
     }
@@ -541,32 +537,32 @@ namespace RendererModule
     {
         if ((s32)count <= 0) { return; }
 
-        u32 a = 0;
-        u32 b = 0;
+        u32 indxA = 0, indxB = 0;
 
         for (u32 x = 0; x < count; x++)
         {
-            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 2));
+            switch (RendererIndexSize)
+            {
+            case RENDERER_MODULE_INDEX_SIZE_1:
+            {
+                indxA = ((u8*)indexes)[x * 2 + 0];
+                indxB = ((u8*)indexes)[x * 2 + 1]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8:
+            {
+                indxA = ((u16*)indexes)[x * 2 + 0];
+                indxB = ((u16*)indexes)[x * 2 + 1]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_4:
+            {
+                indxA = ((u32*)indexes)[x * 2 + 0];
+                indxB = ((u32*)indexes)[x * 2 + 1]; break;
+            }
+            }
 
-            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
-            {
-                a = ((u8*)indxs)[0];
-                b = ((u8*)indxs)[1];
-            }
-            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
-                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
-            {
-                a = ((u16*)indxs)[0];
-                b = ((u16*)indxs)[1];
-            }
-            else
-            {
-                a = ((u32*)indxs)[0];
-                b = ((u32*)indxs)[1];
-            }
-
-            DrawSprite((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)));
+            DrawSprite((RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxA)),
+                (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxB)));
         }
     }
 
@@ -579,29 +575,29 @@ namespace RendererModule
         {
             State.Data.Counters.Triangles = State.Data.Counters.Triangles + 1;
 
-            if (IsNotEnoughRenderPackets(D3DPT_TRIANGLELIST, 3)) { RenderAllPackets(); }
+            if (AreRenderPacketsComplete(D3DPT_TRIANGLELIST, 3)) { RenderAllPackets(); }
 
             if (State.Data.Packets.Count == 0)
             {
-                State.Data.Packets.Packets[1].PrimitiveType = D3DPT_TRIANGLELIST;
-                State.Data.Packets.Packets[1].PrimitiveCount = 1;
-                State.Data.Packets.Packets[1].StartIndex = 3;
+                State.Data.Packets.Packets[0].Type = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[0].Count = 1;
+                State.Data.Packets.Packets[0].Size = 3;
 
                 State.Data.Packets.Count = 1;
             }
-            else if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == D3DPT_TRIANGLELIST)
+            else if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == D3DPT_TRIANGLELIST)
             {
-                State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount =
-                    State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveCount + 1;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].Count + 1;
 
-                State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex =
-                    State.Data.Packets.Packets[State.Data.Packets.Count].StartIndex + 3;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size =
+                    State.Data.Packets.Packets[State.Data.Packets.Count].Size + 3;
             }
             else
             {
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLELIST;
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = 1;
-                State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = 3;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLELIST;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Count = 1;
+                State.Data.Packets.Packets[State.Data.Packets.Count].Size = 3;
 
                 State.Data.Packets.Count = State.Data.Packets.Count + 1;
             }
@@ -612,19 +608,19 @@ namespace RendererModule
 
             // A
             {
-                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
+                CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 0)), a, RendererVertexSize);
                 UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 0)));
             }
 
             // B
             {
-                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
+                CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 1)), b, RendererVertexSize);
                 UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 1)));
             }
 
             // C
             {
-                memcpy((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
+                CopyMemory((void*)((addr)buffer + (addr)(RendererVertexSize * 2)), c, RendererVertexSize);
                 UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(RendererVertexSize * 2)));
             }
 
@@ -640,22 +636,22 @@ namespace RendererModule
     {
         if ((s32)count <= 0) { return; }
 
-        const RTLVX* vs = (RTLVX*)vertexes;
+        const RTLVX* points = (RTLVX*)vertexes;
 
-        for (u32 x = 0; x < count; x++) { DrawTriangle(vertexes, (RVX*)&vs[x + 1], (RVX*)&vs[x + 2]); }
+        for (u32 x = 0; x < count; x++) { DrawTriangle(vertexes, (RVX*)&points[x + 1], (RVX*)&points[x + 2]); }
     }
 
     // 0x60002580
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFans(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        State.Data.Counters.TriangleFans = State.Data.Counters.TriangleFans + 1;
+        State.Data.Counters.Fans = State.Data.Counters.Fans + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLEFAN, count + 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLEFAN, count + 2)) { RenderAllPackets(); }
 
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLEFAN;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLEFAN;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 2;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -667,15 +663,15 @@ namespace RendererModule
         {
             u32 indx = 0;
 
+            switch (RendererIndexSize)
             {
-                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
-
-                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
-                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
-                else { indx = ((u32*)indxs)[0]; }
+            case RENDERER_MODULE_INDEX_SIZE_1: { indx = ((u8*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8: { indx = ((u16*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_4: { indx = ((u32*)indexes)[x]; break; }
             }
 
-            memcpy((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(x * RendererVertexSize)));
         }
 
@@ -690,39 +686,40 @@ namespace RendererModule
     {
         if ((s32)count <= 0) { return; }
 
-        u32 a = 0;
-        u32 b = 0;
-        u32 c = 0;
-
         State.Data.Counters.Triangles = State.Data.Counters.Triangles + count;
+
+        u32 indxA = 0, indxB = 0, indxC = 0;
 
         for (u32 x = 0; x < count; x++)
         {
-            void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize * 3));
+            switch (RendererIndexSize)
+            {
+            case RENDERER_MODULE_INDEX_SIZE_1:
+            {
+                indxA = ((u8*)indexes)[x * 3 + 0];
+                indxB = ((u8*)indexes)[x * 3 + 1];
+                indxC = ((u8*)indexes)[x * 3 + 2]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8:
+            {
+                indxA = ((u16*)indexes)[x * 3 + 0];
+                indxB = ((u16*)indexes)[x * 3 + 1];
+                indxB = ((u16*)indexes)[x * 3 + 2]; break;
+            }
+            case RENDERER_MODULE_INDEX_SIZE_4:
+            {
+                indxA = ((u32*)indexes)[x * 3 + 0];
+                indxB = ((u32*)indexes)[x * 3 + 1];
+                indxB = ((u32*)indexes)[x * 3 + 2]; break;
+            }
+            }
 
-            if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1)
-            {
-                a = ((u8*)indxs)[0];
-                b = ((u8*)indxs)[1];
-                c = ((u8*)indxs)[2];
-            }
-            else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2
-                || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4)
-            {
-                a = ((u16*)indxs)[0];
-                b = ((u16*)indxs)[1];
-                c = ((u16*)indxs)[2];
-            }
-            else
-            {
-                a = ((u32*)indxs)[0];
-                b = ((u32*)indxs)[1];
-                c = ((u32*)indxs)[2];
-            }
+            RVX* a = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxA));
+            RVX* b = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxB));
+            RVX* c = (RVX*)((addr)vertexes + (addr)(RendererVertexSize * indxC));
 
-            DrawTriangle((RVX*)((addr)vertexes + (addr)(a * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(b * RendererVertexSize)),
-                (RVX*)((addr)vertexes + (addr)(c * RendererVertexSize)));
+            DrawTriangle(a, b, c);
         }
     }
 
@@ -748,13 +745,13 @@ namespace RendererModule
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        State.Data.Counters.TriangleStrips = State.Data.Counters.TriangleStrips + 1;
+        State.Data.Counters.Strips = State.Data.Counters.Strips + 1;
 
-        if (IsNotEnoughRenderPackets(D3DPT_TRIANGLESTRIP, count + 2)) { RenderAllPackets(); }
+        if (AreRenderPacketsComplete(D3DPT_TRIANGLESTRIP, count + 2)) { RenderAllPackets(); }
 
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveType = D3DPT_TRIANGLESTRIP;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].PrimitiveCount = count;
-        State.Data.Packets.Packets[State.Data.Packets.Count + 1].StartIndex = count + 2;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Type = D3DPT_TRIANGLESTRIP;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Count = count;
+        State.Data.Packets.Packets[State.Data.Packets.Count].Size = count + 2;
 
         State.Data.Packets.Count = State.Data.Packets.Count + 1;
 
@@ -762,25 +759,25 @@ namespace RendererModule
         State.Data.Vertexes.Buffer->Lock(State.Data.Vertexes.Count * RendererVertexSize,
             RendererVertexSize * (count + 2), (BYTE**)&buffer, D3DLOCK_NOOVERWRITE);
 
-        for (u32 x = 0; x < (count + 2); x++)
+        for (u32 x = 0; x < count + 2; x++)
         {
             u32 indx = 0;
 
+            switch (RendererIndexSize)
             {
-                void* indxs = (void*)((addr)indexes + (addr)(x * RendererIndexSize));
-
-                if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_1) { indx = ((u8*)indxs)[0]; }
-                else if (RendererIndexSize == RENDERER_MODULE_INDEX_SIZE_2 || RendererIndexSize != RENDERER_MODULE_INDEX_SIZE_4) { indx = ((u16*)indxs)[0]; }
-                else { indx = ((u32*)indxs)[0]; }
+            case RENDERER_MODULE_INDEX_SIZE_1: { indx = ((u8*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_2:
+            case RENDERER_MODULE_INDEX_SIZE_8: { indx = ((u16*)indexes)[x]; break; }
+            case RENDERER_MODULE_INDEX_SIZE_4: { indx = ((u32*)indexes)[x]; break; }
             }
 
-            memcpy((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
+            CopyMemory((void*)((addr)buffer + (addr)(x * RendererVertexSize)), (void*)((addr)vertexes + (addr)(indx * RendererVertexSize)), RendererVertexSize);
             UpdateVertexValues((RTLVX2*)((addr)buffer + (addr)(x * RendererVertexSize)));
         }
 
         State.Data.Vertexes.Buffer->Unlock();
 
-        State.Data.Vertexes.Count = State.Data.Vertexes.Count + (count + 2);
+        State.Data.Vertexes.Count = State.Data.Vertexes.Count + count + 2;
     }
 
     // 0x600013d0
@@ -956,8 +953,8 @@ namespace RendererModule
         State.Data.Counters.Triangles = 0;
         State.Data.Counters.Quads = 0;
         State.Data.Counters.Lines = 0;
-        State.Data.Counters.TriangleStrips = 0;
-        State.Data.Counters.TriangleFans = 0;
+        State.Data.Counters.Strips = 0;
+        State.Data.Counters.Fans = 0;
         State.Data.Counters.Vertexes = 0;
 
         BeginRendererScene();
@@ -975,9 +972,23 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI ReadRectangles(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels, const u32 stride)
     {
-        // TODO NOT IMPLEMENTED
+        const RendererModuleWindowLock* state = LockGameWindow();
 
-        return RENDERER_MODULE_FAILURE;
+        if (state == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 multiplier = state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8
+            ? 4 : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8 ? 3 : 2);
+
+        const u32 length = stride != 0 ? stride : multiplier * width;
+
+        for (u32 xx = 0; xx < height; xx++)
+        {
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+
+            CopyMemory(&pixels[xx * length], (void*)((addr)state->Data + (addr)offset), length);
+        }
+
+        return UnlockGameWindow(NULL);
     }
 
     // 0x60003380
@@ -1807,7 +1818,7 @@ namespace RendererModule
 
             D3DGAMMARAMP gamma;
 
-            for (u32 x = 0; x < 256; x++)
+            for (u32 x = 0; x < MAX_TEXTURE_PALETTE_COLOR_COUNT; x++)
             {
                 gamma.red[x] = (u16)Clamp<u32>((u32)(State.DX.State.Gamma.red[x] * modifier + 0.5f), U16_MIN, U16_MAX);
                 gamma.green[x] = (u16)Clamp<u32>((u32)(State.DX.State.Gamma.green[x] * modifier + 0.5f), U16_MIN, U16_MAX);
@@ -2137,7 +2148,7 @@ namespace RendererModule
         {
             if (value == NULL) { return RENDERER_MODULE_FAILURE; }
 
-            memcpy(value, &State.Device.Capabilities, sizeof(RendererModuleDeviceCapabilities8));
+            CopyMemory(value, &State.Device.Capabilities, sizeof(RendererModuleDeviceCapabilities8));
 
             return (addr)value;
         }
@@ -2654,9 +2665,14 @@ namespace RendererModule
     // a.k.a. THRASH_tupdaterect
     DLLAPI RendererTexture* STDCALLAPI UpdateTextureRectangle(RendererTexture* tex, const u32* pixels, const u32* palette, const s32 x, const s32 y, const s32 width, const s32 height, const s32 size, const s32 level)
     {
-        // TODO NOT IMPLEMENTED
+        if (State.Lock.IsActive) { UnlockGameWindow(NULL); }
 
-        return RENDERER_MODULE_FAILURE;
+        if (tex != NULL && pixels != NULL)
+        {
+            return UpdateRendererTextureRectangle(tex, pixels, palette, x, y, width, height, size, level) ? tex : NULL;
+        }
+
+        return NULL;
     }
     
     // 0x600016f0
@@ -2684,7 +2700,7 @@ namespace RendererModule
 
         return RENDERER_MODULE_SUCCESS;
     }
-    
+
     // 0x60001160
     // a.k.a. THRASH_window
     DLLAPI u32 STDCALLAPI SelectGameWindow(const u32 indx)
@@ -2810,8 +2826,22 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI u32 STDCALLAPI WriteRectangles(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels, const u32 stride)
     {
-        // TODO NOT IMPLEMENTED
+        RendererModuleWindowLock* state = LockGameWindow();
 
-        return RENDERER_MODULE_FAILURE;
+        if (state == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 multiplier = state->Format == RENDERER_PIXEL_FORMAT_A8R8G8B8
+            ? 4 : (state->Format == RENDERER_PIXEL_FORMAT_R8G8B8 ? 3 : 2);
+
+        const u32 length = multiplier * width;
+
+        for (u32 xx = 0; xx < height; xx++)
+        {
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+
+            CopyMemory((void*)((addr)state->Data + (addr)offset), &pixels[xx * length], length);
+        }
+
+        return UnlockGameWindow(NULL);
     }
 }

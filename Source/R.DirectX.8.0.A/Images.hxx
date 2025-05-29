@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2024 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ SOFTWARE.
 
 #define IMAGE_CONTAINER_OPTIONS_COLOR               0x00000001
 #define IMAGE_CONTAINER_OPTIONS_BUMP_MAP            0x00000002
-#define IMAGE_CONTAINER_OPTIONS_UNKNOWN_4           0x00000004
+#define IMAGE_CONTAINER_OPTIONS_UNKNOWN_4           0x00000004 /* TODO */
 
 #define IMAGE_CONTAINER_OPTIONS_LOW_VALUE_MASK      0x0000FFFF
 #define IMAGE_CONTAINER_OPTIONS_HIGH_VALUE_MASK     0xFFF00000
@@ -52,11 +52,11 @@ namespace Images
 {
     enum ImageFormatDescriptorType
     {
-        IMAGE_FORMAT_DESCRIPTOR_TYPE_COLOR          = 0,
+        IMAGE_FORMAT_DESCRIPTOR_TYPE_RGB            = 0,
         IMAGE_FORMAT_DESCRIPTOR_TYPE_PALETTE        = 1,
         IMAGE_FORMAT_DESCRIPTOR_TYPE_LUMINANCE      = 2,
-        IMAGE_FORMAT_DESCRIPTOR_TYPE_BUMPMAP        = 3,
-        IMAGE_FORMAT_DESCRIPTOR_TYPE_FORCE_DWORD    = 0x7fffffff
+        IMAGE_FORMAT_DESCRIPTOR_TYPE_UV             = 3,
+        IMAGE_FORMAT_DESCRIPTOR_TYPE_FORCE_DWORD    = 0x7FFFFFFF
     };
 
     struct ImageFormatDescriptor

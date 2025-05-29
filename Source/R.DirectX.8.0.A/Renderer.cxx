@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -697,9 +697,9 @@ namespace RendererModule
         {
             const RendererPacket* packet = &State.Data.Packets.Packets[x + 1];
 
-            State.DX.Device->DrawPrimitive(packet->PrimitiveType, State.Data.Vertexes.StartIndex, packet->PrimitiveCount);
+            State.DX.Device->DrawPrimitive(packet->Type, State.Data.Vertexes.StartIndex, packet->Count);
 
-            State.Data.Vertexes.StartIndex = State.Data.Vertexes.StartIndex + packet->StartIndex;
+            State.Data.Vertexes.StartIndex = State.Data.Vertexes.StartIndex + packet->Size;
         }
 
         State.Data.Packets.Count = 0;
@@ -1389,7 +1389,7 @@ namespace RendererModule
     }
 
     // 0x60001d80
-    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count)
+    BOOL AreRenderPacketsComplete(const D3DPRIMITIVETYPE type, const u32 count)
     {
         u32 indx = 0;
         BOOL list = FALSE;
@@ -1397,7 +1397,7 @@ namespace RendererModule
 
         if (State.Data.Packets.Count != 0)
         {
-            if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == type)
+            if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == type)
             {
                 switch (type)
                 {
@@ -1432,7 +1432,7 @@ namespace RendererModule
         {
             u32 max = 0;
 
-            if (list) { max = State.Data.Packets.Packets[indx + 1].PrimitiveCount; }
+            if (list) { max = State.Data.Packets.Packets[indx + 1].Count; }
 
             switch (type)
             {
@@ -1890,7 +1890,7 @@ namespace RendererModule
             rect.y1 = 0;
             rect.y2 = desc.Height;
 
-            if (UpdateRendererTextureSurface(surface, NULL, &rect, px, tex->TextureFormat, lock.Pitch,
+            if (UpdateRendererTextureLevel(surface, NULL, &rect, px, tex->TextureFormat, lock.Pitch,
                 NULL, &rect, IMAGE_CONTAINER_OPTIONS_COLOR, GRAPCHICS_COLOR_BLACK) != D3D_OK)
             {
                 surface->Release(); return FALSE;
@@ -1931,8 +1931,85 @@ namespace RendererModule
         return FALSE;
     }
 
+    // 0x60007450
+    BOOL UpdateRendererTextureRectangle(RendererTexture* tex, const u32* pixels, const u32* palette, const s32 x, const s32 y, const s32 width, const s32 height, const s32 size, const s32 level)
+    {
+        if (tex == NULL) { return FALSE; }
+        if (pixels == NULL && palette == NULL) { return FALSE; }
+
+        if (-1 < x && -1 < y && 0 < width && 0 < height && 0 < size && -1 < level)
+        {
+            if (palette == NULL || UpdateRendererTexturePalette(tex, palette))
+            {
+                if (pixels == NULL) { return TRUE; }
+
+                IDirect3DSurface8* surface = NULL;
+                tex->Texture->GetSurfaceLevel(level, &surface);
+
+                D3DSURFACE_DESC desc;
+                ZeroMemory(&desc, sizeof(D3DSURFACE_DESC));
+
+                surface->GetDesc(&desc);
+
+                D3DRECT dst;
+
+                dst.x1 = x;
+                dst.x2 = x + width;
+                dst.y1 = y;
+                dst.y2 = height + y;
+
+                D3DRECT src;
+
+                src.x1 = 0;
+                src.x2 = width;
+                src.y1 = 0;
+                src.y2 = height;
+
+                if (dst.x2 <= desc.Width && dst.y2 <= desc.Height)
+                {
+                    u32* px = (u32*)pixels;
+
+                    if (tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT1 || tex->PixelFormat == RENDERER_PIXEL_FORMAT_DXT3)
+                    {
+                        const u8 v0 = (*(u8*)((addr)px + (addr)0));
+                        const u8 v1 = (*(u8*)((addr)px + (addr)1));
+
+                        if ((v0 == 24 && v1 == 251) || (v0 == 26 && v1 == 251)) // TODO
+                        {
+                            px = (u32*)((addr)px + (addr)(2 * sizeof(u32)));
+                        }
+                    }
+
+                    if (UpdateRendererTextureLevel(surface,
+                        NULL, &dst, px, tex->TextureFormat, size,
+                        NULL, &src, IMAGE_CONTAINER_OPTIONS_COLOR, GRAPCHICS_COLOR_BLACK) == D3D_OK)
+                    {
+                        surface->Release();
+
+                        return TRUE;
+                    }
+
+                    surface->Release();
+                }
+            }
+        }
+
+        return FALSE;
+    }
+
+    // 0x60008ef6
+    ImageFormatDescriptor* AcquireImageFormatDescriptor(const D3DFORMAT format)
+    {
+        for (u32 x = 0; x < MAX_IMAGE_FORMAT_DESCRIPTOR_COUNT; x++)
+        {
+            if (ImageFormatDescriptors[x].Format == format) { return &ImageFormatDescriptors[x]; }
+        }
+
+        return NULL;
+    }
+
     // 0x60008f1a
-    HRESULT UpdateRendererTextureSurface(IDirect3DSurface8* surface,
+    HRESULT UpdateRendererTextureLevel(IDirect3DSurface8* surface,
         const u8* dpal, const D3DRECT* drect,
         const u32* pixels, const D3DFORMAT format, const u32 pitch,
         const u8* spal, const D3DRECT* srect, const u32 options, const u32 color)
@@ -2050,7 +2127,7 @@ namespace RendererModule
         srci.Palette = spal;
 
         const HRESULT result = InitializeImageContainer(&img, &dsti, &srci, options == IMAGE_CONTAINER_OPTIONS_INVALID
-            ? (AcquireImageFormatDescriptor(format)->Format == IMAGE_FORMAT_DESCRIPTOR_TYPE_BUMPMAP
+            ? (AcquireImageFormatDescriptor(format)->Format == IMAGE_FORMAT_DESCRIPTOR_TYPE_UV
                 ? (IMAGE_CONTAINER_OPTIONS_GRADIENT | IMAGE_CONTAINER_OPTIONS_BUMP_MAP) : (IMAGE_CONTAINER_OPTIONS_GRADIENT | IMAGE_CONTAINER_OPTIONS_UNKNOWN_4)) : options);
 
         surface->UnlockRect();
@@ -2058,16 +2135,5 @@ namespace RendererModule
         ReleaseImageContainer(&img);
 
         return result;
-    }
-
-    // 0x60008ef6
-    ImageFormatDescriptor* AcquireImageFormatDescriptor(const D3DFORMAT format)
-    {
-        for (u32 x = 0; x < MAX_IMAGE_FORMAT_DESCRIPTOR_COUNT; x++)
-        {
-            if (ImageFormatDescriptors[x].Format == format) { return &ImageFormatDescriptors[x]; }
-        }
-
-        return NULL;
     }
 }

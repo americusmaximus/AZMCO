@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Mathematics.Basic.hxx"
 #include "Graphics.Basic.hxx"
+// #include "Images.hxx" // TODO
+#include "Mathematics.Basic.hxx"
 #include "Renderer.hxx"
 #include "RendererValues.hxx"
 
@@ -32,6 +33,7 @@ SOFTWARE.
 
 #define MAX_SETTINGS_BUFFER_LENGTH 80
 
+// using namespace Images; // TODO
 using namespace Mathematics;
 using namespace Renderer;
 using namespace RendererModuleValues;
@@ -846,9 +848,9 @@ namespace RendererModule
         {
             const RendererPacket* packet = &State.Data.Packets.Packets[x];
 
-            State.DX.Device->DrawPrimitive(packet->PrimitiveType, State.Data.Vertexes.StartIndex, packet->PrimitiveCount);
+            State.DX.Device->DrawPrimitive(packet->Type, State.Data.Vertexes.StartIndex, packet->Count);
 
-            State.Data.Vertexes.StartIndex = State.Data.Vertexes.StartIndex + packet->StartIndex;
+            State.Data.Vertexes.StartIndex = State.Data.Vertexes.StartIndex + packet->Size;
         }
 
         State.Data.Packets.Count = 0;
@@ -1539,7 +1541,7 @@ namespace RendererModule
     }
 
     // 0x60001e10
-    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count)
+    BOOL AreRenderPacketsComplete(const D3DPRIMITIVETYPE type, const u32 count)
     {
         u32 indx = 0;
         BOOL list = FALSE;
@@ -1547,7 +1549,7 @@ namespace RendererModule
 
         if (State.Data.Packets.Count != 0)
         {
-            if (State.Data.Packets.Packets[State.Data.Packets.Count].PrimitiveType == type)
+            if (State.Data.Packets.Packets[State.Data.Packets.Count].Type == type)
             {
                 switch (type)
                 {
@@ -1582,7 +1584,7 @@ namespace RendererModule
         {
             u32 max = 0;
 
-            if (list) { max = State.Data.Packets.Packets[indx + 1].PrimitiveCount; }
+            if (list) { max = State.Data.Packets.Packets[indx + 1].Count; }
 
             switch (type)
             {
@@ -1983,7 +1985,7 @@ namespace RendererModule
             rect.y1 = 0;
             rect.y2 = desc.Height;
 
-            if (FUN_6000989a(surface, 0, &rect, px, tex->TextureFormat, lock.Pitch, 0, &rect, 1, 0) != 0)
+            if (UpdateRendererTextureSurface(surface, 0, &rect, px, tex->TextureFormat, lock.Pitch, 0, &rect, 1, 0) != 0)
             {
                 surface->Release();
 

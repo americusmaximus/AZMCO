@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 - 2025 Americus Maximus
+Copyright (c) 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Basic.hxx"
 #include "FPU.hxx"
 
 #include <float.h>
 
-u32 CONTROL; // 0x6001e01c
+#include <FPU.hxx>
 
-// 0x6000c7fc
-void FPUSTART()
-{
-    CONTROL = _controlfp(0, 0);
-    _controlfp(CONTROL | _RC_CHOP, _MCW_RC);
-}
+#define FPU_START_ADDRESS   0x6000C7FC
+#define FPU_END_ADDRESS     0x6000C81F
 
-// 0x6000c81f
-void FPUEND()
+#define BASE_ADDRESS        0x60000000
+
+typedef VOID(*FPUSTARTACTION)();
+typedef VOID(*FPUENDACTION)();
+
+#define MODE_COUNT          6
+
+BOOL FPU(HMODULE module)
 {
-    _controlfp(CONTROL, _MCW_RC);
+    u32 words[MODE_COUNT];
+    ZeroMemory(words, MODE_COUNT * sizeof(u32));
+
+    // #
+
+    // Get original x87 control word.
+    u32 result = __control87_2(0, 0, &words[0], 0);
+
+    ((FPUSTARTACTION)((addr)module + (addr)(FPU_START_ADDRESS - BASE_ADDRESS)))();
+
+    // Get the x87 control word after modification.
+    result = __control87_2(0, 0, &words[1], 0);
+
+    ((FPUENDACTION)((addr)module + (addr)(FPU_END_ADDRESS - BASE_ADDRESS)))();
+
+    // Get the x87 control word after modification.
+    result = __control87_2(0, 0, &words[2], 0);
+
+    // #
+
+    result = __control87_2(0, 0, &words[3], 0);
+
+    FPUSTART();
+
+    result = __control87_2(0, 0, &words[4], 0);
+
+    FPUEND();
+
+    result = __control87_2(0, 0, &words[5], 0);
+
+    return words[1] == words[4];
 }

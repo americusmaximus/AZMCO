@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 - 2025 Americus Maximus
+Copyright (c) 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Basic.hxx"
-#include "FPU.hxx"
+#pragma once
 
-#include <float.h>
+#include "Images.hxx"
+#include <Images.hxx>
 
-u32 CONTROL; // 0x6001e01c
-
-// 0x6000c7fc
-void FPUSTART()
-{
-    CONTROL = _controlfp(0, 0);
-    _controlfp(CONTROL | _RC_CHOP, _MCW_RC);
-}
-
-// 0x6000c81f
-void FPUEND()
-{
-    _controlfp(CONTROL, _MCW_RC);
-}
+BOOL LoadPixels(LPCSTR name, u32* pixels, u32* width, u32* height);
+BOOL SavePixels(LPCSTR name, const Images::ImageColor* pixels, const u32 width, const u32 height);
+BOOL SavePixels(LPCSTR name, const Images::ImageColor* pixels, const u32 width, const u32 height, const u32 stride);

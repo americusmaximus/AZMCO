@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2024 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -167,7 +167,10 @@ namespace Images
         {
             self->Source = InitializeAbstractImage(src);
 
-            if (self->Source != NULL/* && TODO NOT IMPLEMENTED */)
+            if (self->Source != NULL
+                && self->Destination->Options == self->Source->Options
+                &&
+                (TRUE /* && TODO NOT IMPLEMENTED */))
             {
                 if (self->Destination != NULL) { self->Destination->Self->Release(self->Destination, IMAGE_RELEASE_DISPOSE); self->Destination = NULL; }
                 if (self->Source != NULL) { self->Source->Self->Release(self->Source, IMAGE_RELEASE_DISPOSE); self->Source = NULL; }
@@ -195,6 +198,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_24, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageR8G8B8Self;
@@ -210,6 +215,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA8R8G8B8Self;
@@ -225,6 +232,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageX8R8G8B8Self;
@@ -240,6 +249,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageR5G6B5Self;
@@ -255,6 +266,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageX1R5G5B5Self;
@@ -270,6 +283,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA1R5G5B5Self;
@@ -285,6 +300,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA4R4G4B4Self;
@@ -300,6 +317,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_8, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageR3G3B2Self;
@@ -315,6 +334,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_8, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA8Self;
@@ -330,6 +351,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA8R3G3B2Self;
@@ -345,6 +368,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageX4R4G4B4Self;
@@ -360,6 +385,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_2);
 
                 result->Self = &ImageA8P8Self;
@@ -375,6 +402,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_8, IMAGE_OPTIONS_UNKNOWN_2);
 
                 result->Self = &ImageP8Self;
@@ -390,6 +419,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_8, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageL8Self;
@@ -405,6 +436,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA8L8Self;
@@ -420,6 +453,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_8, IMAGE_OPTIONS_UNKNOWN_1);
 
                 result->Self = &ImageA4L4Self;
@@ -435,6 +470,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageV8U8Self;
@@ -450,6 +487,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_16, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageL6V5U5Self;
@@ -465,6 +504,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageX8L8V8U8Self;
@@ -480,6 +521,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageQ8W8V8U8Self;
@@ -495,6 +538,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageV16U16Self;
@@ -510,6 +555,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageBitMap));
+
                 InitializeImageBitMap((ImageBitMap*)result, args, GRAPHICS_BITS_PER_PIXEL_32, IMAGE_OPTIONS_UNKNOWN_3);
 
                 result->Self = &ImageW11V11U10Self;
@@ -525,6 +572,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageDXT));
+
                 InitializeImageDXT((ImageDXT*)result, args);
 
                 result->Self = &ImageDXT1Self;
@@ -540,6 +589,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageDXT));
+
                 InitializeImageDXT((ImageDXT*)result, args);
 
                 result->Self = &ImageDXT2Self;
@@ -555,6 +606,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageDXT));
+
                 InitializeImageDXT((ImageDXT*)result, args);
 
                 result->Self = &ImageDXT3Self;
@@ -570,6 +623,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageDXT));
+
                 InitializeImageDXT((ImageDXT*)result, args);
 
                 result->Self = &ImageDXT4Self;
@@ -585,6 +640,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageDXT));
+
                 InitializeImageDXT((ImageDXT*)result, args);
 
                 result->Self = &ImageDXT5Self;
@@ -600,6 +657,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageUYVY));
+
                 InitializeImageUYVY((ImageUYVY*)result, args);
 
                 result->Self = &ImageUYVYSelf;
@@ -615,6 +674,8 @@ namespace Images
 
             if (result != NULL)
             {
+                ZeroMemory(result, sizeof(ImageUYVY));
+
                 InitializeImageUYVY((ImageUYVY*)result, args);
 
                 result->Self = &ImageYUY2Self;
@@ -659,12 +720,12 @@ namespace Images
 
         self->AreaStride = args->AreaStride;
 
-        memcpy(&self->Dimensions, &args->Dimensions, sizeof(ImageDimensions));
+        CopyMemory(&self->Dimensions, &args->Dimensions, sizeof(ImageDimensions));
 
         ImageColor color;
         AcquireImageColor(&color, args->Color);
 
-        memcpy(&self->Color, &color, sizeof(ImageColor));
+        CopyMemory(&self->Color, &color, sizeof(ImageColor));
         
         self->IsColor = args->Color != GRAPCHICS_COLOR_BLACK;
 
@@ -674,7 +735,7 @@ namespace Images
         self->IsBitMap = (bits != GRAPHICS_BITS_PER_PIXEL_0);
         self->Options = options;
 
-        if (self->Options == 2) // TODO
+        if (self->Options == IMAGE_OPTIONS_UNKNOWN_2)
         {
             self->Options = IMAGE_OPTIONS_UNKNOWN_1;
             self->IsPalette = TRUE;
@@ -754,10 +815,8 @@ namespace Images
     {
         for (u32 x = 0; x < self->Width; x++)
         {
-            if ((isnan(pixels[x].R) || isnan(self->Color.R)) != (pixels[x].R == self->Color.R)
-                && (isnan(pixels[x].G) || isnan(self->Color.G)) != (pixels[x].G == self->Color.G)
-                && (isnan(pixels[x].B) || isnan(self->Color.B)) != (pixels[x].B == self->Color.B)
-                && (isnan(pixels[x].A) || isnan(self->Color.A)) != (pixels[x].A == self->Color.A))
+            if (pixels[x].R != self->Color.R || pixels[x].G != self->Color.G
+                || pixels[x].B != self->Color.B || pixels[x].A != self->Color.A)
             {
                 pixels[x].R = 0.0f;
                 pixels[x].G = 0.0f;
@@ -1219,10 +1278,10 @@ namespace Images
 
                 const f32 color = pixel.R * pixel.R + pixel.G * pixel.G + pixel.B * pixel.B;
 
-                if (color < F32_MAX != isnan(color)) { indx = xx; }
+                if (color < F32_MAX) { indx = xx; }
             }
 
-            values[x] = (u16)((((u32)roundf(pixels[x].A * 255.0f + value)) << 8) | indx);
+            values[x] = (u16)((((u32)(pixels[x].A * 255.0f + value)) << 8) | indx);
         }
 
         FPUEND();
@@ -1263,7 +1322,7 @@ namespace Images
 
                 const f32 color = pixel.R * pixel.R + pixel.G * pixel.G + pixel.B * pixel.B + pixel.A * pixel.A;
 
-                if (color < value != (isnan(color) || isnan(value)))
+                if (color < value)
                 {
                     indx = xx;
                     value = color;
@@ -1596,24 +1655,24 @@ namespace Images
 
         switch (args->Width)
         {
-        case 1:
+        case 1: // TODO
         {
-            self->Unk0x109c = 0;
-            self->Unk0x1098 = 1;
+            self->Unk0x109c = 0; // TODO
+            self->Unk0x1098 = 1; // TODO
 
             break;
         }
-        case 2:
+        case 2: // TODO
         {
-            self->Unk0x109c = 1;
-            self->Unk0x1098 = 1;
+            self->Unk0x109c = 1; // TODO
+            self->Unk0x1098 = 1; // TODO
 
             break;
         }
         default:
         {
-            self->Unk0x109c = 3;
-            self->Unk0x1098 = 1;
+            self->Unk0x109c = 3; // TODO
+            self->Unk0x1098 = 1; // TODO
 
             break;
         }
@@ -1621,20 +1680,24 @@ namespace Images
 
         switch (args->Height)
         {
-        case 1:
+        case 1: // TODO
         {
-            self->Unk0x10a0 = 0;
-            self->Unk0x1098 = 1;
+            self->Unk0x10a0 = 0; // TODO
+            self->Unk0x1098 = 1; // TODO
+
+            break;
         }
-        case 2:
+        case 2: // TODO
         {
-            self->Unk0x10a0 = 1;
-            self->Unk0x1098 = 1;
+            self->Unk0x10a0 = 1; // TODO
+            self->Unk0x1098 = 1; // TODO
+
+            break;
         }
         default:
         {
-            self->Unk0x10a0 = 3;
-            self->Unk0x1098 = 0;
+            self->Unk0x10a0 = 3; // TODO
+            self->Unk0x1098 = 0; // TODO
         }
         }
 
@@ -1657,9 +1720,12 @@ namespace Images
 
         for (u32 x = 0; x < IMAGE_DXT_DIMENSION; x++)
         {
-            self->Colors[x] = (ImageColor*)malloc(self->ActualWidth * sizeof(ImageColor));
+            const u32 size = self->ActualWidth * sizeof(ImageColor);
+
+            self->Colors[x] = (ImageColor*)malloc(size);
 
             if (self->Colors[x] == NULL) { self->IsAlloc = FALSE; }
+            else { ZeroMemory(self->Colors[x], size); }
         }
 
         return self;
@@ -1864,7 +1930,7 @@ namespace Images
                 + (addr)(IMAGE_DXT_DIMENSION * (line + self->Dimensions.Top - self->MinLine))
                 + (addr)(IMAGE_DXT_DIMENSION_SEGMENT * (self->Dimensions.Left - self->ActualLeft)));
 
-            memcpy(pixels, colors, self->Width * sizeof(ImageColor));
+            CopyMemory(pixels, colors, self->Width * sizeof(ImageColor));
 
             if (self->IsColor) { ImproveImageColors((AbstractImage*)self, pixels); }
         }
@@ -1879,7 +1945,7 @@ namespace Images
                 + (addr)(IMAGE_DXT_DIMENSION * (line + self->Dimensions.Top - self->MinLine))
                 + (addr)(IMAGE_DXT_DIMENSION_SEGMENT * (self->Dimensions.Left - self->ActualLeft)));
 
-            memcpy(colors, pixels, self->Width * sizeof(ImageColor));
+            CopyMemory(colors, pixels, self->Width * sizeof(ImageColor));
 
             self->IsInit = TRUE;
         }
@@ -1940,8 +2006,8 @@ namespace Images
 
         self->Self = &AbstractImageUYVYSelf;
 
-        const s32 left = self->Dimensions.Left & 0xfffffffe;
-        const s32 right = (self->Dimensions.Right + 1) & 0xfffffffe;
+        const s32 left = self->Dimensions.Left & 0xfffffffe; // TODO
+        const s32 right = (self->Dimensions.Right + 1) & 0xfffffffe; // TODO
 
         self->ActualRight = right;
         self->ActualLeft = left;
@@ -1955,9 +2021,14 @@ namespace Images
         self->IsAlloc = TRUE;
         self->IsInit = FALSE;
 
-        self->Colors = (ImageColor*)malloc(self->ActualWidth * sizeof(ImageColor));
+        {
+            const u32 size = self->ActualWidth * sizeof(ImageColor);
 
-        if (self->Colors == NULL) { self->IsAlloc = FALSE; }
+            self->Colors = (ImageColor*)malloc(size);
+
+            if (self->Colors == NULL) { self->IsAlloc = FALSE; }
+            else { ZeroMemory(self->Colors, size); }
+        }
 
         if (args->Format == D3DFMT_UYVY)
         {
@@ -2049,7 +2120,7 @@ namespace Images
         {
             ImageColor* colors = (ImageColor*)((addr)self->Colors + (addr)(self->Dimensions.Left - self->ActualLeft));
 
-            memcpy(pixels, colors, self->Width * sizeof(ImageColor));
+            CopyMemory(pixels, colors, self->Width * sizeof(ImageColor));
 
             if (self->IsColor) { ImproveImageColors((AbstractImage*)self, pixels); }
         }
@@ -2062,7 +2133,7 @@ namespace Images
         {
             ImageColor* colors = (ImageColor*)((addr)self->Colors + (addr)(self->Dimensions.Left - self->ActualLeft));
 
-            memcpy(colors, pixels, self->Width * sizeof(ImageColor));
+            CopyMemory(colors, pixels, self->Width * sizeof(ImageColor));
 
             self->IsInit = TRUE;
         }
@@ -2108,28 +2179,12 @@ namespace Images
 
                     colors[x + 0].A = 1.0f;
 
-                    if (r < 0.0f == isnan(r))
-                    {
-                        if (1.0f < r) { r = 1.0f; }
-                    }
-                    else { r = 0.0f; }
+                    r = max(0.0f, min(r, 1.0f));
+                    g = max(0.0f, min(g, 1.0f));
+                    b = max(0.0f, min(b, 1.0f));
 
                     colors[x + 0].R = r;
-
-                    if (g < 0.0f == isnan(g))
-                    {
-                        if (1.0f < g) { g = 1.0f; }
-                    }
-                    else { g = 0.0f; }
-
                     colors[x + 0].G = g;
-
-                    if (b < 0.0f == isnan(b))
-                    {
-                        if (1.0f < b) { b = 1.0f; }
-                    }
-                    else { b = 0.0f; }
-
                     colors[x + 0].B = b;
 
                     //
@@ -2143,28 +2198,12 @@ namespace Images
                     //
                     colors[x + 1].A = 1.0f;
 
-                    if (r < 0.0f == isnan(r))
-                    {
-                        if (1.0f < r) { r = 1.0f; }
-                    }
-                    else { r = 0.0f; }
+                    r = max(0.0f, min(r, 1.0f));
+                    g = max(0.0f, min(g, 1.0f));
+                    b = max(0.0f, min(b, 1.0f));
 
                     colors[x + 1].R = r;
-
-                    if (g < 0.0f == isnan(g))
-                    {
-                        if (1.0f < g) { g = 1.0f; }
-                    }
-                    else { g = 0.0f; }
-
                     colors[x + 1].G = g;
-
-                    if (b < 0.0f == isnan(b))
-                    {
-                        if (1.0f < b) { b = 1.0f; }
-                    }
-                    else { b = 0.0f; }
-
                     colors[x + 1].B = b;
 
                     //

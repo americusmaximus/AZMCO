@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 - 2025 Americus Maximus
+Copyright (c) 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Basic.hxx"
-#include "FPU.hxx"
+#pragma once
 
-#include <float.h>
+#include "Base.hxx"
 
-u32 CONTROL; // 0x6001e01c
+#include <Images.hxx>
 
-// 0x6000c7fc
-void FPUSTART()
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
+enum ColorSchema
 {
-    CONTROL = _controlfp(0, 0);
-    _controlfp(CONTROL | _RC_CHOP, _MCW_RC);
-}
+    COLORSCHEMA_BLACK = 0,
+    COLORSCHEMA_WHITE = 1,
+    COLORSCHEMA_REPEAT = 2,
+    COLORSCHEMA_IMAGE = 3
+};
 
-// 0x6000c81f
-void FPUEND()
+struct ImageContainer
 {
-    _controlfp(CONTROL, _MCW_RC);
-}
+    Images::ImageContainerArgs  Args;
+    void* Pixels;
+    Images::ImageBitMap* Image;
+};
+
+struct ImageTest
+{
+    u32         Width;
+    u32         Heigh;
+    BOOL        Gradient;
+    u32         Color;
+    BOOL        Colors;
+    BOOL        Palette;
+    ColorSchema Schema;
+};
+
+BOOL AcquireImage(void* pixels, const ColorSchema schema);
+BOOL AcquirePalette(void* palette);
+BOOL AcquireColors(Images::ImageColor* colors, void* pixels, const u32 width, const u32 height, const BOOL generate);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ SOFTWARE.
 #define DEFAULT_VERTEX_MAX_DEPTH (65535.0f)
 #define DEFAULT_VERTEX_MIN_DEPTH (1.0f)
 #define ENVIRONMENT_SECTION_NAME "DX8"
-#define INVALID_TEXTURE_PALETTE_VALUE 0xffff
+#define INVALID_TEXTURE_PALETTE_VALUE 0xFFFF
 #define MAX_ACTIVE_SURFACE_COUNT 8
 #define MAX_ACTIVE_UNKNOWN_COUNT 11
 #define MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT 34
@@ -137,9 +137,9 @@ namespace RendererModule
 
     struct RendererPacket
     {
-        D3DPRIMITIVETYPE PrimitiveType;
-        u32 PrimitiveCount;
-        u32 StartIndex;
+        D3DPRIMITIVETYPE Type;
+        u32 Count;
+        u32 Size;
     };
 
     struct RendererModuleWindow
@@ -180,8 +180,8 @@ namespace RendererModule
                 u32 Triangles; // 0x6001dab4
                 u32 Quads; // 0x6001dab8
                 u32 Lines; // 0x6001dabc
-                u32 TriangleStrips; // 0x6001dac0
-                u32 TriangleFans; // 0x6001dac4
+                u32 Strips; // 0x6001dac0
+                u32 Fans; // 0x6001dac4
                 u32 Vertexes; // 0x6001dac8
             } Counters;
 
@@ -191,7 +191,7 @@ namespace RendererModule
             {
                 u32 Count; // 0x6001daa0
 
-                RendererPacket Packets[MAX_RENDER_PACKET_COUNT + 1]; // 0x60020ff4
+                RendererPacket Packets[MAX_RENDER_PACKET_COUNT]; // 0x60021000
             } Packets;
 
             struct
@@ -323,18 +323,19 @@ namespace RendererModule
     BOOL AcquireRendererDeviceDepthFormat(const u32 device, const D3DFORMAT adapter, const D3DFORMAT target, D3DFORMAT* result);
     BOOL AcquireRendererDeviceDepthFormat(u32* bits, D3DFORMAT* result);
     BOOL AcquireRendererDeviceDepthWindowFormat(u32* width, u32* height, u32* bits, D3DFORMAT* format);
+    BOOL AreRenderPacketsComplete(const D3DPRIMITIVETYPE type, const u32 count);
     BOOL AttemptRenderPackets(void);
     BOOL BeginRendererScene(void);
-    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
     BOOL IsRendererTextureDepthFormatAllowed(const u32 format);
     BOOL RestoreRendererSurfaces(void);
     BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
     BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
     BOOL UpdateRendererTexture(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette);
     BOOL UpdateRendererTexturePalette(Renderer::RendererTexture* tex, const u32* palette);
+    BOOL UpdateRendererTextureRectangle(Renderer::RendererTexture* tex, const u32* pixels, const u32* palette, const s32 x, const s32 y, const s32 width, const s32 height, const s32 size, const s32 level);
     D3DFORMAT AcquireRendererTextureDepthFormatIndex(const u32 format);
     HRESULT InitializeRendererTexture(Renderer::RendererTexture* tex);
-    HRESULT UpdateRendererTextureSurface(IDirect3DSurface8* surface, const u8* dpal, const D3DRECT* drect, const u32* pixels, const D3DFORMAT format, const u32 pitch, const u8* spal, const D3DRECT* srect, const u32 options, const u32 color);
+    HRESULT UpdateRendererTextureLevel(IDirect3DSurface8* surface, const u8* dpal, const D3DRECT* drect, const u32* pixels, const D3DFORMAT format, const u32 pitch, const u8* spal, const D3DRECT* srect, const u32 options, const u32 color);
     Images::ImageFormatDescriptor* AcquireImageFormatDescriptor(const D3DFORMAT format);
     inline u32 AcquireNormal(const f32x3* a, const f32x3* b, const f32x3* c) { const s32 value = (s32)((b->X - a->X) * (c->Y - a->Y) - (c->X - a->X) * (b->Y - a->Y)); return *(u32*)&value; }
     Renderer::RendererTexture* AllocateRendererDepthTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state, const BOOL destination);
@@ -345,7 +346,7 @@ namespace RendererModule
     u32 AcquireRendererDeviceCount(void);
     u32 AcquireRendererDeviceFormat(const D3DFORMAT format);
     u32 AcquireRendererDeviceFormatSize(const D3DFORMAT format);
-    u32 AcquireTexturePalette();
+    u32 AcquireTexturePalette(void);
     u32 ClearRendererViewPort(const u32 x0, const u32 y0, const u32 x1, const u32 y1, const BOOL window);
     u32 DisposeRendererTexture(Renderer::RendererTexture* tex);
     u32 SelectBasicRendererState(const u32 state, void* value);

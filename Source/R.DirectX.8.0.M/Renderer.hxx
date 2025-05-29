@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2025 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ SOFTWARE.
 #define DEFAULT_VERTEX_MAX_DEPTH (65535.0f)
 #define DEFAULT_VERTEX_MIN_DEPTH (1.0f)
 #define ENVIRONMENT_SECTION_NAME "DX8"
-#define INVALID_TEXTURE_PALETTE_VALUE 0xffff
+#define INVALID_TEXTURE_PALETTE_VALUE 0xFFFF
 #define MAX_ACTIVE_SURFACE_COUNT 8
 #define MAX_ACTIVE_UNKNOWN_COUNT 10
 #define MAX_DEVICE_CAPABILITIES_COUNT 256
@@ -62,7 +62,7 @@ SOFTWARE.
 #define RENDERER_CULL_MODE_NONE                 0x00000001
 #define RENDERER_CULL_MODE_COUNTER_CLOCK_WISE   0x80000000
 
-#define MAKEPIXELFORMAT(x) (x & 0xff)
+#define MAKEPIXELFORMAT(x) (x & 0xFF)
 
 #if !defined(__WATCOMC__) && _MSC_VER <= 1200
 inline void LOGERROR(...) { }
@@ -98,8 +98,8 @@ namespace Renderer
 
 namespace RendererModule
 {
-    extern u32 DAT_6001eee0; // 0x6001eee0
     extern u32 DAT_6001eedc; // 0x6001eedc
+    extern u32 DAT_6001eee0; // 0x6001eee0
 
     struct MinMax
     {
@@ -118,13 +118,6 @@ namespace RendererModule
         s32 Values[MAX_TEXTURE_STAGE_COUNT];
     };
 
-    struct RendererPacket
-    {
-        D3DPRIMITIVETYPE PrimitiveType;
-        u32 PrimitiveCount;
-        u32 StartIndex;
-    };
-
     struct TextureStage
     {
         s32 Unk01; // TODO
@@ -139,6 +132,13 @@ namespace RendererModule
         s32 Unk10; // TODO
         s32 Unk11; // TODO
         s32 Unk12; // TODO
+    };
+
+    struct RendererPacket
+    {
+        D3DPRIMITIVETYPE Type;
+        u32 Count;
+        u32 Size;
     };
 
     struct RendererModuleWindow
@@ -184,8 +184,8 @@ namespace RendererModule
                 u32 Triangles; // 0x6001dac8
                 u32 Quads; // 0x6001dacc
                 u32 Lines; // 0x6001dad0
-                u32 TriangleStrips; // 0x6001dad4
-                u32 TriangleFans; // 0x6001dad8
+                u32 Strips; // 0x6001dad4
+                u32 Fans; // 0x6001dad8
                 u32 Vertexes; // 0x6001dadc
             } Counters;
 
@@ -195,7 +195,7 @@ namespace RendererModule
             {
                 u32 Count; // 0x6001dab4
 
-                RendererPacket Packets[MAX_RENDER_PACKET_COUNT + 1]; // 0x60021000
+                RendererPacket Packets[MAX_RENDER_PACKET_COUNT]; // 0x60021000
             } Packets;
 
             struct
@@ -333,7 +333,7 @@ namespace RendererModule
     BOOL AcquireRendererDeviceDepthWindowFormat(u32* width, u32* height, u32* bits, D3DFORMAT* format);
     BOOL AttemptRenderPackets(void);
     BOOL BeginRendererScene(void);
-    BOOL IsNotEnoughRenderPackets(const D3DPRIMITIVETYPE type, const u32 count);
+    BOOL AreRenderPacketsComplete(const D3DPRIMITIVETYPE type, const u32 count);
     BOOL RestoreRendererSurfaces(void);
     BOOL SelectRendererState(const D3DRENDERSTATETYPE type, const DWORD value);
     BOOL SelectRendererTextureStage(const u32 stage, const D3DTEXTURESTAGESTATETYPE type, const DWORD value);
