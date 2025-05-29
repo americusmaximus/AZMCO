@@ -234,7 +234,12 @@ BOOL CompareImageBitMap(const ImageBitMap* a, const ImageBitMap* b)
     if (memcmp(a->Pixels, b->Pixels, IMAGE_SIZE) != 0) return FALSE;
     if (memcmp(&a->Color, &b->Color, sizeof(ImageColor)) != 0) return FALSE;
     if (memcmp(a->Modifiers, b->Modifiers, sizeof(f32) * MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT) != 0) return FALSE;
-    if (memcmp(&a->Palette, &b->Palette, sizeof(ImageColor) * MAX_IMAGE_PALETTE_VALUES_COUNT) != 0) return FALSE;
+    
+    if (a->IsPalette)
+    {
+        if (memcmp(&a->Palette, &b->Palette, sizeof(ImageColor) * MAX_IMAGE_PALETTE_VALUES_COUNT) != 0) return FALSE;
+    }
+    
     if (memcmp(&a->Dimensions, &b->Dimensions, sizeof(ImageDimensions)) != 0) return FALSE;
 
     if (a->Stride != b->Stride) return FALSE;

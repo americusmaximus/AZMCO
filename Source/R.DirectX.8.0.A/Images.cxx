@@ -894,10 +894,10 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[0] = (u8)roundf(pixels[x].B * 255.0f + value);
-            values[1] = (u8)roundf(pixels[x].G * 255.0f + value);
-            values[2] = (u8)roundf(pixels[x].R * 255.0f + value);
-            values[3] = (u8)roundf(pixels[x].A * 255.0f + value);
+            values[0] = (u8)(pixels[x].B * 255.0f + value);
+            values[1] = (u8)(pixels[x].G * 255.0f + value);
+            values[2] = (u8)(pixels[x].R * 255.0f + value);
+            values[3] = (u8)(pixels[x].A * 255.0f + value);
 
             values = (u8*)((addr)values + 4 * sizeof(u8));
         }
@@ -1041,10 +1041,10 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u16)((((u32)roundf(pixels[x].A + value)) << 15)
-                            | (((u32)roundf(pixels[x].R * 31.0f + value)) << 10)
-                            | (((u32)roundf(pixels[x].G * 31.0f + value)) << 5)
-                            | (((u32)roundf(pixels[x].B * 31.0f + value)) << 0));
+            values[x] = (u16)((((u32)(pixels[x].A + value)) << 15)
+                            | (((u32)(pixels[x].R * 31.0f + value)) << 10)
+                            | (((u32)(pixels[x].G * 31.0f + value)) << 5)
+                            | (((u32)(pixels[x].B * 31.0f + value)) << 0));
         }
 
         FPUEND();
@@ -1077,10 +1077,10 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u16)((((u32)roundf(pixels[x].A * 15.0f + value)) << 12)
-                            | (((u32)roundf(pixels[x].R * 15.0f + value)) << 8)
-                            | (((u32)roundf(pixels[x].G * 15.0f + value)) << 4)
-                            | (((u32)roundf(pixels[x].B * 15.0f + value)) << 0));
+            values[x] = (u16)((((u32)(pixels[x].A * 15.0f + value)) << 12)
+                            | (((u32)(pixels[x].R * 15.0f + value)) << 8)
+                            | (((u32)(pixels[x].G * 15.0f + value)) << 4)
+                            | (((u32)(pixels[x].B * 15.0f + value)) << 0));
         }
 
         FPUEND();
@@ -1148,7 +1148,7 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u8)roundf(pixels[x].A * 255.0f + value);
+            values[x] = (u8)(pixels[x].A * 255.0f + value);
         }
 
         FPUEND();
@@ -1183,10 +1183,10 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u16)((((u32)roundf(pixels[x].A * 255.0f + value)) << 8)
-                            | (((u32)roundf(pixels[x].R * 7.0f + value)) << 5)
-                            | (((u32)roundf(pixels[x].G * 7.0f + value)) << 2)
-                            | (((u32)roundf(pixels[x].B * 3.0f + value)) << 0));
+            values[x] = (u16)((((u32)(pixels[x].A * 255.0f + value)) << 8)
+                            | (((u32)(pixels[x].R * 7.0f + value)) << 5)
+                            | (((u32)(pixels[x].G * 7.0f + value)) << 2)
+                            | (((u32)(pixels[x].B * 3.0f + value)) << 0));
         }
 
         FPUEND();
@@ -1399,8 +1399,8 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u16)(((u32)roundf(pixels[x].A * 255.0f + value) << 8)
-                            | ((u32)roundf((pixels[x].R * 0.2125f + pixels[x].G * 0.7154f + pixels[x].B * 0.0721f) * 255.0f + value)));
+            values[x] = (u16)(((u32)(pixels[x].A * 255.0f + value) << 8)
+                            | ((u32)((pixels[x].R * 0.2125f + pixels[x].G * 0.7154f + pixels[x].B * 0.0721f) * 255.0f + value)));
         }
 
         FPUEND();
@@ -1435,8 +1435,8 @@ namespace Images
         {
             const f32 value = self->Modifiers[(level & 3) + (line & 3) * 8 + (x & 3)];
 
-            values[x] = (u8)(((u32)roundf(pixels[x].A * 15.0f + value) << 4)
-                | ((u32)roundf((pixels[x].R * 0.2125f + pixels[x].G * 0.7154f + pixels[x].B * 0.0721f) * 15.0f + value)));
+            values[x] = (u8)(((u32)(pixels[x].A * 15.0f + value) << 4)
+                | ((u32)((pixels[x].R * 0.2125f + pixels[x].G * 0.7154f + pixels[x].B * 0.0721f) * 15.0f + value)));
         }
 
         FPUEND();
