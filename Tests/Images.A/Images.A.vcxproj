@@ -71,21 +71,29 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\AZX;..\..\SDK\DX80\Include;</ExternalIncludePath>
     <SourcePath>$(VC_SourcePath);..\..\Source\R.DirectX.8.0.A;</SourcePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\R.DirectX.8.0.A;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\AZX;..\..\SDK\DX80\Include;</ExternalIncludePath>
     <SourcePath>$(VC_SourcePath);..\..\Source\R.DirectX.8.0.A;</SourcePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\R.DirectX.8.0.A;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\AZX;..\..\SDK\DX80\Include;</ExternalIncludePath>
     <SourcePath>$(VC_SourcePath);..\..\Source\R.DirectX.8.0.A;</SourcePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\R.DirectX.8.0.A;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)Bin\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Obj\x86\$(Configuration)\$(ProjectName)\</IntDir>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\AZX;..\..\SDK\DX80\Include;</ExternalIncludePath>
     <SourcePath>$(VC_SourcePath);..\..\Source\R.DirectX.8.0.A;</SourcePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\Source\R.DirectX.8.0.A;</IncludePath>
@@ -155,17 +163,24 @@
     <ClCompile Include="DXS.cxx" />
     <ClCompile Include="FPU.cxx" />
     <ClCompile Include="ImageBitMap.cxx" />
+    <ClCompile Include="ImageDXT.cxx" />
+    <ClCompile Include="ImageDXTQuads.cxx" />
     <ClCompile Include="Images.cxx" />
+    <ClCompile Include="ImageYV.cxx" />
     <ClCompile Include="Main.cxx" />
+    <ClCompile Include="Tests.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Base.hxx" />
     <ClInclude Include="BitMap.hxx" />
     <ClInclude Include="DXS.hxx" />
+    <ClInclude Include="ImageDXT.hxx" />
     <ClInclude Include="FPU.hxx" />
     <ClInclude Include="Image.hxx" />
     <ClInclude Include="ImageBitMap.hxx" />
+    <ClInclude Include="ImageDXTQuads.hxx" />
     <ClInclude Include="Images.hxx" />
+    <ClInclude Include="ImageYV.hxx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

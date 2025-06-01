@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "ImageBitMap.hxx"
+#include "ImageYV.hxx"
 
 #include <stdlib.h>
 
@@ -28,17 +28,17 @@ using namespace Images;
 
 typedef AbstractImage* (__cdecl* INITIALIZEABSTRACTIMAGEACTION)(ImageContainerArgs*);
 
-typedef ImageBitMap* (__thiscall* IMAGEBITMAPCONSTRUCTORACTION)(ImageBitMap*, ImageContainerArgs* args, const u32 bits, const u32 options);
+typedef ImageUYVY* (__thiscall* IMAGEYVCONSTRUCTORACTION)(ImageUYVY*, ImageContainerArgs* args, const u32 bits, const u32 options);
 
-typedef VOID(__thiscall* IMAGEBITMAPRELEASEACTION)(ImageBitMap*, const u8 mode);
-typedef VOID(__thiscall* IMAGEBITMAPREADACTION)(ImageBitMap*, const u32 line, const u32 level, ImageColor* pixels);
-typedef VOID(__thiscall* IMAGEBITMAPWRITEACTION)(ImageBitMap*, const u32 line, const u32 level, ImageColor* pixels);
+typedef VOID(__thiscall* IMAGEBITMAPRELEASEACTION)(ImageUYVY*, const u8 mode);
+typedef VOID(__thiscall* IMAGEBITMAPREADACTION)(ImageUYVY*, const u32 line, const u32 level, ImageColor* pixels);
+typedef VOID(__thiscall* IMAGEBITMAPWRITEACTION)(ImageUYVY*, const u32 line, const u32 level, ImageColor* pixels);
 
-BOOL CompareImageBitMap(const ImageBitMap* a, const ImageBitMap* b);
-BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors);
-BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels);
+BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const ImageTest* item);
+BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels);
+BOOL CompareImageYV(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors);
 
-BOOL CompareImageBitMap(const ImageBitMap* a, const ImageBitMap* b)
+BOOL CompareImageYV(const ImageUYVY* a, const ImageUYVY* b, const BOOL colors)
 {
     if (a->Format != b->Format) return FALSE;
     if (a->Options != b->Options) return FALSE;
@@ -46,7 +46,8 @@ BOOL CompareImageBitMap(const ImageBitMap* a, const ImageBitMap* b)
     if (a->IsColor != b->IsColor) return FALSE;
     if (a->IsPalette != b->IsPalette) return FALSE;
 
-    if (memcmp(a->Pixels, b->Pixels, IMAGE_SIZE) != 0) return FALSE;
+    if (memcmp(a->Pixels, b->Pixels, IMAGE_SIZE) != 0) { return FALSE; }
+
     if (memcmp(&a->Color, &b->Color, sizeof(ImageColor)) != 0) return FALSE;
     if (memcmp(a->Modifiers, b->Modifiers, sizeof(f32) * MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT) != 0) return FALSE;
 
@@ -65,18 +66,36 @@ BOOL CompareImageBitMap(const ImageBitMap* a, const ImageBitMap* b)
     if (a->BytesStride != b->BytesStride) return FALSE;
     if (a->Bytes != b->Bytes) return FALSE;
 
+    // UYVY
+
+    if (colors)
+    {
+        if (memcmp(a->Colors, b->Colors, (a->ActualRight - a->ActualLeft) * sizeof(ImageColor)) != 0) return FALSE;
+    }
+
+    if (a->ActualLeft != b->ActualLeft) return FALSE;
+    if (a->MinLine != b->MinLine) return FALSE;
+    if (a->ActualRight != b->ActualRight) return FALSE;
+    if (a->MaxLine != b->MaxLine) return FALSE;
+    if (a->MinLevel != b->MinLevel) return FALSE;
+    if (a->MaxLevel != b->MaxLevel) return FALSE;
+    if (a->ActualWidth != b->ActualWidth) return FALSE;
+    if (a->IsAlloc != b->IsAlloc) return FALSE;
+    if (a->LumaShift != b->LumaShift) return FALSE;
+    if (a->ValueShift != b->ValueShift) return FALSE;
+
     return TRUE;
 }
 
-BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
+BOOL CompareImageYV(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
 {
     // Create
 
-    ImageBitMap* o = (ImageBitMap*)((INITIALIZEABSTRACTIMAGEACTION)INIT_IMAGE_FUNC_ADDRESS(module))(a);
+    ImageUYVY* o = (ImageUYVY*)((INITIALIZEABSTRACTIMAGEACTION)INIT_IMAGE_FUNC_ADDRESS(module))(a);
 
     if (o == NULL) { return FALSE; }
 
-    ImageBitMap* m = (ImageBitMap*)InitializeAbstractImage(b);
+    ImageUYVY* m = (ImageUYVY*)InitializeAbstractImage(b);
 
     if (m == NULL)
     {
@@ -85,7 +104,7 @@ BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArg
         return FALSE;
     }
 
-    if (!CompareImageBitMap(o, m))
+    if (!CompareImageYV(o, m, FALSE))
     {
         ((IMAGEBITMAPRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -109,7 +128,7 @@ BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArg
         m->Self->Write((AbstractImage*)m, x, 0, row);
     }
 
-    if (!CompareImageBitMap(o, m))
+    if (!CompareImageYV(o, m, TRUE))
     {
         ((IMAGEBITMAPRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -166,7 +185,7 @@ BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArg
     free(oread);
     free(mread);
 
-    if (!CompareImageBitMap(o, m))
+    if (!CompareImageYV(o, m, TRUE))
     {
         ((IMAGEBITMAPRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -180,7 +199,7 @@ BOOL CompareImageBitMap(HMODULE module, ImageContainerArgs* a, ImageContainerArg
     return TRUE;
 }
 
-BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
+BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
 {
     void* ia = malloc(IMAGE_SIZE);
 
@@ -230,7 +249,7 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width,
             palette
     };
 
-    const BOOL result = CompareImageBitMap(module, &a, &b, colors);
+    const BOOL result = CompareImageYV(module, &a, &b, colors);
 
     free(ia);
     free(ib);
@@ -238,7 +257,7 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width,
     return result;
 }
 
-BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const ImageTest* item)
+BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const ImageTest* item)
 {
     u8* palette = NULL;
 
@@ -282,7 +301,7 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const ImageTest*
         return FALSE;
     }
 
-    const BOOL result = ExecuteImageBitMap(module, format,
+    const BOOL result = ExecuteImageYV(module, format,
         item->Width, item->Heigh, item->Gradient, item->Color, colors, palette, pixels);
 
     free(colors);
@@ -292,16 +311,13 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const ImageTest*
     return result;
 }
 
-#include <stdio.h> // TODO
+#define MAX_YV_IMAGE_TEST_CASES 16
 
-BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format)
+BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format)
 {
-    for (u32 x = 64; x < MAX_IMAGE_TEST_CASES; x++) // TODO
+    for (u32 x = 0; x < MAX_YV_IMAGE_TEST_CASES; x++)
     {
-        if (!ExecuteImageBitMap(module, format, &ImageTests[x])) {
-            printf("FAILED: %d\r\n", x);
-            //return FALSE;
-        }
+        if (!ExecuteImageYV(module, format, &ImageTests[x])) { return FALSE; }
     }
 
     return TRUE;

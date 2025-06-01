@@ -27,3 +27,14 @@ SOFTWARE.
 #define IMAGE_SIZE                      (IMAGE_DIMS * IMAGE_DIMS * IMAGE_BPP)
 
 #define IMAGE_NAME                      "..\\Content\\Image.bmp"
+
+#define IMAGE_RELEASE                   0
+#define IMAGE_READ                      1
+#define IMAGE_WRITE                     2
+
+#define VIRTUAL_METHOD(SELF, INDEX) (*((VOID***)SELF))[INDEX]
+
+#define ALLOCATE(T) (T*)calloc(sizeof(T), 1)
+
+#define INIT_IMAGE_BASE_ADDRESS         (0x6000F55A - 0x60000000)
+#define INIT_IMAGE_FUNC_ADDRESS(M)      ((addr)M + (addr)INIT_IMAGE_BASE_ADDRESS)

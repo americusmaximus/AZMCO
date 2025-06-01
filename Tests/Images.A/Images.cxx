@@ -32,7 +32,7 @@ BOOL AcquireImage(void* pixels, const ColorSchema schema)
     switch (schema)
     {
     case COLORSCHEMA_BLACK: { ZeroMemory(pixels, IMAGE_SIZE); break; }
-    case COLORSCHEMA_WHITE: { memset(pixels, 0xFF, IMAGE_SIZE); break; }
+    case COLORSCHEMA_WHITE: { FillMemory(pixels, 0xFF, IMAGE_SIZE); break; }
     case COLORSCHEMA_REPEAT:
     {
         u8* colors = (u8*)pixels;
@@ -41,15 +41,15 @@ BOOL AcquireImage(void* pixels, const ColorSchema schema)
         {
             for (u32 xx = 0; xx < IMAGE_DIMS * IMAGE_BPP; xx = xx + IMAGE_BPP)
             {
-                u8* pix = (u8*)(colors + xx);
+                u8* pix = (u8*)((addr)colors + (addr)xx);
 
                 pix[0] = x % 256;
-                pix[1] = xx % 256;
-                pix[2] = xx % 256;
-                pix[3] = xx % 256;
+                pix[1] = (xx + 0) % 256;
+                pix[2] = (xx + 1) % 256;
+                pix[3] = (xx + 2) % 256;
             }
 
-            colors = (u8*)(colors + IMAGE_DIMS * IMAGE_BPP);
+            colors = (u8*)((addr)colors + (addr)(IMAGE_DIMS * IMAGE_BPP));
         }
 
         break;
@@ -92,9 +92,9 @@ BOOL AcquireColors(ImageColor* colors, void* pixels, const u32 width, const u32 
 
             for (u32 xx = 0; xx < width; xx++)
             {
-                const f32 c = (f32)xx * 1.0f / (f32)width;
+                const f32 c = (f32)xx / (f32)width;
 
-                row[x].A = row[x].R = row[x].G = row[x].B = c;
+                row[xx].A = row[xx].R = row[xx].G = row[xx].B = c;
             }
         }
     }
@@ -109,12 +109,12 @@ BOOL AcquireColors(ImageColor* colors, void* pixels, const u32 width, const u32 
 
             for (u32 xx = 0; xx < width; xx++)
             {
-                const u32 c = pix[x];
+                const u32 c = pix[xx];
 
-                row[x].A = ((c >> 24) & 0xFF) / 255.0f;
-                row[x].R = ((c >> 16) & 0xFF) / 255.0f;
-                row[x].G = ((c >> 8) & 0xFF) / 255.0f;
-                row[x].B = ((c >> 0) & 0xFF) / 255.0f;
+                row[xx].A = ((c >> 24) & 0xFF) / 255.0f;
+                row[xx].R = ((c >> 16) & 0xFF) / 255.0f;
+                row[xx].G = ((c >> 8) & 0xFF) / 255.0f;
+                row[xx].B = ((c >> 0) & 0xFF) / 255.0f;
             }
         }
     }

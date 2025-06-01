@@ -41,12 +41,12 @@ SOFTWARE.
 
 #define IMAGE_CONTAINER_OPTIONS_INVALID             0xFFFFFFFF
 
-#define MAX_IMAGE_PALETTE_VALUES_COUNT 256
+#define MAX_IMAGE_PALETTE_VALUES_COUNT              256
 
-#define MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT 32
+#define MAX_IMAGE_COLOR_MODIFIER_VALUES_COUNT       32
 
-#define IMAGE_DXT_DIMENSION 4
-#define IMAGE_DXT_DIMENSION_SEGMENT (IMAGE_DXT_DIMENSION * IMAGE_DXT_DIMENSION)
+#define IMAGE_QUAD_COLOR_COUNT                      4
+#define IMAGE_QUAD_PIXEL_COUNT                      (IMAGE_QUAD_COLOR_COUNT * IMAGE_QUAD_COLOR_COUNT)
 
 namespace Images
 {
@@ -127,6 +127,23 @@ namespace Images
         BOOL IsGradient;
         u32 Color;
         const u8* Palette;
+    };
+
+    struct ImagePixel
+    {
+        u8 B;
+        u8 G;
+        u8 R;
+        u8 A;
+    };
+
+    struct ImageQuad
+    {
+        union
+        {
+            u32         ARGB[IMAGE_QUAD_PIXEL_COUNT];
+            ImagePixel  Pixels[IMAGE_QUAD_PIXEL_COUNT];
+        };
     };
 
     struct AbstractImage;
@@ -225,7 +242,7 @@ namespace Images
 
         // DXT
 
-        ImageColor* Colors[IMAGE_DXT_DIMENSION];
+        ImageColor* Colors[IMAGE_QUAD_COLOR_COUNT];
         u32 ActualLeft;
         u32 MinLine;
         u32 ActualRight;
@@ -374,7 +391,7 @@ namespace Images
     ImageDXT* ReleaseAbstractImageDXT(ImageDXT* self, const u32 mode);
     void AssignImageDXTSelf(ImageDXT* self);
 
-    void UnpackImageDXT1(const u32 indx, u32* colors, u16* pixels);
+    void UnpackImageDXT1(const u32 indx, ImageQuad* quad, u16* pixels);
 
     void ReadImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
     void WriteImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
@@ -388,4 +405,9 @@ namespace Images
 
     void ReadImageUYVY(ImageUYVY* self, const u32 line, const u32 level, ImageColor* pixels);
     void WriteImageUYVY(ImageUYVY* self, const u32 line, const u32 level, ImageColor* pixels);
+
+    void AcquireImageQuad(const u16* pixels, ImageQuad* quad);
+
+    void AcquireImageColor(const u16 in, ImagePixel* out);
+    void AcquireImageQuadDXT1(const u16* pixels, ImageQuad* quad);
 }
