@@ -13,6 +13,7 @@ There are multiple goals this project tries to achieve:
 
 ## Requirements & Dependencies
 1. [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/)
+2. [Microsoft DirectX 8.0a SDK](https://archive.org/details/dx8a_sdk)
 
 ## Notes
 ### Compatibility, Code Style & Standards
@@ -21,12 +22,17 @@ In order to be able to run the code not only in the modern operating systems, bu
 Modern Visual Studio makes the binary dependent on modern runtime libraries that are not available in the legacy systems, therefore the game won't work. In order to make the code work on legacy systems please see [detailed instructions on compatibility](COMPATIBILITY.MD).
 
 ### Renderer Modules
-The renderer modules were implemented with minor changes, such as omission of write-only variables, making calls to functions when result is not used, as well as addition of configuration file and reading values from it, which is useful in a few cases.
+The renderer modules were implemented with minor changes, such as omission of write-only variables, removal of function calls when result is not used, as well as the addition of configuration file and reading values from it, which is useful in a few cases.
 
 #### DirectX 7
 The original game shipped with DirectX 7 renderer. The renderer is very similar to the ones in the Need For Speed series, since it is evolution of the same engine.
 
 1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original, however it is fully functional for predecessor games such as Neer For Speed Hot Pursuit and High Stakes.
+
+#### DirectX 8
+The original game shipped with DirectX 8 renderer, then, an update had a modified and updated version of the same renderer. Structurally it is similar to the prior renderers in therms of the external API, however internally it conteins a whole new piece of logic responsible for converting texture data into numerous pixel formats.
+
+	1. TODO Work in progress!
 
 ### Other Modules
 The game also contains Compress and Implode modules, functionality of each is described below.
