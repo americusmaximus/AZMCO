@@ -30,9 +30,10 @@ The original game shipped with DirectX 7 renderer. The renderer is very similar 
 1. DirectX 7 A is a renderer based on the original file `dx7z.dll` version: 2001.06.21.1418 (8195.6.33.55.5144). It is important to note that the game does not work with either this renderer nor its original, however it is fully functional for predecessor games such as Neer For Speed Hot Pursuit and High Stakes.
 
 #### DirectX 8
-The original game shipped with DirectX 8 renderer, then, an update had a modified and updated version of the same renderer. Structurally it is similar to the prior renderers in therms of the external API, however internally it conteins a whole new piece of logic responsible for converting texture data into numerous pixel formats.
+The original game shipped with DirectX 8 renderer, then, an update had a modified and updated version of the same renderer. Structurally it is similar to the prior renderers in terms of the external API, however internally it conteins a whole new piece of logic responsible for converting texture data into numerous pixel formats.
 
-	1. TODO Work in progress!
+1. DirectX 8 A is a renderer that shipped with the release of the game. Original file name is `dx8z.dll` version 2001.09.05.1632 (8193.9.5.5682).
+2. Direct 8 M is the renderer that came with the game's update. Version 2001.11.07.1357 (8193.17.7.4951).
 
 ### Other Modules
 The game also contains Compress and Implode modules, functionality of each is described below.
