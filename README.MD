@@ -35,6 +35,8 @@ The original game shipped with DirectX 8 renderer, then, an update had a modifie
 1. DirectX 8 A is a renderer that shipped with the release of the game. Original file name is `dx8z.dll` version 2001.09.05.1632 (8193.9.5.5682).
 2. Direct 8 M is the renderer that came with the game's update. Version 2001.11.07.1357 (8193.17.7.4951).
 
+DirectX 8 renderers were the only renderers the game actually runs with. The game rejects software renderes and DirectX 7 renderers.
+
 ### Other Modules
 The game also contains Compress and Implode modules, functionality of each is described below.
 
