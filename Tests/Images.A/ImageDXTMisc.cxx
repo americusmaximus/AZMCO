@@ -27,11 +27,17 @@ SOFTWARE.
 #define ACQUIRE_IMAGE_COLOR_MULTIPLY_BASE_ADDRESS   (0x6000FD57 - 0x60000000)
 #define ACQUIRE_IMAGE_COLOR_MULTIPLY_ADDRESS(M)     ((addr)M + (addr)ACQUIRE_IMAGE_COLOR_MULTIPLY_BASE_ADDRESS)
 
-#define TO_GRAY_SCALE_BASE_ADDRESS      (0x6000FC73 - 0x60000000)
-#define TO_GRAY_SCALE_ADDRESS(M)        ((addr)M + (addr)TO_GRAY_SCALE_BASE_ADDRESS)
+#define TO_GRAY_SCALE_BASE_ADDRESS          (0x6000FC73 - 0x60000000)
+#define TO_GRAY_SCALE_ADDRESS(M)            ((addr)M + (addr)TO_GRAY_SCALE_BASE_ADDRESS)
 
-#define FROM_GRAY_SCALE_BASE_ADDRESS    (0x6000FCA5 - 0x60000000)
-#define FROM_GRAY_SCALE_ADDRESS(M)      ((addr)M + (addr)TO_GRAY_SCALE_BASE_ADDRESS)
+#define FROM_GRAY_SCALE_BASE_ADDRESS        (0x6000FCA5 - 0x60000000)
+#define FROM_GRAY_SCALE_ADDRESS(M)          ((addr)M + (addr)FROM_GRAY_SCALE_BASE_ADDRESS)
+
+#define MIX_GRAY_SCALE_COLORS_BASE_ADDRESS  (0x6000FE81 - 0x60000000)
+#define MIX_GRAY_SCALE_COLORS_ADDRESS(M)    ((addr)M + (addr)MIX_GRAY_SCALE_COLORS_BASE_ADDRESS)
+
+#define SHADE_COLORS_BASE_ADDRESS           (0x6000FDF6 - 0x60000000)
+#define SHADE_COLORS_ADDRESS(M)             ((addr)M + (addr)SHADE_COLORS_BASE_ADDRESS)
 
 #define MAX_MULTIPLY_VALUE_COUNT    9
 
@@ -217,7 +223,7 @@ void MixGrayScaleColorsWrapper(HMODULE m, f32* a, f32* b)
         mov edi, b;
 
         mov ecx, m;
-        add ecx, 0xFE81; // TODO Name
+        add ecx, 0xFE81; // MIX_GRAY_SCALE_COLORS_ADDRESS
 
         call ecx;
     };
@@ -274,7 +280,40 @@ BOOL ExecuteMixGrayScaleColors(HMODULE module, const MixGrayScaleColorsTest* tes
     return TRUE;
 }
 
-void FUN_6000fdf6Wrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)
+struct ShadeColorsTest
+{
+    u16 InPixels[2];
+    f32 InA[RGB_COLOR_COUNT];
+    f32 InB[RGB_COLOR_COUNT];
+    u32 Count;
+
+    u16 OutPixels[2];
+    f32 OutA[RGB_COLOR_COUNT];
+    f32 OutB[RGB_COLOR_COUNT];
+};
+
+#define MAX_SHADE_COLOR_TEST_COUNT  3
+
+static const ShadeColorsTest ShadeColorsTests[MAX_SHADE_COLOR_TEST_COUNT] =
+{
+    {
+        { 0x00FF, 0xABCD }, { 0.5f, 0.12f, 0.87f }, { 0.63f, 0.71f, 0.66f },
+        0,
+        { 8532, 51586 }, { 0.053f, 0.095f, 0.039f }, { 0.005f, 0.114f, 0.249f }
+    },
+    {
+        { 0x00FF, 0xABCD }, { 0.5f, 0.12f, 0.87f }, { 0.63f, 0.71f, 0.66f },
+        16,
+        { 51586, 8532 }, { 0.005f, 0.114f, 0.249f }, { 0.053f, 0.095f, 0.039f }
+    },
+    {
+        { 0xF66A, 0x1818 }, { 0.75f, 0.48f, 0.27f }, { 1.0f, 0.73f, 0.19f },
+        4,
+        { 39300, 56899 }, { 0.01f, 0.114f, 0.188f }, { 0.007f, 0.485f, 0.268f }
+    },
+};
+
+void ImageDXTShadeColorsWrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)
 {
     __asm
     {
@@ -285,7 +324,7 @@ void FUN_6000fdf6Wrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)
         push a;
 
         mov ecx, m;
-        add ecx, 0xFDF6; // TODO name
+        add ecx, 0xFDF6; // SHADE_COLORS_ADDRESS
 
         call ecx;
 
@@ -297,24 +336,40 @@ void FUN_6000fdf6Wrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)
     return;
 }
 
-BOOL ExecuteFUN_6000fdf6(HMODULE module) // TODO
+BOOL ExecuteImageDXTShadeColors(HMODULE module, const ShadeColorsTest* test)
 {
-    // TOD more tests
+    u16 p1[2];
+    CopyMemory(p1, test->InPixels, 2 * sizeof(u16));
 
+    f32 a1[RGB_COLOR_COUNT];
+    CopyMemory(a1, test->InA, RGB_COLOR_COUNT * sizeof(f32));
 
-    u16 pixels[] = { 0x00FF, 0xABCD };
-    f32 a[] = { 0.5f, 0.12f, 0.87f };
-    f32 b[] = { 0.63f, 0.71f, 0.66f };
+    f32 b1[RGB_COLOR_COUNT];
+    CopyMemory(b1, test->InB, RGB_COLOR_COUNT * sizeof(f32));
 
-    FUN_6000fdf6(pixels, a, b, 0);
+    ImageDXTShadeColors(p1, a1, b1, test->Count);
 
-    u16 pixels1[] = { 0x00FF, 0xABCD };
-    f32 a1[] = { 0.5f, 0.12f, 0.87f };
-    f32 b1[] = { 0.63f, 0.71f, 0.66f };
+    u16 p2[2];
+    CopyMemory(p2, test->InPixels, 2 * sizeof(u16));
 
-    FUN_6000fdf6Wrapper(module, pixels1, a1, b1, 0);
+    f32 a2[RGB_COLOR_COUNT];
+    CopyMemory(a2, test->InA, RGB_COLOR_COUNT * sizeof(f32));
 
-    // TODO
+    f32 b2[RGB_COLOR_COUNT];
+    CopyMemory(b2, test->InB, RGB_COLOR_COUNT * sizeof(f32));
+
+    ImageDXTShadeColorsWrapper(module, p2, a2, b2, test->Count);
+
+    if (memcmp(p1, p2, 2 * sizeof(u16)) != 0 || memcmp(p2, test->OutPixels, 2 * sizeof(u16)) != 0) { return FALSE; }
+
+    for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+    {
+        if (e < fabs(a1[x] - a2[x])) { return FALSE; }
+        if (e < fabs(b1[x] - b2[x])) { return FALSE; }
+        if (e < fabs(a2[x] - test->OutA[x])) { return FALSE; }
+        if (e < fabs(b2[x] - test->OutB[x])) { return FALSE; }
+    }
+
     return TRUE;
 }
 
@@ -343,7 +398,11 @@ BOOL ExecuteImageDXTMisc(HMODULE module)
         if (!ExecuteMixGrayScaleColors(module, &MixGrayScaleColorsTests[x])) { return FALSE; }
     }
 
-    ExecuteFUN_6000fdf6(module); // TODO
+    // Shading
+    for (u32 x = 0; x < MAX_SHADE_COLOR_TEST_COUNT; x++)
+    {
+        if(!ExecuteImageDXTShadeColors(module, &ShadeColorsTests[x])) { return FALSE; }
+    }
 
     return TRUE;
 }

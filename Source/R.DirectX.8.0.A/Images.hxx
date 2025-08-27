@@ -417,6 +417,6 @@ namespace Images
     void ImageDXTColorsFromGrayScale(const f32* in, u8* out);
     void ImageDXTColorsToGrayScale(const u8* in, f32* out);
 
-    void FUN_6000fdf6(u16* pixels, f32* a, f32* b, u32 count); // TODO
+    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, u32 count);
     void MixGrayScaleColors(f32* a, f32* b);
 }

@@ -2405,7 +2405,7 @@ namespace Images
     }
 
     // 0x6000fdf6
-    void FUN_6000fdf6(u16* pixels, f32* a, f32* b, u32 count) // TODO name
+    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, u32 count)
     {
         ImagePixel pixel;
 
