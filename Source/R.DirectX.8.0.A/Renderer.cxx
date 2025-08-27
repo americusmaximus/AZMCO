@@ -2093,18 +2093,17 @@ namespace RendererModule
         dsti.Pixels = lock.pBits;
         dsti.Stride = lock.Pitch;
 
-        dsti.Width = desc.Width;
-        dsti.Height = desc.Height;
+        dsti.Source.Right = desc.Width;
+        dsti.Source.Bottom = desc.Height;
+        dsti.Source.Min = 0;
+        dsti.Source.Max = 1;
 
-        dsti.Unk08 = 0;
-        dsti.Unk09 = 1;
-
-        dsti.Dimensions.Left = rect.left;
-        dsti.Dimensions.Top = rect.top;
-        dsti.Dimensions.Right = rect.right;
-        dsti.Dimensions.Bottom = rect.bottom;
-        dsti.Dimensions.Min = 0;
-        dsti.Dimensions.Max = 1;
+        dsti.Target.Left = rect.left;
+        dsti.Target.Top = rect.top;
+        dsti.Target.Right = rect.right;
+        dsti.Target.Bottom = rect.bottom;
+        dsti.Target.Min = 0;
+        dsti.Target.Max = 1;
 
         dsti.Color = GRAPCHICS_COLOR_BLACK;
         dsti.Palette = dpal;
@@ -2116,12 +2115,12 @@ namespace RendererModule
         srci.Pixels = (void*)pixels;
         srci.Stride = pitch;
 
-        srci.Dimensions.Left = srect->x1;
-        srci.Dimensions.Top = srect->y1;
-        srci.Dimensions.Right = srect->x2;
-        srci.Dimensions.Bottom = srect->y2;
-        srci.Dimensions.Min = 0;
-        srci.Dimensions.Max = 1;
+        srci.Target.Left = srect->x1;
+        srci.Target.Top = srect->y1;
+        srci.Target.Right = srect->x2;
+        srci.Target.Bottom = srect->y2;
+        srci.Target.Min = 0;
+        srci.Target.Max = 1;
 
         srci.Color = color;
         srci.Palette = spal;

@@ -25,6 +25,8 @@ SOFTWARE.
 #include "ImageBitMap.hxx"
 #include "ImageYV.hxx"
 #include "ImageDXT.hxx"
+#include "ImageDXTColors.hxx"
+#include "ImageDXTMisc.hxx"
 #include "ImageDXTQuads.hxx"
 
 #include <stdio.h>
@@ -48,7 +50,9 @@ s32 main(s32 argc, char** argv)
     }
 
     printf("FPU: %s\r\n", FPU(module) ? "OK" : "ERROR");
-    printf("DXT: %s\r\n", ExecuteImageDXTQuads(module) ? "OK" : "ERROR");
+    printf("DXT Colors: %s\r\n", ExecuteImageDXTColors(module) ? "OK" : "ERROR");
+    printf("DXT Misc: %s\r\n", ExecuteImageDXTMisc(module) ? "OK" : "ERROR");
+    printf("DXT Quads: %s\r\n", ExecuteImageDXTQuads(module) ? "OK" : "ERROR");
 
     //printf("A1R5G5B5: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A1R5G5B5) ? "OK" : "ERROR"); // OK
     //printf("A4L4: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A4L4) ? "OK" : "ERROR"); // OK

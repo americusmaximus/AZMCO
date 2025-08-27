@@ -134,6 +134,9 @@ namespace Images
     // 0x600186dc
     ImageCalls ImageDXT5Self = { (RELEASEIMAGECALL)ReleaseImageDXT, (READIMAGECALL)ReadImageDXT, (WRITEDIMAGECALL)WriteImageDXT };
 
+    // 0x6001c808
+    const f32 GrayScaleValues[] = { 0.082f, 0.60939997f, 0.3086f }; // Blue Green Red
+
     // 0x60009150
     void InitializeImageContainer(ImageContainer* self)
     {
@@ -720,7 +723,7 @@ namespace Images
 
         self->AreaStride = args->AreaStride;
 
-        CopyMemory(&self->Dimensions, &args->Dimensions, sizeof(ImageDimensions));
+        CopyMemory(&self->Dimensions, &args->Target, sizeof(ImageDimensions));
 
         ImageColor color;
         AcquireImageColor(&color, args->Color);
@@ -1658,7 +1661,7 @@ namespace Images
 
         self->Unk0x1098 = 0;
 
-        switch (args->Width)
+        switch (args->Source.Right)
         {
         case 1: // TODO
         {
@@ -1683,7 +1686,7 @@ namespace Images
         }
         }
 
-        switch (args->Height)
+        switch (args->Source.Bottom)
         {
         case 1: // TODO
         {
@@ -1967,16 +1970,16 @@ namespace Images
     {
         // Simple
         {
-            u32 x = 0;
+            BOOL alpha = FALSE;
 
-            for (; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+            for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
             {
-                if (quad->ARGB[x] & 0x80000000) { break; } // Sign bit is set, it is a negative value.
+                if ((s32)quad->ARGB[x] >= 0) { alpha = TRUE;  break; } // Check for Alpha.
             }
 
-            if (x == IMAGE_QUAD_PIXEL_COUNT)
+            if (!alpha) // No Alpha found.
             {
-                // TODO FUN_600106e2(indx, quad, pixels);
+                FUN_600106e2(indx, quad, pixels);
 
                 return;
             }
@@ -2011,10 +2014,22 @@ namespace Images
         }
     }
 
+    // 0x60010014
+    void FUN_60010014(ImageQuad* quad, u16* pixels, u32 color, u32 alpha) // TODO
+    {
+
+    }
+
+    // 0x600106e2
+    void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels) // TODO 
+    {
+        FUN_60010014(quad, pixels, indx & 0x00FFFFFF, indx & 0xFF000000);
+    }
+
     // 0x6000fc4d
     void AcquireImageQuadDXT1(const u16* pixels, ImageQuad* quad)
     {
-        AcquireImageQuad(pixels, quad);
+        AcquireImageColorQuad(pixels, quad);
 
         for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
         {
@@ -2261,9 +2276,15 @@ namespace Images
         *out = result;
     }
 
+    // 0x6000fcda
+    void AcquireImagePixel(ImagePixel in, u16* out)
+    {
+        *out = ((in.R >> 3) << 11) | ((in.G >> 2) << 5) | (in.B >> 3);
+    }
+
     // 0x600104ab
     // https://en.wikipedia.org/wiki/S3_Texture_Compression
-    void AcquireImageQuad(const u16* pixels, ImageQuad* quad)
+    void AcquireImageColorQuad(const u16* pixels, ImageQuad* quad)
     {
         if (pixels == NULL) { ZeroMemory(quad, sizeof(ImageQuad)); return; }
 
@@ -2316,6 +2337,70 @@ namespace Images
             quad->Pixels[x].A = colors[indx].A;
 
             pix = pix >> 2;
+        }
+    }
+
+    // 0x6000ffb3
+    void AcquireImagePixelQuad(const ImageQuad* quad, u16* pixels, u16 color)
+    {
+        ImagePixel pixel = quad->Pixels[0];
+
+        AcquireImagePixel(quad->Pixels[0], pixels);
+
+        pixels[1] = pixels[0];
+        pixels[2] = 0;
+        pixels[3] = 0;
+
+        if (color != 0xFFFF)
+        {
+            u16 v1 = 1;
+            u32 v2 = 3;
+
+            for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+            {
+                if (!(v1 & color))
+                {
+                    u32* values = (u32*)((addr)pixels + sizeof(u32));
+                    values[0] = values[0] | v2;
+                }
+                else { pixel = quad->Pixels[x]; }
+
+                v1 = v1 << 1;
+                v2 = v2 << 2;
+            }
+
+            AcquireImagePixel(pixel, pixels);
+
+            pixels[1] = pixels[0];
+        }
+    }
+
+    // 0x6000fd57
+    void ImageDXTColorMultiply(const f32* in, f32* out)
+    {
+        out[0] = in[2] * in[2] + in[1] * in[1] + in[0] * in[0];
+        out[1] = in[5] * in[2] + (in[4] + in[0]) * in[1];
+        out[2] = in[5] * in[1] + (in[8] + in[0]) * in[2];
+        out[4] = in[1] * in[1] + in[4] * in[4] + in[5] * in[5];
+        out[5] = in[2] * in[1] + (in[8] + in[4]) * in[5];
+        out[8] = in[2] * in[2] + in[5] * in[5] + in[8] * in[8];
+    }
+
+    // 0x6000fca5
+    void ImageDXTColorsFromGrayScale(const f32* in, u8* out)
+    {
+        for (u32 x = 0; x < 3; x++)
+        {
+            out[x] = (s8)((in[x] / GrayScaleValues[x]) * 255.0f);
+        }
+    }
+
+    // 0x6000fc73
+    void ImageDXTColorsToGrayScale(const u8* in, f32* out)
+    {
+        for (u32 x = 0; x < 3; x++)
+        {
+            out[x] = in[x] * GrayScaleValues[x] * (1.0f / 255.0f);
         }
     }
 }

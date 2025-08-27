@@ -24,64 +24,20 @@ SOFTWARE.
 
 using namespace Images;
 
-#define ACQUIRE_IMAGE_QUAD_BASE_ADDRESS         (0x600104AB - 0x60000000)
-#define ACQUIRE_IMAGE_QUAD_FUNC_ADDRESS(M)      ((addr)M + (addr)ACQUIRE_IMAGE_QUAD_BASE_ADDRESS)
+#define ACQUIRE_IMAGE_COLOR_QUAD_BASE_ADDRESS       (0x600104AB - 0x60000000)
+#define ACQUIRE_IMAGE_COLOR_QUAD_FUNC_ADDRESS(M)    ((addr)M + (addr)ACQUIRE_IMAGE_COLOR_QUAD_BASE_ADDRESS)
+
+#define ACQUIRE_IMAGE_PIXEL_QUAD_BASE_ADDRESS       (0x6000FFB3 - 0x60000000)
+#define ACQUIRE_IMAGE_PIXEL_QUAD_FUNC_ADDRESS(M)    ((addr)M + (addr)ACQUIRE_IMAGE_PIXEL_QUAD_BASE_ADDRESS)
 
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/opaque-and-1-bit-alpha-textures
 
 #define MAX_QUAD_COUNT                  10
 #define MAX_QUAD_SEQUENCE_COUNT         16
 
+typedef void (*ACQUIREIMAGECOLORQUADACTION)(const u16* pixels, ImageQuad* quad);
 
-#define ACQUIREIMAGECOLOR_BASE_ADDRESS          (0x6000FD0A - 0x60000000)
-#define ACQUIREIMAGECOLOR_FUNC_ADDRESS(M)       ((addr)M + (addr)ACQUIREIMAGECOLOR_BASE_ADDRESS)
-
-struct ImageColorTest
-{
-    u16         Input;
-    ImagePixel  Output;
-};
-
-#define MAX_IMAGE_COLOR_TEST_COUNT  10
-
-static const ImageColorTest ImageColorTests[MAX_IMAGE_COLOR_TEST_COUNT] =
-{
-    { 0x0000, { 0x00, 0x00, 0x00, 0x00 } },
-    { 0xFFFF, { 0xFF, 0xFF, 0xFF, 0x00 } },
-    { 0xAAAA, { 0x52, 0x55, 0xAD, 0x00 } },
-    { 0xFAFA, { 0xD6, 0x5D, 0xFF, 0x00 } },
-    { 0x1285, { 0x29, 0x51, 0x10, 0x00 } },
-    { 0xFA00, { 0x00, 0x41, 0xFF, 0x00 } },
-    { 0x0CA0, { 0x00, 0x96, 0x08, 0x00 } },
-    { 0x1FF1, { 0x8C, 0xFF, 0x18, 0x00 } },
-    { 0x2020, { 0x00, 0x04, 0x21, 0x00 } },
-    { 0xDDCC, { 0x63, 0xBA, 0xDE, 0x00 } }
-};
-
-void AcquireImageColorWrapper(HMODULE m, const u16* input, ImagePixel* output)
-{
-    __asm
-    {
-        mov ebx, output;
-        mov eax, input;
-        mov ecx, m;
-
-        push ecx;
-        push ebx;
-
-        add ecx, 0xFD0A; // ACQUIREIMAGECOLOR_FUNC_ADDRESS
-        call ecx;
-
-        pop ecx;
-        pop ecx;
-    }
-
-    return;
-}
-
-typedef void (*ACQUIREIMAGEQUADACTION)(const u16*, ImageQuad* quad);
-
-static const u16 QuadInputs[MAX_QUAD_COUNT][MAX_QUAD_SEQUENCE_COUNT] =
+static const u16 QuadColorInputs[MAX_QUAD_COUNT][MAX_QUAD_SEQUENCE_COUNT] =
 {
     { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 },
     { 0x0000, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 },
@@ -95,7 +51,7 @@ static const u16 QuadInputs[MAX_QUAD_COUNT][MAX_QUAD_SEQUENCE_COUNT] =
     { 0xCDCD, 0x1818, 0x5678, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 }
 };
 
-static const ImageQuad QuadResults[MAX_QUAD_COUNT] =
+static const ImageQuad QuadColorResults[MAX_QUAD_COUNT] =
 {
     { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
     { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
@@ -109,38 +65,122 @@ static const ImageQuad QuadResults[MAX_QUAD_COUNT] =
     { 0xFFCEBA6B, 0xFF917C89, 0xFF553EA8, 0xFF1800C6, 0xFF917C89, 0xFF1800C6, 0xFF1800C6, 0xFF1800C6, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B, 0xFFCEBA6B },
 };
 
-BOOL AcquireImageDXTQuad(HMODULE module, const u16* pixels, const ImageQuad* expect)
+BOOL ExecuteAcquireImageColorQuad(HMODULE module, const u16* pixels, const ImageQuad* expect)
 {
     ImageQuad o, m;
     ZeroMemory(&o, sizeof(ImageQuad));
     ZeroMemory(&m, sizeof(ImageQuad));
 
-    ((ACQUIREIMAGEQUADACTION)ACQUIRE_IMAGE_QUAD_FUNC_ADDRESS(module))(pixels, &o);
+    ((ACQUIREIMAGECOLORQUADACTION)ACQUIRE_IMAGE_COLOR_QUAD_FUNC_ADDRESS(module))(pixels, &o);
 
-    AcquireImageQuad(pixels, &m);
+    AcquireImageColorQuad(pixels, &m);
 
     return memcmp(&o, &m, sizeof(ImageQuad)) == 0 && memcmp(&o, expect, sizeof(ImageQuad)) == 0;
+}
+
+struct ImageQuadPixelTest
+{
+    ImageQuad   Quad;
+    u16         Pixels[IMAGE_QUAD_PIXEL_COUNT];
+    u16         Color;
+};
+
+#define MAX_IMAGE_PIXEL_QUAD_TEST_COUNT 7
+
+static const ImageQuadPixelTest ImageQuadPixelTests[MAX_IMAGE_PIXEL_QUAD_TEST_COUNT] =
+{
+    {
+        { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+        { 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0x0000
+    },
+    {
+        { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+        { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0xFFFF
+    },
+    {
+        { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+        { 0x0000, 0x0000, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0xABCD
+    },
+    {
+        { 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF },
+        { 0xFFFF, 0xFFFF, 0x3333, 0xC0C0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0x77AA
+    },
+    {
+        { 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF },
+        { 0x52AA, 0x52AA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0xFFFF
+    },
+    {
+        { 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552 },
+        { 0xAAAA, 0xAAAA, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0xABCD
+    },
+    {
+        { 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552 },
+        { 0xAAAA, 0xAAAA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0xFFFF
+    }
+};
+
+void AcquireImagePixelQuadWrapper(HMODULE m, const ImageQuad* quad, u16* pixels, u16 color)
+{
+    __asm
+    {
+        push edi;
+        push esi;
+
+        mov edi, quad;
+        mov esi, pixels;
+
+        movzx ecx, color;
+        push ecx;
+
+        mov ecx, m;
+        add ecx, 0xFFB3; // ACQUIRE_IMAGE_PIXEL_QUAD_BASE_ADDRESS
+
+        call ecx;
+
+        pop esi; // color
+
+        pop esi;
+        pop edi;
+    }
+
+    return;
+}
+
+BOOL ExecuteAcquireImagePixelQuad(HMODULE module, const ImageQuadPixelTest* value)
+{
+    const u32 size = sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT;
+
+    u16 o[IMAGE_QUAD_PIXEL_COUNT];
+    ZeroMemory(o, size);
+
+    u16 m[IMAGE_QUAD_PIXEL_COUNT];
+    ZeroMemory(m, size);
+
+    AcquireImagePixelQuadWrapper(module, &value->Quad, o, value->Color);
+    AcquireImagePixelQuad(&value->Quad, m, value->Color);
+
+    return memcmp(o, m, size) == 0 && memcmp(o, value->Pixels, size) == 0;
 }
 
 BOOL ExecuteImageDXTQuads(HMODULE module)
 {
     // Colors
-    
-    for (u32 x = 0; x < MAX_IMAGE_COLOR_TEST_COUNT; x++)
-    {
-        ImagePixel o, m;
-
-        AcquireImageColorWrapper(module, &ImageColorTests[x].Input, &o);
-        AcquireImageColor(ImageColorTests[x].Input, &m);
-
-        if (memcmp(&o, &m, sizeof(ImagePixel)) != 0
-            || memcmp(&o, &ImageColorTests[x].Output, sizeof(ImagePixel) != 0)) { return FALSE; }
-    }
-
-    // Quads
     for (u32 x = 0; x < MAX_QUAD_COUNT; x++)
     {
-        if (!AcquireImageDXTQuad(module, QuadInputs[x], &QuadResults[x])) { return FALSE; }
+        if (!ExecuteAcquireImageColorQuad(module, QuadColorInputs[x], &QuadColorResults[x])) { return FALSE; }
+    }
+
+    // Pixels
+    for (u32 x = 0; x < MAX_IMAGE_PIXEL_QUAD_TEST_COUNT; x++)
+    {
+        if (!ExecuteAcquireImagePixelQuad(module, &ImageQuadPixelTests[x])) { return FALSE; }
     }
 
     return TRUE;

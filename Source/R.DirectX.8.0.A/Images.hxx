@@ -113,20 +113,15 @@ namespace Images
 
     struct ImageContainerArgs
     {
-        void* Pixels;
-        D3DFORMAT Format;
-        u32 Stride;
-        u32 AreaStride;
-        s32 Unk04; // TODO
-        s32 Unk05; // TODO
-        s32 Width;
-        s32 Height;
-        s32 Unk08; // TODO
-        s32 Unk09; // TODO
-        ImageDimensions Dimensions;
-        BOOL IsGradient;
-        u32 Color;
-        const u8* Palette;
+        void*           Pixels;
+        D3DFORMAT       Format;
+        u32             Stride;
+        u32             AreaStride;
+        ImageDimensions Source;
+        ImageDimensions Target;
+        BOOL            IsGradient;
+        u32             Color;
+        const u8*       Palette;
     };
 
     struct ImagePixel
@@ -177,7 +172,7 @@ namespace Images
         BOOL IsColor;
         BOOL IsPalette;
         void* Pixels;
-        ImageColor Color;
+        ImageColor Color; // Color Key
         f32* Modifiers;
         ImageColor Palette[MAX_IMAGE_PALETTE_VALUES_COUNT];
         ImageDimensions Dimensions;
@@ -205,7 +200,7 @@ namespace Images
         BOOL IsColor;
         BOOL IsPalette;
         void* Pixels;
-        ImageColor Color;
+        ImageColor Color; // Color Key
         f32* Modifiers;
         ImageColor Palette[MAX_IMAGE_PALETTE_VALUES_COUNT];
         ImageDimensions Dimensions;
@@ -228,7 +223,7 @@ namespace Images
         BOOL IsColor;
         BOOL IsPalette;
         void* Pixels;
-        ImageColor Color;
+        ImageColor Color; // Color Key
         f32* Modifiers;
         ImageColor Palette[MAX_IMAGE_PALETTE_VALUES_COUNT];
         ImageDimensions Dimensions;
@@ -269,7 +264,7 @@ namespace Images
         BOOL IsColor;
         BOOL IsPalette;
         void* Pixels;
-        ImageColor Color;
+        ImageColor Color; // Color Key
         f32* Modifiers;
         ImageColor Palette[MAX_IMAGE_PALETTE_VALUES_COUNT];
         ImageDimensions Dimensions;
@@ -392,6 +387,9 @@ namespace Images
     void AssignImageDXTSelf(ImageDXT* self);
 
     void UnpackImageDXT1(const u32 indx, ImageQuad* quad, u16* pixels);
+    
+    void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels); // TODO
+    void FUN_60010014(ImageQuad* quad, u16* pixels, u32 color, u32 alpha); // TODO
 
     void ReadImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
     void WriteImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
@@ -406,8 +404,14 @@ namespace Images
     void ReadImageUYVY(ImageUYVY* self, const u32 line, const u32 level, ImageColor* pixels);
     void WriteImageUYVY(ImageUYVY* self, const u32 line, const u32 level, ImageColor* pixels);
 
-    void AcquireImageQuad(const u16* pixels, ImageQuad* quad);
+    void AcquireImageColorQuad(const u16* pixels, ImageQuad* quad);
+    void AcquireImagePixelQuad(const ImageQuad* quad, u16* pixels, u16 color);
 
     void AcquireImageColor(const u16 in, ImagePixel* out);
     void AcquireImageQuadDXT1(const u16* pixels, ImageQuad* quad);
+    void AcquireImagePixel(ImagePixel in, u16* out);
+
+    void ImageDXTColorMultiply(const f32* in, f32* out);
+    void ImageDXTColorsFromGrayScale(const f32* in, u8* out);
+    void ImageDXTColorsToGrayScale(const u8* in, f32* out);
 }

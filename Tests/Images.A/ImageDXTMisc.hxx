@@ -22,48 +22,10 @@ SOFTWARE.
 
 #pragma once
 
-#include "Base.hxx"
+#include "Image.hxx"
+#include "Images.hxx"
 
+#include <Graphics.Basic.hxx>
 #include <Images.hxx>
 
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-
-enum ColorSchema
-{
-    COLORSCHEMA_BLACK =     0,
-    COLORSCHEMA_WHITE =     1,
-    COLORSCHEMA_REPEAT =    2,
-    COLORSCHEMA_IMAGE =     3
-};
-
-struct ImageContainer
-{
-    Images::ImageContainerArgs  Args;
-    void*                       Pixels;
-    Images::ImageBitMap*        Image;
-};
-
-struct ImageTest
-{
-    u32         Width;
-    u32         Heigh;
-    BOOL        Gradient;
-    u32         Color;
-    BOOL        Colors;
-    BOOL        Palette;
-    ColorSchema Schema;
-};
-
-#define MAX_IMAGE_TEST_CASES        128
-
-extern const ImageTest ImageTests[MAX_IMAGE_TEST_CASES];
-
-BOOL AcquireImage(void* pixels, const ColorSchema schema);
-BOOL AcquirePalette(void* palette);
-BOOL AcquireColors(Images::ImageColor* colors, void* pixels, const u32 width, const u32 height, const BOOL generate);
+BOOL ExecuteImageDXTMisc(HMODULE module);

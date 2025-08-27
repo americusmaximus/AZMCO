@@ -209,20 +209,15 @@ BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const u32 width, con
 
     ImageContainerArgs a =
     {
-            ia,
-            format,
-            IMAGE_DIMS * IMAGE_BPP,
-            0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
-            gradient,
-            color,
-            palette
+        ia,
+        format,
+        IMAGE_DIMS * IMAGE_BPP,
+        0, // AREA STRIDE
+        { 0, 0, width, height, 0, 1 },
+        { 0, 0, width, height, 0, 1 },
+        gradient,
+        color,
+        palette
     };
 
     void* ib = malloc(IMAGE_SIZE);
@@ -233,20 +228,15 @@ BOOL ExecuteImageYV(HMODULE module, const D3DFORMAT format, const u32 width, con
 
     ImageContainerArgs b =
     {
-            ib,
-            format,
-            IMAGE_DIMS * IMAGE_BPP,
-            0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
-            gradient,
-            color,
-            palette
+        ib,
+        format,
+        IMAGE_DIMS * IMAGE_BPP,
+        0, // AREA STRIDE
+        { 0, 0, width, height, 0, 1 },
+        { 0, 0, width, height, 0, 1 },
+        gradient,
+        color,
+        palette
     };
 
     const BOOL result = CompareImageYV(module, &a, &b, colors);

@@ -72,7 +72,7 @@ BOOL CompareImageDXT(const ImageDXT* a, const ImageDXT* b, const BOOL colors)
     {
         for (u32 x = 0; x < IMAGE_QUAD_COLOR_COUNT; x++)
         {
-            if (memcmp(&a->Colors[x], &b->Colors[x], a->ActualWidth * sizeof(ImageColor)) != 0) return FALSE;
+            if (memcmp(a->Colors[x], b->Colors[x], a->ActualWidth * sizeof(ImageColor)) != 0) return FALSE;
         }
     }
 
@@ -100,6 +100,12 @@ BOOL CompareImageDXT(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* 
 
     if (o == NULL) { return FALSE; }
 
+    // Original code's new operator leaves first 8 bytes with garbage values.
+    for (u32 x = 0; x < IMAGE_QUAD_COLOR_COUNT; x++)
+    {
+        ZeroMemory(o->Colors[x], o->ActualWidth * sizeof(ImageColor));
+    }
+
     ImageDXT* m = (ImageDXT*)InitializeAbstractImage(b);
 
     if (m == NULL)
@@ -109,7 +115,7 @@ BOOL CompareImageDXT(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* 
         return FALSE;
     }
 
-    if (!CompareImageDXT(o, m, FALSE))
+    if (!CompareImageDXT(o, m, TRUE))
     {
         ((IMAGEBITMAPRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -214,20 +220,15 @@ BOOL ExecuteImageDXT(HMODULE module, const D3DFORMAT format, const u32 width, co
 
     ImageContainerArgs a =
     {
-            ia,
-            format,
-            IMAGE_DIMS * IMAGE_BPP,
-            0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
-            gradient,
-            color,
-            palette
+        ia,
+        format,
+        IMAGE_DIMS * IMAGE_BPP,
+        0, // AREA STRIDE
+        { 0, 0, width, height, 0, 1 },
+        { 0, 0, width, height, 0, 1 },
+        gradient,
+        color,
+        palette
     };
 
     void* ib = malloc(IMAGE_SIZE);
@@ -238,20 +239,15 @@ BOOL ExecuteImageDXT(HMODULE module, const D3DFORMAT format, const u32 width, co
 
     ImageContainerArgs b =
     {
-            ib,
-            format,
-            IMAGE_DIMS * IMAGE_BPP,
-            0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
-            gradient,
-            color,
-            palette
+        ib,
+        format,
+        IMAGE_DIMS * IMAGE_BPP,
+        0, // AREA STRIDE
+        { 0, 0, width, height, 0, 1 },
+        { 0, 0, width, height, 0, 1 },
+        gradient,
+        color,
+        palette
     };
 
     const BOOL result = CompareImageDXT(module, &a, &b, colors);

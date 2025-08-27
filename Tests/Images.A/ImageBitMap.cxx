@@ -194,13 +194,8 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width,
             format,
             IMAGE_DIMS * IMAGE_BPP,
             0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
+            { 0, 0, width, height, 0, 1 },
+            { 0, 0, width, height, 0, 1 },
             gradient,
             color,
             palette
@@ -218,13 +213,8 @@ BOOL ExecuteImageBitMap(HMODULE module, const D3DFORMAT format, const u32 width,
             format,
             IMAGE_DIMS * IMAGE_BPP,
             0, // AREA STRIDE
-            0, // TODO
-            0, // TODO
-            width,
-            height,
-            0, // TODO
-            1, // TODO
-            { 0, 0, width, height, 0, 1 }, // TODO
+            { 0, 0, width, height, 0, 1 },
+            { 0, 0, width, height, 0, 1 },
             gradient,
             color,
             palette
