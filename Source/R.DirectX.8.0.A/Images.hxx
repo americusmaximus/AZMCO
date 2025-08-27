@@ -48,6 +48,8 @@ SOFTWARE.
 #define IMAGE_QUAD_COLOR_COUNT                      4
 #define IMAGE_QUAD_PIXEL_COUNT                      (IMAGE_QUAD_COLOR_COUNT * IMAGE_QUAD_COLOR_COUNT)
 
+#define RGB_COLOR_COUNT                             3
+
 namespace Images
 {
     enum ImageFormatDescriptorType
@@ -414,4 +416,7 @@ namespace Images
     void ImageDXTColorMultiply(const f32* in, f32* out);
     void ImageDXTColorsFromGrayScale(const f32* in, u8* out);
     void ImageDXTColorsToGrayScale(const u8* in, f32* out);
+
+    void FUN_6000fdf6(u16* pixels, f32* a, f32* b, u32 count); // TODO
+    void MixGrayScaleColors(f32* a, f32* b);
 }

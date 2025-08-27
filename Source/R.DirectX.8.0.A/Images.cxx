@@ -2017,7 +2017,7 @@ namespace Images
     // 0x60010014
     void FUN_60010014(ImageQuad* quad, u16* pixels, u32 color, u32 alpha) // TODO
     {
-
+        // TODO
     }
 
     // 0x600106e2
@@ -2389,7 +2389,7 @@ namespace Images
     // 0x6000fca5
     void ImageDXTColorsFromGrayScale(const f32* in, u8* out)
     {
-        for (u32 x = 0; x < 3; x++)
+        for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
         {
             out[x] = (s8)((in[x] / GrayScaleValues[x]) * 255.0f);
         }
@@ -2398,9 +2398,73 @@ namespace Images
     // 0x6000fc73
     void ImageDXTColorsToGrayScale(const u8* in, f32* out)
     {
-        for (u32 x = 0; x < 3; x++)
+        for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
         {
             out[x] = in[x] * GrayScaleValues[x] * (1.0f / 255.0f);
+        }
+    }
+
+    // 0x6000fdf6
+    void FUN_6000fdf6(u16* pixels, f32* a, f32* b, u32 count) // TODO name
+    {
+        ImagePixel pixel;
+
+        ImageDXTColorsFromGrayScale(a, (u8*)&pixel);
+        AcquireImagePixel(pixel, &pixels[0]);
+
+        ImageDXTColorsFromGrayScale(b, (u8*)&pixel);
+        AcquireImagePixel(pixel, &pixels[1]);
+
+        if (pixels[1] < pixels[0] != (count == 16))
+        {
+            const u16 old = pixels[0];
+            pixels[0] = pixels[1];
+            pixels[1] = old;
+        }
+
+        AcquireImageColor(pixels[0], &pixel);
+        ImageDXTColorsToGrayScale((u8*)&pixel, a);
+
+        AcquireImageColor(pixels[1], &pixel);
+        ImageDXTColorsToGrayScale((u8*)&pixel, b);
+    }
+
+    // 0x6000fe81
+    void MixGrayScaleColors(f32* a, f32* b)
+    {
+        for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+        {
+            if (b[x] < 0.0f != a[x] < 0.0f)
+            {
+                f32* target = a;
+                f32 value = -a[x] / (b[x] - a[x]);
+
+                if (0.0f <= a[x])
+                {
+                    value = value - 1.0f;
+                    target = b;
+                }
+
+                target[2] = (b[2] - a[2]) * value + target[2];
+                target[1] = (b[1] - a[1]) * value + target[1];
+                target[0] = (b[0] - a[0]) * value + target[0];
+            }
+
+            if (GrayScaleValues[x] < b[x] != GrayScaleValues[x] < a[x])
+            {
+                f32* target = a;
+                f32 value = (GrayScaleValues[x] - a[x]) / (b[x] - a[x]);
+
+                if (a[x] <= GrayScaleValues[x])
+                {
+                    value = value - 1.0f;
+                    target = b;
+                }
+
+                target[2] = (b[2] - a[2]) * value + target[2];
+                target[1] = (b[1] - a[1]) * value + target[1];
+                target[0] = (b[0] - a[0]) * value + target[0];
+            }
         }
     }
 }

@@ -137,18 +137,18 @@ void ImageDXTColorsToGrayScaleWrapper(HMODULE m, const u8* input, f32* output)
 
 BOOL ExecuteImageDXTColorsToGrayScale(HMODULE module, const ToGrayScaleTest* test)
 {
-    const u32 size = sizeof(f32) * 3;
+    const u32 size = sizeof(f32) * RGB_COLOR_COUNT;
 
-    f32 o[3];
+    f32 o[RGB_COLOR_COUNT];
     ZeroMemory(o, size);
 
-    f32 m[3];
+    f32 m[RGB_COLOR_COUNT];
     ZeroMemory(m, size);
 
     ImageDXTColorsToGrayScaleWrapper(module, test->In, o);
     ImageDXTColorsToGrayScale(test->In, m);
 
-    for (u32 x = 0; x < 3; x++)
+    for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
     {
         if (e < fabs(o[x] - m[x])) { return FALSE; }
         if (e < fabs(o[x] - test->Out[x])) { return FALSE; }
@@ -195,18 +195,127 @@ void ImageDXTColorsFromGrayScaleWrapper(HMODULE m, const f32* input, u8* output)
 
 BOOL ExecuteImageDXTColorsFromGrayScale(HMODULE module, const FromGrayScaleTest* test)
 {
-    const u32 size = sizeof(u8) * 3;
+    const u32 size = sizeof(u8) * RGB_COLOR_COUNT;
 
-    u8 o[3];
+    u8 o[RGB_COLOR_COUNT];
     ZeroMemory(o, size);
 
-    u8 m[3];
+    u8 m[RGB_COLOR_COUNT];
     ZeroMemory(m, size);
 
     ImageDXTColorsFromGrayScaleWrapper(module, test->In, o);
     ImageDXTColorsFromGrayScale(test->In, m);
 
     return memcmp(o, m, size) == 0 && memcmp(o, test->Out, size) == 0;
+}
+
+void MixGrayScaleColorsWrapper(HMODULE m, f32* a, f32* b)
+{
+    __asm
+    {
+        mov edx, a;
+        mov edi, b;
+
+        mov ecx, m;
+        add ecx, 0xFE81; // TODO Name
+
+        call ecx;
+    };
+
+    return;
+}
+
+#define MAX_MIX_GRAY_SCALE_TEST_COUNT   4
+
+struct MixGrayScaleColorsTest
+{
+    f32 InA[RGB_COLOR_COUNT];
+    f32 InB[RGB_COLOR_COUNT];
+    f32 OutA[RGB_COLOR_COUNT];
+    f32 OutB[RGB_COLOR_COUNT];
+};
+
+static const MixGrayScaleColorsTest MixGrayScaleColorsTests[MAX_MIX_GRAY_SCALE_TEST_COUNT] =
+{
+    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } },
+    { { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f } },
+    { { 17.0f, 0.19f, 0.55f }, { -145.0f, 0.77f, 0.87f }, { 0.082f, 0.25f, 0.583f }, { 0.0f, 0.25f, 0.583f } },
+    { { -17.0f, -0.19f, 0.55f }, { 16.5f, 0.77f, 1.87f }, { 0.0f, 0.297f, 1.219f }, { 0.082f, 0.299f, 1.223f } }
+};
+
+BOOL ExecuteMixGrayScaleColors(HMODULE module, const MixGrayScaleColorsTest* test)
+{
+    const u32 size = sizeof(f32) * RGB_COLOR_COUNT;
+
+    f32 ao[RGB_COLOR_COUNT];
+    CopyMemory(ao, test->InA, size);
+
+    f32 bo[RGB_COLOR_COUNT];
+    CopyMemory(bo, test->InB, size);
+
+    MixGrayScaleColorsWrapper(module, ao, bo);
+
+    f32 am[RGB_COLOR_COUNT];
+    CopyMemory(am, test->InA, size);
+
+    f32 bm[RGB_COLOR_COUNT];
+    CopyMemory(bm, test->InB, size);
+
+    MixGrayScaleColors(am, bm);
+
+    for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+    {
+        if (e < fabs(ao[x] - am[x])) { return FALSE; }
+        if (e < fabs(bo[x] - bm[x])) { return FALSE; }
+        if (e < fabs(am[x] - test->OutA[x])) { return FALSE; }
+        if (e < fabs(bm[x] - test->OutB[x])) { return FALSE; }
+    }
+
+    return TRUE;
+}
+
+void FUN_6000fdf6Wrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)
+{
+    __asm
+    {
+        mov esi, pixels;
+
+        push count;
+        push b;
+        push a;
+
+        mov ecx, m;
+        add ecx, 0xFDF6; // TODO name
+
+        call ecx;
+
+        pop eax;
+        pop eax;
+        pop eax;
+    };
+
+    return;
+}
+
+BOOL ExecuteFUN_6000fdf6(HMODULE module) // TODO
+{
+    // TOD more tests
+
+
+    u16 pixels[] = { 0x00FF, 0xABCD };
+    f32 a[] = { 0.5f, 0.12f, 0.87f };
+    f32 b[] = { 0.63f, 0.71f, 0.66f };
+
+    FUN_6000fdf6(pixels, a, b, 0);
+
+    u16 pixels1[] = { 0x00FF, 0xABCD };
+    f32 a1[] = { 0.5f, 0.12f, 0.87f };
+    f32 b1[] = { 0.63f, 0.71f, 0.66f };
+
+    FUN_6000fdf6Wrapper(module, pixels1, a1, b1, 0);
+
+    // TODO
+    return TRUE;
 }
 
 BOOL ExecuteImageDXTMisc(HMODULE module)
@@ -227,6 +336,14 @@ BOOL ExecuteImageDXTMisc(HMODULE module)
     {
         if (!ExecuteImageDXTColorsFromGrayScale(module, &FromGrayScaleTests[x])) { return FALSE; }
     }
+
+    // Mixing
+    for (u32 x = 0; x < MAX_MIX_GRAY_SCALE_TEST_COUNT; x++)
+    {
+        if (!ExecuteMixGrayScaleColors(module, &MixGrayScaleColorsTests[x])) { return FALSE; }
+    }
+
+    ExecuteFUN_6000fdf6(module); // TODO
 
     return TRUE;
 }
