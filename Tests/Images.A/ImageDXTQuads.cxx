@@ -30,6 +30,9 @@ using namespace Images;
 #define ACQUIRE_IMAGE_PIXEL_QUAD_BASE_ADDRESS       (0x6000FFB3 - 0x60000000)
 #define ACQUIRE_IMAGE_PIXEL_QUAD_FUNC_ADDRESS(M)    ((addr)M + (addr)ACQUIRE_IMAGE_PIXEL_QUAD_BASE_ADDRESS)
 
+#define NORMALIZE_QUAD_BASE_ADDRESS                 (0x60010014 - 0x60000000)
+#define NORMALIZE_QUAD_FUNC_ADDRESS(M)              ((addr)M + (addr)NORMALIZE_QUAD_BASE_ADDRESS)
+
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/opaque-and-1-bit-alpha-textures
 
 #define MAX_QUAD_COUNT                  10
@@ -169,6 +172,78 @@ BOOL ExecuteAcquireImagePixelQuad(HMODULE module, const ImageQuadPixelTest* valu
     return memcmp(o, m, size) == 0 && memcmp(o, value->Pixels, size) == 0;
 }
 
+typedef void(*IMAGEDXTNORMALIZEQUADACTION)(ImageQuad* quad, u16* pixels, const u32 color, const u32 alpha);
+
+struct ImageDXTNormalizeQuadTest
+{
+    ImageQuad InQ;
+    u16 InPixels[IMAGE_QUAD_PIXEL_COUNT];
+    u32 Color, Alpha;
+
+    ImageQuad OutQ;
+    u16 OutPixels[IMAGE_QUAD_PIXEL_COUNT];
+};
+
+#define MAX_NORMALIZE_QUAD_TEST_COUNT   1
+
+static const ImageDXTNormalizeQuadTest ImageDXTNormalizeQuadTests[MAX_NORMALIZE_QUAD_TEST_COUNT] =
+{
+    //{ {}, {},  0x00FFFFFF, 0xFF000000, {}, {} },
+    //{
+    //    { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+    //    { 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+    //    0x00FFFFFF, 0xFF000000,
+    //    { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+    //    { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+    //},
+    //{
+    //    { 0xFF2A450E, 0xFF91A181, 0xFF4C519E, 0xFF0B0E42, 0xFF222229, 0xFF000000, 0xFFADC7A3, 0xFF27660F, 0xFF3C6E62, 0xFF079170, 0xFFE36222, 0xFF73584B, 0xFFD4284F, 0xFF287BD4, 0xFF36D428, 0xFFA6D428 },
+    //    { 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+    //    0x00FFFFFF, 0xFF000000,
+    //    { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
+    //    { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+    //},
+    {
+        { 0xFFFFAAFF, 0xFFAAFFFF, 0xFFFFFFAA, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555 },
+        { 0x0011, 0x0555, 0x0AAA, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        0x00FFFFFF, 0xFF000000,
+        { 0xFFFFAAFF, 0xFFAAFFFF, 0xFFFFFFAA, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555 },
+        { 0xF7FD, 0x52AA, 0x5542, 0x5555, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+    },
+};
+
+BOOL ExecuteImageDXTNormalizeQuad(HMODULE module, const ImageDXTNormalizeQuadTest* test)
+{
+    IMAGEDXTNORMALIZEQUADACTION action =
+        (IMAGEDXTNORMALIZEQUADACTION)NORMALIZE_QUAD_FUNC_ADDRESS(module);
+
+    ImageQuad q1;
+    CopyMemory(&q1, &test->InQ, sizeof(ImageQuad));
+
+    u16 p1[IMAGE_QUAD_PIXEL_COUNT];
+    CopyMemory(p1, &test->InPixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
+
+    action(&q1, p1, test->Color, test->Alpha);
+
+    ImageQuad q2;
+    CopyMemory(&q2, &test->InQ, sizeof(ImageQuad));
+
+    u16 p2[IMAGE_QUAD_PIXEL_COUNT];
+    CopyMemory(p2, &test->InPixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
+
+    ImageDXTNormalizeQuad(&q2, p2, test->Color, test->Alpha);
+
+    bool res = memcmp(&q1, &q2, sizeof(ImageQuad)) == 0
+        && memcmp(p1, p2, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT) == 0;
+
+    if (!res)
+    {
+        int kk = 1;
+    }
+
+    return res;
+}
+
 BOOL ExecuteImageDXTQuads(HMODULE module)
 {
     // Colors
@@ -181,6 +256,12 @@ BOOL ExecuteImageDXTQuads(HMODULE module)
     for (u32 x = 0; x < MAX_IMAGE_PIXEL_QUAD_TEST_COUNT; x++)
     {
         if (!ExecuteAcquireImagePixelQuad(module, &ImageQuadPixelTests[x])) { return FALSE; }
+    }
+
+    // Normalize
+    for (u32 x = 0; x < MAX_NORMALIZE_QUAD_TEST_COUNT; x++)
+    {
+        if (!ExecuteImageDXTNormalizeQuad(module, &ImageDXTNormalizeQuadTests[x])) { return FALSE; }
     }
 
     return TRUE;

@@ -292,7 +292,7 @@ struct ShadeColorsTest
     f32 OutB[RGB_COLOR_COUNT];
 };
 
-#define MAX_SHADE_COLOR_TEST_COUNT  3
+#define MAX_SHADE_COLOR_TEST_COUNT 4
 
 static const ShadeColorsTest ShadeColorsTests[MAX_SHADE_COLOR_TEST_COUNT] =
 {
@@ -311,6 +311,11 @@ static const ShadeColorsTest ShadeColorsTests[MAX_SHADE_COLOR_TEST_COUNT] =
         4,
         { 39300, 56899 }, { 0.01f, 0.114f, 0.188f }, { 0.007f, 0.485f, 0.268f }
     },
+    {
+        { 0, 0 }, { 0.0f, 0.0f, 0.0f }, { 0.0228524953f, 0.609400034f, 0.152350008f },
+        16,
+        { 32744, 0 }, { 0.0212235320f, 0.609399974f, 0.148854136f }, { 0.0f, 0.0f, 0.0f }
+    }
 };
 
 void ImageDXTShadeColorsWrapper(HMODULE m, u16* pixels, f32* a, f32* b, u32 count)

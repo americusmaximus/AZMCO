@@ -2014,16 +2014,376 @@ namespace Images
         }
     }
 
-    // 0x60010014
-    void FUN_60010014(ImageQuad* quad, u16* pixels, u32 color, u32 alpha) // TODO
+    const static u32 UINT_6001c814[4] = // TODO
     {
-        // TODO
+        0, 2, 3, 1
+    };
+
+    const static u32 UINT_6001c824[4] = // TODO
+    {
+        0, 2, 1, 3
+    };
+
+    // 0x60010014
+    void ImageDXTNormalizeQuad(ImageQuad* quad, u16* pixels, const u32 color, const u32 alpha)
+    {
+        if (pixels == NULL) { return; }
+
+        u32 count = 0;
+        u16 mask = 0x00;
+
+        {
+            const u8 cr = (color >> 0x18) & 0xFF;
+            const u8 cg = (color >> 0x10) & 0xFF;
+            const u8 cb = (color >> 0x00) & 0xFF;
+
+            const u8 ar = (alpha >> 0x18) & 0xFF;
+            const u8 ag = (alpha >> 0x10) & 0xFF;
+            const u8 ab = (alpha >> 0x00) & 0xFF;
+
+            for (u32 x = IMAGE_QUAD_PIXEL_COUNT; x != 0; x--)
+            {
+                const ImagePixel pixel = quad->Pixels[x - 1];
+
+                if (pixel.R < cr || ar < pixel.R)
+                {
+                    mask = (mask << 1) | 1;
+                    count = count + 1;
+                }
+                else if (pixel.G < cg || ag < pixel.G)
+                {
+                    mask = (mask << 1) | 1;
+                    count = count + 1;
+                }
+                else if (pixel.B < cb || ab < pixel.B)
+                {
+                    mask = (mask << 1) | 1;
+                    count = count + 1;
+                }
+                else
+                {
+                    mask = (mask << 1) & 0xFFFE;
+                }
+            }
+        }
+
+        if (count == 0)
+        {
+            pixels[0] = 0;
+            pixels[1] = 0xFFFF;
+            pixels[2] = 0xFFFF;
+            pixels[3] = 0xFFFF;
+        }
+        else
+        {
+            BOOL stop = TRUE;
+
+            for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+            {
+                if (stop && x != 0)
+                {
+                    if (TRUE/* TODO NOT IMPLEMENTED */)
+                    {
+                        stop = FALSE;
+                    }
+                }
+            }
+
+            if (!stop)
+            {
+                /* ------------------------------------ */
+
+                // (RGBA * 16 colors) = 64 elements
+                f32 grayscale[(RGB_COLOR_COUNT + 1) * IMAGE_QUAD_PIXEL_COUNT];
+
+                for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+                {
+                    ImageDXTColorsToGrayScale((u8*)&quad->Pixels[x], &grayscale[x * (RGB_COLOR_COUNT + 1)]);
+                }
+
+                /* ------------------------------------ */
+
+                f32 average[RGB_COLOR_COUNT];
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    u32 m = 1;
+                    average[x] = 0.0f;
+
+                    for (u32 xx = 0; xx < IMAGE_QUAD_PIXEL_COUNT; xx++)
+                    {
+                        if (m & mask)
+                        {
+                            average[x] += grayscale[xx * (RGB_COLOR_COUNT + 1) + x];
+                        }
+
+                        m = m << 1;
+                    }
+
+                    average[x] = (1.0f / (f32)count) * average[x];
+                }
+
+                /* ------------------------------------ */
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    for (u32 xx = 0; xx < IMAGE_QUAD_PIXEL_COUNT; xx++)
+                    {
+                        grayscale[xx * (RGB_COLOR_COUNT + 1) + x] -= average[x];
+                    }
+                }
+
+                /* ------------------------------------ */
+
+                f32 pattern[RGB_COLOR_COUNT * RGB_COLOR_COUNT];
+
+                // Output pattern:
+                //  X       X       X
+                //  0.0     X       X
+                //  0.0     0.0     X
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    for (u32 xx = x; xx < RGB_COLOR_COUNT; xx++)
+                    {
+                        u32 m = 1;
+
+                        pattern[x * RGB_COLOR_COUNT + xx] = 0.0f;
+
+                        for (u32 xxx = 0; xxx < IMAGE_QUAD_PIXEL_COUNT; xxx++)
+                        {
+                            if (m & mask)
+                            {
+                                pattern[x * RGB_COLOR_COUNT + xx] +=
+                                    grayscale[xxx * (RGB_COLOR_COUNT + 1) + x] *
+                                    grayscale[xxx * (RGB_COLOR_COUNT + 1) + xx];
+                            }
+
+                            m = m << 1;
+                        }
+                    }
+                }
+
+                /* ------------------------------------ */
+
+                {
+                    f32 m[RGB_COLOR_COUNT * RGB_COLOR_COUNT];
+
+                    for (u32 x = 0; x < RGB_COLOR_COUNT * RGB_COLOR_COUNT; x++)
+                    {
+                        ImageDXTColorMultiply(pattern, m);
+                        ImageDXTColorMultiply(m, pattern);
+
+                        const f32 diagonal = pattern[0] + pattern[4] + pattern[8];
+
+                        if (diagonal == 0.0f)
+                        {
+                            AcquireImagePixelQuad(quad, pixels, mask);
+
+                            return;
+                        }
+
+                        for (u32 xx = 0; xx < RGB_COLOR_COUNT; xx++)
+                        {
+                            for (u32 xxx = xx; xxx < RGB_COLOR_COUNT; xxx++)
+                            {
+                                pattern[xx * RGB_COLOR_COUNT + xxx] *= 3.0f / diagonal;
+                            }
+                        }
+                    }
+                }
+
+                /* ------------------------------------ */
+
+                pattern[3] = pattern[1];
+                pattern[6] = pattern[2];
+                pattern[7] = pattern[5];
+
+                u32 maxIndex = 0;
+                f32 maxValue = 0.0f; // Maximum value on the diagonal
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    const f32 current = pattern[x * (RGB_COLOR_COUNT + 1)];
+
+                    if (maxValue < current) {
+                        maxValue = current;
+                        maxIndex = x;
+                    }
+                }
+
+                /* ------------------------------------ */
+
+                f32 inverted[RGB_COLOR_COUNT];
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    inverted[x] = (1.0f / sqrtf(maxValue)) * pattern[x * RGB_COLOR_COUNT + maxIndex];
+                }
+
+                /* ------------------------------------ */
+
+                f32 square = 0.0f;
+
+                for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                {
+                    square += inverted[x] * inverted[x];
+                }
+
+                /* ------------------------------------ */
+
+                if (square != 0.0f)
+                {
+                    u32 m = 1;
+                    f32 max = -99999.0f;
+                    f32 min = 99999.0f;
+
+                    for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+                    {
+                        if (m & mask)
+                        {
+                            f32 value = 0.0f;
+
+                            for (u32 xx = 0; xx < RGB_COLOR_COUNT; xx++)
+                            {
+                                value += inverted[xx] * grayscale[x * (RGB_COLOR_COUNT + 1) + xx];
+                            }
+
+                            value = value / square;
+
+                            if (value < min) { min = value; }
+                            if (max < value) { max = value; }
+                        }
+
+                        m = m << 1;
+
+                    }
+
+                    /* >>>>>>>>>>>>>>>>>>>>>>> */
+
+                    f32 minimums[RGB_COLOR_COUNT];
+                    f32 maximums[RGB_COLOR_COUNT];
+
+                    for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                    {
+                        minimums[x] = min * inverted[x] + average[x];
+                        maximums[x] = max * inverted[x] + average[x];
+                    }
+
+                    /* >>>>>>>>>>>>>>>>>>>>>>> */
+
+                    MixGrayScaleColors(minimums, maximums);
+                    ImageDXTShadeColors(pixels, minimums, maximums, count);
+
+                    /* >>>>>>>>>>>>>>>>>>>>>>> */
+
+                    f32 sqdist = 0.0f;
+
+                    for (u32 x = 0; x < RGB_COLOR_COUNT; x++)
+                    {
+                        const f32 diff = maximums[x] - minimums[x];
+
+                        sqdist += diff * diff;
+                    }
+
+                    /* >>>>>>>>>>>>>>>>>>>>>>> */
+
+                    if (sqdist != 0.0f || count != 16)
+                    {
+                        f32 fVar15 = 0.0f; // TODO
+                        u32 m = 0x8000;
+                        f32 min = 3.0f; // TODO
+                        f32 max = 4.0f; // TODO
+
+                        u32 pix = 0;
+
+                        for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+                        {
+                            if (!(m & mask)) { pix = *(u32*)(&pixels[2]) << 2 | 3; }
+                            else
+                            {
+                                f32 acc = 0.0f;
+
+                                for (u32 xx = 0; xx < RGB_COLOR_COUNT; xx++)
+                                {
+                                    // TODO, is iterating backwards needed?
+                                    const u32 indx = IMAGE_QUAD_PIXEL_COUNT * (RGB_COLOR_COUNT + 1)
+                                        - (x + 1) * (RGB_COLOR_COUNT + 1) + xx;
+
+                                    grayscale[indx] += average[xx];
+                                    acc += (grayscale[indx] - minimums[xx]) * (maximums[xx] - minimums[xx]);
+
+                                    //const u32 indx = x * (RGB_COLOR_COUNT + 1) + xx;
+                                    //
+                                    //grayscale[indx] += average[xx];
+                                    //acc += (grayscale[indx] - minimums[xx]) * (maximums[xx] - minimums[xx]);
+                                }
+
+                                /* <<<<<<<<<<<<<<<<<<<<<<<< */
+
+                                f32 om = min;
+
+                                if (count == 16)
+                                {
+                                    sqdist = (acc / sqdist) * max;
+
+                                    if (fVar15 <= sqdist)
+                                    {
+                                        if (max <= sqdist) { sqdist = min; }
+                                    }
+                                    else { sqdist = 0.0f; }
+
+                                    *(u32*)(&pixels[2]) = *(u32*)(&pixels[2]) << 2;
+
+                                    pix = UINT_6001c814[(u32)sqdist];
+                                }
+                                else
+                                {
+                                    sqdist = (acc / sqdist) * min;
+
+                                    if (fVar15 <= sqdist)
+                                    {
+                                        if (min <= sqdist) { sqdist = 2.0f; }
+                                    }
+                                    else { sqdist = 0.0f; }
+
+                                    *(u32*)(&pixels[2]) = *(u32*)(&pixels[2]) << 2;
+
+                                    pix = UINT_6001c824[(u32)sqdist];
+                                }
+
+                                max = min = sqdist; // 0x0000 0x5000
+
+                                //max = sqdist; // 0x0000 0x9000
+
+                                // TODO ST0 and ST1 ?
+                                //max = min;
+                                //min = fVar15; // => 0x4444 0x4444
+
+                                sqdist = fVar15;
+
+                                pix = pix | *(u32*)(&pixels[2]);
+                                fVar15 = om;
+                            }
+
+                            m = m >> 1;
+
+                            *(u32*)(&pixels[2]) = pix;
+                        }
+
+                        return;
+                    }
+                }
+            }
+
+            AcquireImagePixelQuad(quad, pixels, mask);
+        }
     }
 
     // 0x600106e2
     void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels) // TODO 
     {
-        FUN_60010014(quad, pixels, indx & 0x00FFFFFF, indx & 0xFF000000);
+        ImageDXTNormalizeQuad(quad, pixels, indx & 0x00FFFFFF, indx & 0xFF000000);
     }
 
     // 0x6000fc4d
@@ -2405,7 +2765,7 @@ namespace Images
     }
 
     // 0x6000fdf6
-    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, u32 count)
+    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, const u32 count)
     {
         ImagePixel pixel;
 

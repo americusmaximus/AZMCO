@@ -391,7 +391,7 @@ namespace Images
     void UnpackImageDXT1(const u32 indx, ImageQuad* quad, u16* pixels);
     
     void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels); // TODO
-    void FUN_60010014(ImageQuad* quad, u16* pixels, u32 color, u32 alpha); // TODO
+    void ImageDXTNormalizeQuad(ImageQuad* quad, u16* pixels, const u32 color, const u32 alpha);
 
     void ReadImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
     void WriteImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);
@@ -417,6 +417,6 @@ namespace Images
     void ImageDXTColorsFromGrayScale(const f32* in, u8* out);
     void ImageDXTColorsToGrayScale(const u8* in, f32* out);
 
-    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, u32 count);
+    void ImageDXTShadeColors(u16* pixels, f32* a, f32* b, const u32 count);
     void MixGrayScaleColors(f32* a, f32* b);
 }
