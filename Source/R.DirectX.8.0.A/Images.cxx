@@ -2082,7 +2082,9 @@ namespace Images
             {
                 if (stop && x != 0)
                 {
-                    if (TRUE/* TODO NOT IMPLEMENTED */)
+                    if (quad->Pixels[x - 1].B != quad->Pixels[x].B
+                        || quad->Pixels[x - 1].G != quad->Pixels[x].G
+                        || quad->Pixels[x - 1].R != quad->Pixels[x].R)
                     {
                         stop = FALSE;
                     }
