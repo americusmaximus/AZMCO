@@ -54,14 +54,14 @@ s32 main(s32 argc, char** argv)
     printf("DXT Misc: %s\r\n", ExecuteImageDXTMisc(module) ? "OK" : "ERROR");
     printf("DXT Quads: %s\r\n", ExecuteImageDXTQuads(module) ? "OK" : "ERROR");
 
-    //printf("A1R5G5B5: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A1R5G5B5) ? "OK" : "ERROR"); // OK
-    //printf("A4L4: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A4L4) ? "OK" : "ERROR"); // OK
-    //printf("A4R4G4B4: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A4R4G4B4) ? "OK" : "ERROR"); // OK
-    //printf("A8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8) ? "OK" : "ERROR"); // OK
-    //printf("A8L8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8L8) ? "OK" : "ERROR"); // OK
-    //printf("A8P8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8P8) ? "OK" : "ERROR"); // OK
-    //printf("A8R3G3B2: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8R3G3B2) ? "OK" : "ERROR"); // OK
-    //printf("A8R8G8B8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8R8G8B8) ? "OK" : "ERROR"); // OK
+    printf("A1R5G5B5: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A1R5G5B5) ? "OK" : "ERROR"); // OK
+    printf("A4L4: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A4L4) ? "OK" : "ERROR"); // OK
+    printf("A4R4G4B4: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A4R4G4B4) ? "OK" : "ERROR"); // OK
+    printf("A8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8) ? "OK" : "ERROR"); // OK
+    printf("A8L8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8L8) ? "OK" : "ERROR"); // OK
+    printf("A8P8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8P8) ? "OK" : "ERROR"); // OK
+    printf("A8R3G3B2: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8R3G3B2) ? "OK" : "ERROR"); // OK
+    printf("A8R8G8B8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8R8G8B8) ? "OK" : "ERROR"); // OK
 
     printf("DXT1: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT1) ? "OK" : "ERROR");
     //TODO printf("DXT2: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT2) ? "OK" : "ERROR");

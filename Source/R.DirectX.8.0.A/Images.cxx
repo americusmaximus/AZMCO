@@ -2155,8 +2155,8 @@ namespace Images
                             if (m & mask)
                             {
                                 pattern[x * RGB_COLOR_COUNT + xx] +=
-                                    grayscale[xxx * (RGB_COLOR_COUNT + 1) + x] *
-                                    grayscale[xxx * (RGB_COLOR_COUNT + 1) + xx];
+                                    grayscale[xxx * (RGB_COLOR_COUNT + 1) + x]
+                                    * grayscale[xxx * (RGB_COLOR_COUNT + 1) + xx];
                             }
 
                             m = m << 1;
@@ -2206,7 +2206,8 @@ namespace Images
                 {
                     const f32 current = pattern[x * (RGB_COLOR_COUNT + 1)];
 
-                    if (maxValue < current) {
+                    if (maxValue < current)
+                    {
                         maxValue = current;
                         maxIndex = x;
                     }
@@ -2283,92 +2284,71 @@ namespace Images
                     {
                         const f32 diff = maximums[x] - minimums[x];
 
-                        sqdist += diff * diff;
+                        sqdist = sqdist + diff * diff;
                     }
 
                     /* >>>>>>>>>>>>>>>>>>>>>>> */
 
                     if (sqdist != 0.0f || count != 16)
                     {
-                        f32 fVar15 = 0.0f; // TODO
-                        u32 m = 0x8000;
-                        f32 min = 3.0f; // TODO
-                        f32 max = 4.0f; // TODO
+                        const f32 min = 3.0f;
+                        const f32 max = 4.0f;
+                        const f32 isqd = sqdist;
 
-                        u32 pix = 0;
+                        u32 m = 0x8000;
+                        u32 pixel = 0;
 
                         for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
                         {
-                            if (!(m & mask)) { pix = *(u32*)(&pixels[2]) << 2 | 3; }
+                            if (!(m & mask)) { pixel = (*(u32*)(&pixels[2]) << 2) | 3; }
                             else
                             {
                                 f32 acc = 0.0f;
 
                                 for (u32 xx = 0; xx < RGB_COLOR_COUNT; xx++)
                                 {
-                                    // TODO, is iterating backwards needed?
                                     const u32 indx = IMAGE_QUAD_PIXEL_COUNT * (RGB_COLOR_COUNT + 1)
                                         - (x + 1) * (RGB_COLOR_COUNT + 1) + xx;
 
                                     grayscale[indx] += average[xx];
                                     acc += (grayscale[indx] - minimums[xx]) * (maximums[xx] - minimums[xx]);
-
-                                    //const u32 indx = x * (RGB_COLOR_COUNT + 1) + xx;
-                                    //
-                                    //grayscale[indx] += average[xx];
-                                    //acc += (grayscale[indx] - minimums[xx]) * (maximums[xx] - minimums[xx]);
                                 }
 
                                 /* <<<<<<<<<<<<<<<<<<<<<<<< */
 
-                                f32 om = min;
-
                                 if (count == 16)
                                 {
-                                    sqdist = (acc / sqdist) * max;
+                                    sqdist = (acc / isqd) * max;
 
-                                    if (fVar15 <= sqdist)
+                                    if (0.0f <= sqdist)
                                     {
                                         if (max <= sqdist) { sqdist = min; }
                                     }
                                     else { sqdist = 0.0f; }
 
-                                    *(u32*)(&pixels[2]) = *(u32*)(&pixels[2]) << 2;
-
-                                    pix = UINT_6001c814[(u32)sqdist];
+                                    pixel = UINT_6001c814[(u32)sqdist];
                                 }
                                 else
                                 {
                                     sqdist = (acc / sqdist) * min;
 
-                                    if (fVar15 <= sqdist)
+                                    if (0.0f <= sqdist)
                                     {
                                         if (min <= sqdist) { sqdist = 2.0f; }
                                     }
                                     else { sqdist = 0.0f; }
 
-                                    *(u32*)(&pixels[2]) = *(u32*)(&pixels[2]) << 2;
-
-                                    pix = UINT_6001c824[(u32)sqdist];
+                                    pixel = UINT_6001c824[(u32)sqdist];
                                 }
 
-                                max = min = sqdist; // 0x0000 0x5000
+                                *(u32*)(&pixels[2]) = *(u32*)(&pixels[2]) << 2;
 
-                                //max = sqdist; // 0x0000 0x9000
-
-                                // TODO ST0 and ST1 ?
-                                //max = min;
-                                //min = fVar15; // => 0x4444 0x4444
-
-                                sqdist = fVar15;
-
-                                pix = pix | *(u32*)(&pixels[2]);
-                                fVar15 = om;
+                                pixel = pixel | *(u32*)(&pixels[2]);
                             }
 
                             m = m >> 1;
 
-                            *(u32*)(&pixels[2]) = pix;
+                            *(u32*)(&pixels[2]) = pixel;
                         }
 
                         return;
