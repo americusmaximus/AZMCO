@@ -390,7 +390,7 @@ namespace Images
 
     void UnpackImageDXT1(const u32 indx, ImageQuad* quad, u16* pixels);
     
-    void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels); // TODO
+    void ImageDXTNormalizeSolidQuad(const u32 indx, ImageQuad* quad, u16* pixels);
     void ImageDXTNormalizeQuad(ImageQuad* quad, u16* pixels, const u32 color, const u32 alpha);
 
     void ReadImageDXT(ImageDXT* self, const u32 line, const u32 level, ImageColor* pixels);

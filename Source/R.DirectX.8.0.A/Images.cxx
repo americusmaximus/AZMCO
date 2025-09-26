@@ -1756,16 +1756,16 @@ namespace Images
             {
                 for (u32 xx = 0; xx < IMAGE_QUAD_COLOR_COUNT; xx++)
                 {
-                    ImageColor* colors = (ImageColor*)((addr)self->Colors[xx] + (addr)(x - self->ActualLeft));
+                    const ImageColor* colors = &self->Colors[xx][x - self->ActualLeft];
 
                     for (u32 xxx = 0; xxx < IMAGE_QUAD_COLOR_COUNT; xxx++)
                     {
-                        const u32 r = (u32)(colors[xx].R * 255.0f + 0.5f);
-                        const u32 g = (u32)(colors[xx].G * 255.0f + 0.5f);
-                        const u32 b = (u32)(colors[xx].B * 255.0f + 0.5f);
-                        const u32 a = (u32)(colors[xx].A * 255.0f + 0.5f);
+                        const u32 r = (u32)(colors[xxx].R * 255.0f + 0.5f);
+                        const u32 g = (u32)(colors[xxx].G * 255.0f + 0.5f);
+                        const u32 b = (u32)(colors[xxx].B * 255.0f + 0.5f);
+                        const u32 a = (u32)(colors[xxx].A * 255.0f + 0.5f);
 
-                        quad.ARGB[xxx] = RGBA_MAKE(r, g, b, a);
+                        quad.ARGB[xx * IMAGE_QUAD_COLOR_COUNT + xxx] = RGBA_MAKE(r, g, b, a);
                     }
                 }
             }
@@ -1773,16 +1773,16 @@ namespace Images
             {
                 for (u32 xx = 0; xx < IMAGE_QUAD_COLOR_COUNT; xx++)
                 {
-                    ImageColor* colors = (ImageColor*)((addr)self->Colors[xx] + (addr)(x - self->ActualLeft));
+                    const ImageColor* colors = &self->Colors[xx][x - self->ActualLeft];
 
                     for (u32 xxx = 0; xxx < IMAGE_QUAD_COLOR_COUNT; xxx++)
                     {
-                        const u32 r = (u32)(colors[xx].R * colors[xx].A * 255.0f + 0.5f);
-                        const u32 g = (u32)(colors[xx].G * colors[xx].A * 255.0f + 0.5f);
-                        const u32 b = (u32)(colors[xx].B * colors[xx].A * 255.0f + 0.5f);
-                        const u32 a = (u32)(colors[xx].A * 255.0f + 0.5f);
+                        const u32 r = (u32)(colors[xxx].R * colors[xxx].A * 255.0f + 0.5f);
+                        const u32 g = (u32)(colors[xxx].G * colors[xxx].A * 255.0f + 0.5f);
+                        const u32 b = (u32)(colors[xxx].B * colors[xxx].A * 255.0f + 0.5f);
+                        const u32 a = (u32)(colors[xxx].A * 255.0f + 0.5f);
 
-                        quad.ARGB[xxx] = RGBA_MAKE(r, g, b, a);
+                        quad.ARGB[xx * IMAGE_QUAD_COLOR_COUNT + xxx] = RGBA_MAKE(r, g, b, a);
                     }
                 }
             }
@@ -1795,16 +1795,17 @@ namespace Images
                 {
                     for (u32 xxx = 0; xxx < IMAGE_QUAD_COLOR_COUNT; xxx++)
                     {
-                        quad.ARGB[xxx] = quad.ARGB[(self->Unk0x109c & xxx) + (self->Unk0x10a0 & xx)];
+                        quad.ARGB[xx * IMAGE_QUAD_COLOR_COUNT + xxx] =
+                            quad.ARGB[(self->Unk0x109c & xxx) + (self->Unk0x10a0 & xx)];
                     }
                 }
             }
 
             if (self->Format == D3DFMT_DXT1)
             {
-                UnpackImageDXT1(x >> 4, &quad,
+                UnpackImageDXT1(x >> 2, &quad,
                     (u16*)((addr)self->Pixels + (addr)((self->MinLine >> 2) * self->Stride)
-                        + (addr)(self->MinLevel * self->AreaStride) + (addr)((x >> 4) * 8)));
+                        + (addr)(self->MinLevel * self->AreaStride) + (addr)((x >> 2) * 8)));
             }
             // TODO
             //else if (self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT3)
@@ -1881,9 +1882,11 @@ namespace Images
             self->MinLevel = level;
             self->MaxLevel = level + 1;
 
-            if (self->MinLine < self->Unk0x10a4) { self->Unk0x10a4 = self->MinLine; }
+            const BOOL process = self->MinLine < self->Unk0x10a4;
 
-            if (fill)
+            self->Unk0x10a4 = max(self->MinLine, self->Unk0x10a4);
+
+            if (process || fill)
             {
                 const BOOL alpha = self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT4;
 
@@ -1895,8 +1898,8 @@ namespace Images
                     if (self->Format == D3DFMT_DXT1)
                     {
                         u16* pixels = (u16*)((addr)self->Pixels
-                            + (addr)(self->AreaStride * level) + (addr)(self->Stride * (line >> 2))
-                            + (addr)((self->ActualLeft >> 2) * 8));
+                            + (addr)(self->AreaStride * level) + (addr)(self->Stride * (x >> 2))
+                            + (addr)((x >> 2) * 8));
 
                         AcquireImageQuadDXT1(pixels, &quad);
                     }
@@ -1911,7 +1914,7 @@ namespace Images
 
                     for (u32 xx = 0; xx < IMAGE_QUAD_COLOR_COUNT; xx++)
                     {
-                        ImageColor* colors = self->Colors[x - self->ActualLeft + xx];
+                        ImageColor* colors = &self->Colors[xx][x];
 
                         for (u32 xxx = 0; xxx < IMAGE_QUAD_COLOR_COUNT; xxx++)
                         {
@@ -1924,7 +1927,41 @@ namespace Images
 
                             if (alpha)
                             {
-                                // TODO
+                                if (colors[xxx].A == 0.0f)
+                                {
+                                    colors[xxx].R = 0.0f;
+                                    colors[xxx].G = 0.0f;
+                                    colors[xxx].B = 0.0f;
+                                }
+                                else if (colors[xxx].A < 1.0f)
+                                {
+                                    if (colors[xxx].A <= colors[xxx].R)
+                                    {
+                                        colors[xxx].R = 1.0f;
+                                    }
+                                    else
+                                    {
+                                        colors[xxx].R = colors[xxx].R / colors[xxx].A;
+                                    }
+
+                                    if (colors[xxx].A <= colors[xxx].G)
+                                    {
+                                        colors[xxx].G = 1.0f;
+                                    }
+                                    else
+                                    {
+                                        colors[xxx].G = colors[xxx].G / colors[xxx].A;
+                                    }
+
+                                    if (colors[xxx].A <= colors[xxx].B)
+                                    {
+                                        colors[xxx].B = 1.0f;
+                                    }
+                                    else
+                                    {
+                                        colors[xxx].B = colors[xxx].B / colors[xxx].A;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1940,9 +1977,9 @@ namespace Images
     {
         if (AcquireImageDXT(self, line + self->Dimensions.Top, level + self->Dimensions.Min, TRUE) == NO_ERROR)
         {
-            ImageColor* colors = (ImageColor*)((addr)self->Colors[0]
-                + (addr)(IMAGE_QUAD_COLOR_COUNT * (line + self->Dimensions.Top - self->MinLine))
-                + (addr)(IMAGE_QUAD_PIXEL_COUNT * (self->Dimensions.Left - self->ActualLeft)));
+            const ImageColor* colors =
+                &self->Colors[line + self->Dimensions.Top - self->MinLine]
+                [self->Dimensions.Left - self->ActualLeft];
 
             CopyMemory(pixels, colors, self->Width * sizeof(ImageColor));
 
@@ -1955,9 +1992,9 @@ namespace Images
     {
         if (AcquireImageDXT(self, line + self->Dimensions.Top, level + self->Dimensions.Min, self->ActualWidth != self->Width) == NO_ERROR)
         {
-            ImageColor* colors = (ImageColor*)((addr)self->Colors[0]
-                + (addr)(IMAGE_QUAD_COLOR_COUNT * (line + self->Dimensions.Top - self->MinLine))
-                + (addr)(IMAGE_QUAD_PIXEL_COUNT * (self->Dimensions.Left - self->ActualLeft)));
+            ImageColor* colors =
+                &self->Colors[line + self->Dimensions.Top - self->MinLine]
+                [self->Dimensions.Left - self->ActualLeft];
 
             CopyMemory(colors, pixels, self->Width * sizeof(ImageColor));
 
@@ -1974,12 +2011,12 @@ namespace Images
 
             for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
             {
-                if ((s32)quad->ARGB[x] >= 0) { alpha = TRUE;  break; } // Check for Alpha.
+                if ((s32)quad->ARGB[x] >= 0) { alpha = TRUE; break; }
             }
 
             if (!alpha) // No Alpha found.
             {
-                FUN_600106e2(indx, quad, pixels);
+                ImageDXTNormalizeSolidQuad(indx, quad, pixels);
 
                 return;
             }
@@ -1987,30 +2024,27 @@ namespace Images
 
         // Complex
         {
-            // TODO
-            //for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
-            //{
-            //    u32 xx = 0;
+            for (u32 x = 0; x < IMAGE_QUAD_PIXEL_COUNT; x++)
+            {
+                BOOL match = FALSE;
 
-            //    for (; xx < IMAGE_QUAD_PIXEL_COUNT; xx++)
-            //    {
-            //        if ((s32)colors[xx] < 0 && (colors[xx] & 0xffffff) == x) { break; }
-            //    }
+                for (u32 xx = 0; xx < IMAGE_QUAD_PIXEL_COUNT; xx++)
+                {
+                    if ((s32)quad->ARGB[xx] < 0 && (quad->ARGB[xx] & 0x00FFFFFF) == x) { match = TRUE; break; }
+                }
 
-            //    if (xx == IMAGE_DXT_DIMENSION_SEGMENT)
-            //    {
-            //        xx = 0;
+                if (!match)
+                {
+                    for (u32 xx = 0; xx < IMAGE_QUAD_PIXEL_COUNT; xx++)
+                    {
+                        if ((s32)quad->ARGB[xx] >= 0) { quad->ARGB[xx] = (u32)x; }
+                    }
 
-            //        for (; xx < IMAGE_DXT_DIMENSION_SEGMENT; xx++)
-            //        {
-            //            if (-1 < (s32)colors[xx]) { colors[x] = (u32)x; }
-            //        }
+                    ImageDXTNormalizeQuad(quad, pixels, x, x);
 
-            //        FUN_60010014(colors, pixels, x, x);
-
-            //        return;
-            //    }
-            //}
+                    return;
+                }
+            }
         }
     }
 
@@ -2363,7 +2397,7 @@ namespace Images
     }
 
     // 0x600106e2
-    void FUN_600106e2(const u32 indx, ImageQuad* quad, u16* pixels) // TODO 
+    void ImageDXTNormalizeSolidQuad(const u32 indx, ImageQuad* quad, u16* pixels)
     {
         ImageDXTNormalizeQuad(quad, pixels, indx & 0x00FFFFFF, indx & 0xFF000000);
     }

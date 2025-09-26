@@ -111,14 +111,18 @@ struct ToGrayScaleTest
     f32 Out[3];
 };
 
-#define MAX_TO_GRAY_SCALSE_TEST_COUNT   4
+#define MAX_TO_GRAY_SCALSE_TEST_COUNT   8
 
 static const ToGrayScaleTest ToGrayScaleTests[MAX_TO_GRAY_SCALSE_TEST_COUNT] =
 {
     { { 0x00, 0x00, 0x00 }, { 0.0f, 0.0f, 0.0f } },
     { { 0xFF, 0xFF, 0xFF }, { 0.082f, 0.60939997f, 0.3086f } },
     { { 0xAA, 0x99, 0x18 }, { 0.0546f, 0.3654f, 0.0290f } },
-    { { 0x55, 0x77, 0x69 }, { 0.0273f, 0.2843f, 0.1270f } }
+    { { 0x55, 0x77, 0x69 }, { 0.0273f, 0.2843f, 0.1270f } },
+    { { 0xEF, 0xEF, 0xEF }, { 0.0768549070f, 0.571163118f, 0.289236873f } },
+    { { 0xF1, 0xF1, 0xF1 }, { 0.0774980485f, 0.575942755f, 0.291657269f } },
+    { { 0xF3, 0xF3, 0xF3 }, { 0.0781411827f, 0.580722392f, 0.294077665f } },
+    { { 0xF5, 0xF5, 0xF5 }, { 0.0787843242f, 0.585501969f, 0.296498060f } }
 };
 
 void ImageDXTColorsToGrayScaleWrapper(HMODULE m, const u8* input, f32* output)

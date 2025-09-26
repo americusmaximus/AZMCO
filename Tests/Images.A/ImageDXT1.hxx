@@ -28,4 +28,4 @@ SOFTWARE.
 #include <Graphics.Basic.hxx>
 #include <Images.hxx>
 
-BOOL ExecuteImageDXT(HMODULE module, const D3DFORMAT format);
+BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format);
