@@ -25,6 +25,7 @@ SOFTWARE.
 #include "ImageBitMap.hxx"
 #include "ImageYV.hxx"
 #include "ImageDXT1.hxx"
+#include "ImageDXT23.hxx"
 #include "ImageDXTColors.hxx"
 #include "ImageDXTMisc.hxx"
 #include "ImageDXTQuads.hxx"
@@ -64,8 +65,8 @@ s32 main(s32 argc, char** argv)
     //printf("A8R8G8B8: %s\r\n", ExecuteImageBitMap(module, D3DFMT_A8R8G8B8) ? "OK" : "ERROR"); // OK
 
     printf("DXT1: %s\r\n", ExecuteImageDXT1(module, D3DFMT_DXT1) ? "OK" : "ERROR");
-    //TODO printf("DXT2: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT2) ? "OK" : "ERROR");
-    //TODO printf("DXT3: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT3) ? "OK" : "ERROR");
+    printf("DXT2: %s\r\n", ExecuteImageDXT23(module, D3DFMT_DXT2) ? "OK" : "ERROR");
+    printf("DXT3: %s\r\n", ExecuteImageDXT23(module, D3DFMT_DXT3) ? "OK" : "ERROR");
     //TODO printf("DXT4: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT4) ? "OK" : "ERROR");
     //TODO printf("DXT5: %s\r\n", ExecuteImageDXT(module, D3DFMT_DXT5) ? "OK" : "ERROR");
 

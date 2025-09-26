@@ -26,11 +26,14 @@ SOFTWARE.
 
 using namespace Images;
 
-#define IMAGE_UNPACK_DXT_BASE_ADDRESS       (0x6000FBE4 - 0x60000000)
+#define IMAGE_UNPACK_DXT_BASE_ADDRESS       (0x60010714 - 0x60000000)
 #define IMAGE_UNPACK_DXT_FUNC_ADDRESS(M)    ((addr)M + (addr)IMAGE_UNPACK_DXT_BASE_ADDRESS)
 
 #define IMAGE_INITIALIZE_BASE_ADDRESS       (0x6000EDD2 - 0x60000000)
 #define IMAGE_INITIALIZE_FUNC_ADDRESS(M)    ((addr)M + (addr)IMAGE_INITIALIZE_BASE_ADDRESS)
+
+#define ACQUIRE_IMAGE_QUAD_BASE_ADDRESS       (0x60010594 - 0x60000000)
+#define ACQUIRE_IMAGE_QUAD_FUNC_ADDRESS(M)    ((addr)M + (addr)ACQUIRE_IMAGE_QUAD_BASE_ADDRESS)
 
 typedef AbstractImage* (__cdecl* INITIALIZEABSTRACTIMAGEACTION)(ImageContainerArgs*);
 
@@ -41,6 +44,7 @@ typedef VOID(__thiscall* IMAGEDXTREADACTION)(ImageDXT*, const u32 line, const u3
 typedef VOID(__thiscall* IMAGEDXTWRITEACTION)(ImageDXT*, const u32 line, const u32 level, ImageColor* pixels);
 
 typedef HRESULT(__thiscall* IMAGEINITIALIZEDXTACTION)(ImageDXT*);
+typedef VOID(__cdecl* ACQUIREIMAGEDXTACTION)(const u16* pixels, ImageQuad* quad);
 
 struct ImageUnpackTest
 {
@@ -57,36 +61,42 @@ static const ImageUnpackTest ImageUnpackTests[IMAGE_UNPACK_TEST_COUNT] =
     {
         0xFFFF,
         { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
-        { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF ... zeroes ... 
     },
     {
         0xFFFF,
         { 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552 },
-        { 0xAAAA, 0xAAAA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0xAAAA, 0xAAAA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0xAAAA 0x7A87 0x4444 0x0000 ... zeroes ...
     },
     {
         0xABCD,
         { 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFF7E503C, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552, 0xFFAD5552 },
-        { 0xAAAA, 0xAAAA, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0xAAAA, 0xAAAA, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0xAAAA 0x7A87 0x4444 0x0000 ... zeroes ...
     },
     {
         0x77AA,
         { 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF },
-        { 0xFFFF, 0xFFFF, 0x3333, 0xC0C0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0xFFFF, 0xFFFF, 0x3333, 0xC0C0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0x52AA 0x5555 0x0000 ... zeroes ...
     },
     {
         0xFFFF,
         { 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFF555555, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF },
-        { 0x52AA, 0x52AA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0x52AA, 0x52AA, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0xFFFF 0x52AA 0x5555 0x0000 ... zeroes ...
     },
     {
         0xABCD,
         { 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000, 0xFF000000 },
-        { 0x0000, 0x0000, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+        { 0x0000, 0x0000, 0x0F0C, 0x3330, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+        // 0xFFFF 0xFFFF 0xFFFF 0xFFFF ... zeroes ... 
     }
 };
 
-void UnpackImageDXT1Wrapper(HMODULE m, u16 color, const ImageQuad* quad, u16* pixels)
+void UnpackImageDXT23Wrapper(HMODULE m, u16 color, const ImageQuad* quad, u16* pixels)
 {
     __asm
     {
@@ -98,7 +108,7 @@ void UnpackImageDXT1Wrapper(HMODULE m, u16 color, const ImageQuad* quad, u16* pi
         movzx ecx, color;
 
         mov eax, m;
-        add eax, 0xFBE4; // IMAGE_UNPACK_DXT_BASE_ADDRESS
+        add eax, 0x10714; // IMAGE_UNPACK_DXT_BASE_ADDRESS
 
         call eax;
 
@@ -111,7 +121,7 @@ void UnpackImageDXT1Wrapper(HMODULE m, u16 color, const ImageQuad* quad, u16* pi
     return;
 }
 
-BOOL ExecuteUnpackImageDXT1(HMODULE module, const ImageUnpackTest* test)
+BOOL ExecuteUnpackImageDXT23(HMODULE module, const ImageUnpackTest* test)
 {
     ImageQuad q1;
     CopyMemory(&q1, &test->Quad, sizeof(ImageQuad));
@@ -119,7 +129,7 @@ BOOL ExecuteUnpackImageDXT1(HMODULE module, const ImageUnpackTest* test)
     u16 p1[IMAGE_QUAD_PIXEL_COUNT];
     CopyMemory(p1, &test->Pixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
 
-    UnpackImageDXT1Wrapper(module, test->Color , &q1, p1);
+    UnpackImageDXT23Wrapper(module, test->Color, &q1, p1);
 
     ImageQuad q2;
     CopyMemory(&q2, &test->Quad, sizeof(ImageQuad));
@@ -127,17 +137,68 @@ BOOL ExecuteUnpackImageDXT1(HMODULE module, const ImageUnpackTest* test)
     u16 p2[IMAGE_QUAD_PIXEL_COUNT];
     CopyMemory(p2, &test->Pixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
 
-    UnpackImageDXT1(test->Color, &q2, p2);
+    UnpackImageDXT23(test->Color, &q2, p2);
 
     return memcmp(&q1, &q2, sizeof(ImageQuad)) == 0
         && memcmp(p1, p2, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT) == 0;
 }
 
-BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const ImageTest* item);
-BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels);
-BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors);
+#define ACQUIRE_IMAGE_QUAD_TEST_COUNT    5
 
-BOOL CompareImageDXT1(const ImageDXT* a, const ImageDXT* b, const BOOL colors)
+struct AcquireImageQuadTest
+{
+    u16 InPixels[IMAGE_QUAD_PIXEL_COUNT];
+};
+
+static const AcquireImageQuadTest AcquireImageQuadTests[ACQUIRE_IMAGE_QUAD_TEST_COUNT] =
+{
+    {
+        { 0x0000, 0x0000, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+    },
+    {
+        { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+    },
+    {
+        { 0x0011, 0x0555, 0x0AAA, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+    },
+    {
+        { 0xF7FD, 0x52AA, 0x5542, 0x5555, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+    },
+    {
+       { 0xF7BE, 0xEF7D, 0xADAD, 0xADAD, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}
+    }
+};
+
+BOOL ExecuteAcquireImageQuadDXT23(HMODULE module, const AcquireImageQuadTest* test)
+{
+    ACQUIREIMAGEDXTACTION action =
+        (ACQUIREIMAGEDXTACTION)ACQUIRE_IMAGE_QUAD_FUNC_ADDRESS(module);
+
+    ImageQuad q1;
+    ZeroMemory(&q1,sizeof(ImageQuad));
+
+    u16 p1[IMAGE_QUAD_PIXEL_COUNT];
+    CopyMemory(p1, &test->InPixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
+
+    action(p1, &q1);
+
+    ImageQuad q2;
+    ZeroMemory(&q2, sizeof(ImageQuad));
+
+    u16 p2[IMAGE_QUAD_PIXEL_COUNT];
+    CopyMemory(p2, &test->InPixels, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT);
+
+    AcquireImageQuadDXT23(p2, &q2);
+
+    return memcmp(&q1, &q2, sizeof(ImageQuad)) == 0
+        && memcmp(p1, p2, sizeof(u16) * IMAGE_QUAD_PIXEL_COUNT) == 0;
+}
+
+BOOL ExecuteImageDXT23(HMODULE module, const D3DFORMAT format, const ImageTest* item);
+BOOL ExecuteImageDXT23(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels);
+BOOL CompareImageDXT23(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors);
+
+BOOL CompareImageDXT23(const ImageDXT* a, const ImageDXT* b, const BOOL colors)
 {
     if (a->Format != b->Format) return FALSE;
     if (a->Options != b->Options) return FALSE;
@@ -191,7 +252,7 @@ BOOL CompareImageDXT1(const ImageDXT* a, const ImageDXT* b, const BOOL colors)
     return TRUE;
 }
 
-BOOL CompareImageInitializeDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
+BOOL CompareImageInitializeDXT23(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
 {
     // Create
 
@@ -214,7 +275,7 @@ BOOL CompareImageInitializeDXT1(HMODULE module, ImageContainerArgs* a, ImageCont
         return FALSE;
     }
 
-    if (!CompareImageDXT1(o, m, TRUE))
+    if (!CompareImageDXT23(o, m, TRUE))
     {
         ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -227,7 +288,7 @@ BOOL CompareImageInitializeDXT1(HMODULE module, ImageContainerArgs* a, ImageCont
 
     InitializeImageDXT(m);
 
-    if (!CompareImageDXT1(o, m, TRUE))
+    if (!CompareImageDXT23(o, m, TRUE))
     {
         ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -241,7 +302,7 @@ BOOL CompareImageInitializeDXT1(HMODULE module, ImageContainerArgs* a, ImageCont
     return TRUE;
 }
 
-BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
+BOOL ExecuteImageInitializeDXT23(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
 {
     void* ia = malloc(IMAGE_SIZE);
 
@@ -281,7 +342,7 @@ BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const u3
         palette
     };
 
-    const BOOL result = CompareImageInitializeDXT1(module, &a, &b, colors);
+    const BOOL result = CompareImageInitializeDXT23(module, &a, &b, colors);
 
     free(ia);
     free(ib);
@@ -289,7 +350,7 @@ BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const u3
     return result;
 }
 
-BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const ImageTest* item)
+BOOL ExecuteImageInitializeDXT23(HMODULE module, const D3DFORMAT format, const ImageTest* item)
 {
     u8* palette = NULL;
 
@@ -333,7 +394,7 @@ BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const Im
         return FALSE;
     }
 
-    const BOOL result = ExecuteImageInitializeDXT1(module, format,
+    const BOOL result = ExecuteImageInitializeDXT23(module, format,
         item->Width, item->Heigh, item->Gradient, item->Color, colors, palette, pixels);
 
     free(colors);
@@ -343,7 +404,7 @@ BOOL ExecuteImageInitializeDXT1(HMODULE module, const D3DFORMAT format, const Im
     return result;
 }
 
-BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
+BOOL CompareImageDXT23(HMODULE module, ImageContainerArgs* a, ImageContainerArgs* b, ImageColor* colors)
 {
     // Create
 
@@ -366,7 +427,7 @@ BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs*
         return FALSE;
     }
 
-    if (!CompareImageDXT1(o, m, TRUE))
+    if (!CompareImageDXT23(o, m, TRUE))
     {
         ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -389,7 +450,7 @@ BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs*
 
         m->Self->Write((AbstractImage*)m, x, 0, row);
 
-        if (!CompareImageDXT1(o, m, TRUE))
+        if (!CompareImageDXT23(o, m, TRUE))
         {
             ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
             ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -432,7 +493,7 @@ BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs*
 
         m->Self->Read((AbstractImage*)m, x, 0, mread);
 
-        if (!CompareImageDXT1(o, m, TRUE))
+        if (!CompareImageDXT23(o, m, TRUE))
         {
             ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
             ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -444,7 +505,7 @@ BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs*
     free(oread);
     free(mread);
 
-    if (!CompareImageDXT1(o, m, TRUE))
+    if (!CompareImageDXT23(o, m, TRUE))
     {
         ((IMAGEDXTRELEASEACTION)VIRTUAL_METHOD(o, IMAGE_RELEASE))(o, IMAGE_RELEASE_DISPOSE);
         ReleaseAbstractImage((AbstractImage*)m, IMAGE_RELEASE_DISPOSE);
@@ -458,7 +519,7 @@ BOOL CompareImageDXT1(HMODULE module, ImageContainerArgs* a, ImageContainerArgs*
     return TRUE;
 }
 
-BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
+BOOL ExecuteImageDXT23(HMODULE module, const D3DFORMAT format, const u32 width, const u32 height, const BOOL gradient, const u32 color, ImageColor* colors, const u8* palette, void* pixels)
 {
     void* ia = malloc(IMAGE_SIZE);
 
@@ -498,7 +559,7 @@ BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const u32 width, c
         palette
     };
 
-    const BOOL result = CompareImageDXT1(module, &a, &b, colors);
+    const BOOL result = CompareImageDXT23(module, &a, &b, colors);
 
     free(ia);
     free(ib);
@@ -506,7 +567,7 @@ BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const u32 width, c
     return result;
 }
 
-BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const ImageTest* item)
+BOOL ExecuteImageDXT23(HMODULE module, const D3DFORMAT format, const ImageTest* item)
 {
     u8* palette = NULL;
 
@@ -550,7 +611,7 @@ BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const ImageTest* i
         return FALSE;
     }
 
-    const BOOL result = ExecuteImageDXT1(module, format,
+    const BOOL result = ExecuteImageDXT23(module, format,
         item->Width, item->Heigh, item->Gradient, item->Color, colors, palette, pixels);
 
     free(colors);
@@ -560,23 +621,26 @@ BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format, const ImageTest* i
     return result;
 }
 
-BOOL ExecuteImageDXT1(HMODULE module, const D3DFORMAT format)
+BOOL ExecuteImageDXT23(HMODULE module, const D3DFORMAT format)
 {
     for (u32 x = 0; x < IMAGE_UNPACK_TEST_COUNT; x++)
     {
-        if (!ExecuteUnpackImageDXT1(module, &ImageUnpackTests[x])) { return FALSE; }
+        if (!ExecuteUnpackImageDXT23(module, &ImageUnpackTests[x])) { return FALSE; }
+    }
+
+    for (u32 x = 0; x < ACQUIRE_IMAGE_QUAD_TEST_COUNT; x++)
+    {
+        if (!ExecuteAcquireImageQuadDXT23(module, &AcquireImageQuadTests[x])) { return FALSE; }
     }
 
     for (u32 x = 0; x < MAX_IMAGE_TEST_CASES; x++)
     {
-        if (!ExecuteImageInitializeDXT1(module, format, &ImageTests[x])) { return FALSE; }
+        if (!ExecuteImageInitializeDXT23(module, format, &ImageTests[x])) { return FALSE; }
     }
 
-    // TODO. See comments with ImageDXTQuads.cxx
-    // Check tests ImageDXTNormalizeQuadTests and ImageDXTNormalizeSolidQuadTests that do not work...
     for (u32 x = 0; x < 16 /* MAX_IMAGE_TEST_CASES */; x++)
     {
-        if (!ExecuteImageDXT1(module, format, &ImageTests[x])) { return FALSE; }
+        if (!ExecuteImageDXT23(module, format, &ImageTests[x])) { return FALSE; }
     }
 
     return TRUE;

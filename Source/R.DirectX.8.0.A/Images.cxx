@@ -1807,13 +1807,13 @@ namespace Images
                     (u16*)((addr)self->Pixels + (addr)((self->MinLine >> 2) * self->Stride)
                         + (addr)(self->MinLevel * self->AreaStride) + (addr)((x >> 2) * 8)));
             }
+            else if (self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT3)
+            {
+                UnpackImageDXT23((x >> 2) << 4, &quad,
+                    (u16*)((addr)self->Pixels + (addr)((self->MinLine >> 2) * self->Stride)
+                        + (addr)(self->MinLevel * self->AreaStride) + (addr)((x >> 2) << 4)));
+            }
             // TODO
-            //else if (self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT3)
-            //{
-            //    UnpackImageDXT2(x / IMAGE_DXT_DIMENSION * 16, values,
-            //        (u16*)((addr)self->Pixels + (addr)(self->MinLine / IMAGE_DXT_DIMENSION * self->Stride)
-            //            + (addr)(self->MinLevel * self->AreaStride) + (addr)(x / IMAGE_DXT_DIMENSION * 16))); // TODO
-            //}
             //else if (self->Format == D3DFMT_DXT4 || self->Format == D3DFMT_DXT5)
             //{
             //    UnpackImageDXT4(x / IMAGE_DXT_DIMENSION * 16, values,
@@ -1903,11 +1903,15 @@ namespace Images
 
                         AcquireImageQuadDXT1(pixels, &quad);
                     }
-                    //else if (self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT4)
-                    //{
-                    //    TODO
-                    //}
-                    //else if (self->Format == D3DFMT_DXT3 || self->Format == D3DFMT_DXT5)
+                    else if (self->Format == D3DFMT_DXT2 || self->Format == D3DFMT_DXT3)
+                    {
+                        u16* pixels = (u16*)((addr)self->Pixels
+                            + (addr)(self->AreaStride * level) + (addr)(self->Stride * (x >> 2))
+                            + (addr)((x >> 2) << 4));
+
+                        AcquireImageQuadDXT23(pixels, &quad);
+                    }
+                    //else if (self->Format == D3DFMT_DXT4 || self->Format == D3DFMT_DXT5)
                     //{
                     //    TODO
                     //}
@@ -2399,7 +2403,7 @@ namespace Images
     // 0x600106e2
     void ImageDXTNormalizeSolidQuad(const u32 indx, ImageQuad* quad, u16* pixels)
     {
-        ImageDXTNormalizeQuad(quad, pixels, indx & 0x00FFFFFF, indx & 0xFF000000);
+        ImageDXTNormalizeQuad(quad, pixels, (indx & 0xFF000000) | 0x00FFFFFF, indx & 0xFF000000);
     }
 
     // 0x6000fc4d
@@ -2840,6 +2844,53 @@ namespace Images
                 target[2] = (b[2] - a[2]) * value + target[2];
                 target[1] = (b[1] - a[1]) * value + target[1];
                 target[0] = (b[0] - a[0]) * value + target[0];
+            }
+        }
+    }
+
+    // 0x60010714
+    void UnpackImageDXT23(const u32 indx, ImageQuad* quad, u16* pixels)
+    {
+        u8* color = NULL;
+        u8* alpha = (u8*)((int)quad->Pixels + 0xF);
+        u16* puVar2 = pixels;
+
+        for (u32 x = 0; x < IMAGE_QUAD_COLOR_COUNT; x++)
+        {
+            color = alpha;
+
+            for (u32 xx = 0; xx < IMAGE_QUAD_COLOR_COUNT; xx++)
+            {
+                *puVar2 = *puVar2 << 4;
+                const u8 bVar1 = *color;
+                color = color - 4;
+                *puVar2 = (u16)(bVar1 >> 4) | *puVar2;
+            }
+
+            puVar2 = puVar2 + 1;
+            alpha = alpha + 0x10;
+        }
+
+        ImageDXTNormalizeSolidQuad((u32)color, quad, pixels + 4);
+    }
+
+    // 0x60010594
+    void AcquireImageQuadDXT23(const u16* pixels, ImageQuad* quad)
+    {
+        AcquireImageColorQuad((u16*)((addr)pixels + 4 * sizeof(u16)), quad);
+
+        u8* alpha = &quad->Pixels->A;
+
+        for (u32 x = 0; x < IMAGE_QUAD_COLOR_COUNT; x++)
+        {
+            u16 value = pixels[x];
+
+            for (u32 xx = 0; xx < IMAGE_QUAD_COLOR_COUNT; xx++)
+            {
+                const u8 t = (u8)value;
+                value = value >> 4;
+                *alpha = (u8)t & 0xF | (u8)t << 4;
+                alpha = alpha + 4;
             }
         }
     }

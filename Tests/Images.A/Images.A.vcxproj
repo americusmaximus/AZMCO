@@ -164,6 +164,7 @@
     <ClCompile Include="FPU.cxx" />
     <ClCompile Include="ImageBitMap.cxx" />
     <ClCompile Include="ImageDXT1.cxx" />
+    <ClCompile Include="ImageDXT23.cxx" />
     <ClCompile Include="ImageDXTColors.cxx" />
     <ClCompile Include="ImageDXTMisc.cxx" />
     <ClCompile Include="ImageDXTQuads.cxx" />
@@ -180,6 +181,7 @@
     <ClInclude Include="FPU.hxx" />
     <ClInclude Include="Image.hxx" />
     <ClInclude Include="ImageBitMap.hxx" />
+    <ClInclude Include="ImageDXT23.hxx" />
     <ClInclude Include="ImageDXTColors.hxx" />
     <ClInclude Include="ImageDXTMisc.hxx" />
     <ClInclude Include="ImageDXTQuads.hxx" />

@@ -389,6 +389,8 @@ namespace Images
     void AssignImageDXTSelf(ImageDXT* self);
 
     void UnpackImageDXT1(const u32 indx, ImageQuad* quad, u16* pixels);
+    void UnpackImageDXT23(const u32 indx, ImageQuad* quad, u16* pixels);
+    void UnpackImageDXT45(const u32 indx, ImageQuad* quad, u16* pixels);
     
     void ImageDXTNormalizeSolidQuad(const u32 indx, ImageQuad* quad, u16* pixels);
     void ImageDXTNormalizeQuad(ImageQuad* quad, u16* pixels, const u32 color, const u32 alpha);
@@ -410,8 +412,11 @@ namespace Images
     void AcquireImagePixelQuad(const ImageQuad* quad, u16* pixels, u16 color);
 
     void AcquireImageColor(const u16 in, ImagePixel* out);
-    void AcquireImageQuadDXT1(const u16* pixels, ImageQuad* quad);
     void AcquireImagePixel(ImagePixel in, u16* out);
+
+    void AcquireImageQuadDXT1(const u16* pixels, ImageQuad* quad);
+    void AcquireImageQuadDXT23(const u16* pixels, ImageQuad* quad);
+    void AcquireImageQuadDXT45(const u16* pixels, ImageQuad* quad);
 
     void ImageDXTColorMultiply(const f32* in, f32* out);
     void ImageDXTColorsFromGrayScale(const f32* in, u8* out);
