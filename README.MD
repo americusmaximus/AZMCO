@@ -59,6 +59,9 @@ PKWARE Data Compression Library Reg. U.S. Pat. and Tm. Off.\r\nVersion 1.11`.
 ### Server
 1. [Rusty Motors Racing Server](https://github.com/rustymotors/server)
 
+## Tools
+1. [Vivianne](https://github.com/TheXDS/Vivianne) - a tool for viewing car models from .viv files.
+
 ## Thanks
 1. [Reddit](https://www.reddit.com/) for providing [Motor City Online](https://www.reddit.com/r/needforspeed/comments/12xz4ce/do_you_guys_remember_motor_city_online_and_if_so/) and the offline patch.
 2. [Ladislav Zezula](https://github.com/ladislav-zezula) for the implementation of PkWare's implode algorithm within his [StormLib](https://github.com/ladislav-zezula/StormLib).
