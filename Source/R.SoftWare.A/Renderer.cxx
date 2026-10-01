@@ -895,7 +895,7 @@ namespace RendererModule
     }
 
     // 0x60004510
-    void FUN_60004510(const u32 mode)
+    void FUN_60004510(u32 mode)
     {
         if (RendererSurfaceStride != State.Renderer.Active.Stride)
         {
@@ -904,17 +904,20 @@ namespace RendererModule
             State.Renderer.Settings.Width = State.Renderer.Active.Width;
             State.Renderer.Settings.Height = State.Renderer.Active.Height;
 
-            if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_1)
-            {
-                TODO
-            }
-            else if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_2)
-            {
-                TODO
-            }
-            else if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_3)
+            if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_3)
             {
 
+                TODO
+            }
+
+            if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_2)
+            {
+                TODO
+            }
+
+
+            if (mode == RENDERER_MODULE_STATE_RENDERER_MODE_1)
+            {
                 TODO
             }
         }
