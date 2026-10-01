@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2024 - 2026 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ SOFTWARE.
 #define MAX_RENDERER_LAMBDAS_COUNT 13
 #define MAX_RENDERER_MATERIAL_COLOR_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
-#define MAX_UNKNOWN_COLOR_ARAY_COUNT 16
+#define MAX_UNKNOWN_COLOR_ARRAY_COUNT 16
 #define MAX_UNKNOWN_COUNT (MAX_ACTIVE_UNKNOWN_COUNT + 2)
 #define MAX_USABLE_TEXTURE_FORMAT_COUNT (MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT + 2)
 #define MIN_DEVICE_AVAIABLE_VIDEO_MEMORY (16 * 1024 * 1024) /* ORIGINAL: 0x8000 (32 KB) */
@@ -56,7 +56,21 @@ SOFTWARE.
 
 namespace Renderer
 {
-
+    struct RendererTexture
+    {
+        u32 Width;                      // 0x00
+        u32 Height;                     // 0x04
+        u16* Data;                      // 0x08
+        u16* Pixels;                    // 0x0C
+        u16* Palette;                   // 0x10
+        u32 Bits;                       // 0x14
+        u32 Stride;                     // 0x18
+        u32 Format1;                    // 0x1C
+        u32 Format2;                    // 0x20
+        u32 Size;                       // 0x24
+        u32 ColorDepth;                 // 0x28
+        RendererTexture* Previous;      // 0x2C
+    };
 }
 
 namespace RendererModule
@@ -132,45 +146,51 @@ namespace RendererModule
 
         struct
         {
-            BOOL IsActive; // 0x6002a32c
-            IDirectDrawSurface4* Surface; // 0x6002a330
+            BOOL IsActive;                  // 0x6002a32c
+            IDirectDrawSurface4* Surface;   // 0x6002a330
 
             RendererModuleWindowLock State; // 0x6002a318
         } Lock;
 
-        HANDLE Mutex; // 0x6002a580
+        HANDLE Mutex;                   // 0x6002a580
 
         struct
         {
             struct
             {
-                u32 Stride; // 0x6002a500
-                u32 Length; // 0x6002a504
-                u32 Width; // 0x6002a508
-                u32 Height; // 0x6002a50c
-                void* Surface; // 0x6002a510
+                u32 Stride;             // 0x6002a500
+                u32 Length;             // 0x6002a504
+                u32 Width;              // 0x6002a508
+                u32 Height;             // 0x6002a50c
+                void* Surface;          // 0x6002a510
             } Active;
 
             struct
             {
-                u32* Unknown1; // 0x60a2d410
-                u32* Unknown2; // 0x60a2d414
-                u32* Unknown3; // 0x60a2d418
-                u32* Unknown4; // 0x60a2d41c
+                u32 UnknownValues[2];   // 0x60a2d400
+
+                u16 UnknownValue3;      // 0x60a2d408
+                u16 UnknownValue2;      // 0x60a2d40a
+                u16 UnknownValue1;      // 0x60a2d40c
+
+                u32* Unknown1;          // 0x60a2d410
+                u32* Unknown2;          // 0x60a2d414
+                u32* Unknown3;          // 0x60a2d418
+                u32* Unknown4;          // 0x60a2d41c
             } Colors;
 
             struct
             {
-                void* Allocated; // 0x6002a4fc
-                void* Surface; // 0x6002a4f8
+                void* Allocated;        // 0x6002a4fc
+                void* Surface;          // 0x6002a4f8
 
-                u32 Mode; // 0x6002a520
+                u32 Mode;               // 0x6002a520
             } Surface;
 
             struct
             {
                 u32 Length; // 0x6002a4ec
-                u32 Width; // 0x6002a4f0
+                u32 Width;  // 0x6002a4f0
                 u32 Height; // 0x6002a4f4
             } Settings;
 
@@ -205,19 +225,20 @@ namespace RendererModule
 
         struct
         {
-            s32 StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x60a2c300
-        } Textures;
+            u32 X0;     // 0x6002a334
+            u32 Y0;     // 0x6002a338
+            u32 Width;  // 0x6002a33c
+            u32 Height; // 0x6002a340
+            u32 X1;     // 0x6002a344
+            u32 Y1;     // 0x6002a348
+        } ViewPort;
 
         struct
         {
-            u32 X; // 0x6002a334
-            u32 Y; // 0x6002a338
+            s32 StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x60a2c300
 
-            u32 Left; // 0x6002a33c
-            u32 Top; // 0x6002a340
-            u32 Right; // 0x6002a344
-            u32 Bottom; // 0x6002a348
-        } ViewPort;
+            Renderer::RendererTexture* Current; // 0x60a2a598
+        } Textures;
 
         struct
         {
@@ -233,6 +254,8 @@ namespace RendererModule
     extern RendererModuleState State;
 
     void Message(const char* format, ...);
+
+    void CalculateVertexColor(u32 color);
 
     BOOL CALLBACK EnumerateRendererDevices(GUID* uid, LPSTR name, LPSTR description, LPVOID context);
     HRESULT CALLBACK EnumerateRendererDeviceModes(LPDDSURFACEDESC2 desc, LPVOID context);
@@ -260,4 +283,6 @@ namespace RendererModule
     void SelectRendererStateValue(const u32 state, void* value);
     void ToggleRenderer(void);
     void* AcquireRendererSurface(void);
+
+    void ResetSelectedTexture();
 }

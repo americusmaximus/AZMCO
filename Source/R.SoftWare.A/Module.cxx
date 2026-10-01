@@ -91,13 +91,12 @@ namespace RendererModule
         const u32 width = State.Renderer.Settings.Width < x1 ? State.Renderer.Settings.Width : x1;
         const u32 height = State.Renderer.Settings.Height < y1 ? State.Renderer.Settings.Height : y1;
 
-        State.ViewPort.X = x;
-        State.ViewPort.Y = y;
-
-        State.ViewPort.Left = width - x;
-        State.ViewPort.Right = width - 1;
-        State.ViewPort.Top = height - y;
-        State.ViewPort.Bottom = height - 1;
+        State.ViewPort.X0 = x;
+        State.ViewPort.Y0 = y;
+        State.ViewPort.Width = width - x;
+        State.ViewPort.X1 = width - 1;
+        State.ViewPort.Height = height - y;
+        State.ViewPort.Y1 = height - 1;
 
         return RENDERER_MODULE_SUCCESS;
     }
@@ -113,14 +112,18 @@ namespace RendererModule
     // a.k.a. THRASH_drawlinemesh
     DLLAPI void STDCALLAPI DrawLineMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[indexes[x * 2 + 0]], (RVX*)&vs[indexes[x * 2 + 1]]); }
     }
 
     // 0x60002440
     // a.k.a. THRASH_drawlinestrip
     DLLAPI void STDCALLAPI DrawLineStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[x + 0], (RVX*)&vs[x + 1]); }
     }
 
     // 0x600022b0
@@ -128,28 +131,42 @@ namespace RendererModule
     // NOTE: Never being called by the application.
     DLLAPI void STDCALLAPI DrawLineStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawLine((RVX*)&vs[x + 0], (RVX*)&vs[x + 1]); }
     }
 
     // 0x60002310
     // a.k.a. THRASH_drawpoint
     DLLAPI void STDCALLAPI DrawPoint(RVX* vertex)
     {
-        // TODO NOT IMPLEMENTED
+        const s32 x = (s32)((RTLVX*)vertex)->XYZ.X;
+        const s32 y = (s32)((RTLVX*)vertex)->XYZ.Y;
+        const u32 color = (s32)((RTLVX*)vertex)->Color;
+
+        CalculateVertexColor(color);
+
+        u16* pixels = (u16*)((addr)State.Renderer.Surface.Surface + RendererSurfaceStride * y);
+
+        pixels[x] = VertexColor;
     }
 
     // 0x60002370
     // a.k.a. THRASH_drawpointmesh
     DLLAPI void STDCALLAPI DrawPointMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&vs[indexes[x]]); }
     }
 
     // 0x60002470
     // a.k.a. THRASH_drawpointstrip
     DLLAPI void STDCALLAPI DrawPointStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawPoint((RVX*)&vs[x]); }
     }
 
     // 0x60001e80
@@ -225,9 +242,7 @@ namespace RendererModule
     {
         if (State.Renderer.Surface.Mode != RENDERER_MODULE_STATE_RENDERER_MODE_0)
         {
-            FUN_60004510(State.Renderer.Surface.Mode);
-
-            return RENDERER_MODULE_SUCCESS;
+            return FUN_60004510(State.Renderer.Surface.Mode);
         }
 
         return RENDERER_MODULE_FAILURE;
@@ -244,7 +259,7 @@ namespace RendererModule
 
     // 0x600011a0
     // a.k.a. THRASH_idle
-    DLLAPI void STDCALLAPI Idle(void) { }
+    DLLAPI void STDCALLAPI Idle(void) {}
 
     // 0x60002c30
     // a.k.a. THRASH_init
@@ -340,9 +355,23 @@ namespace RendererModule
     // a.k.a. THRASH_readrect
     DLLAPI u32 STDCALLAPI ReadRectangle(const u32 x, const u32 y, const u32 width, const u32 height, u32* pixels)
     {
-        // TODO NOT IMPLEMENTED
+        const RendererModuleWindowLock* state = LockGameWindow();
 
-        return RENDERER_MODULE_FAILURE;
+        if (state == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 multiplier = state->Format == RENDERER_PIXEL_FORMAT_R8G8B8
+            ? (GRAPHICS_BITS_PER_PIXEL_32 >> 3) : (GRAPHICS_BITS_PER_PIXEL_16 >> 3);
+
+        const u32 length = multiplier * width;
+
+        for (u32 xx = 0; xx < height; xx++)
+        {
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+
+            CopyMemory(&pixels[xx * length], (void*)((addr)state->Data + (addr)offset), length);
+        }
+
+        return UnlockGameWindow(state);
     }
 
     // 0x60002c60
@@ -683,11 +712,64 @@ namespace RendererModule
     // a.k.a. THRASH_talloc
     DLLAPI RendererTexture* STDCALLAPI AllocateTexture(const u32 width, const u32 height, const u32 format, const u32 options, const u32 state)
     {
-        // TODO NOT IMPLEMENTED
+        RendererTexture* texture = (RendererTexture*)malloc(sizeof(RendererTexture));
 
-        return NULL;
+        if (texture != NULL)
+        {
+            texture->Width = width;
+            texture->Height = height;
+            texture->Format1 = format;
+            texture->Format2 = format;
+
+            texture->Previous = State.Textures.Current;
+            State.Textures.Current = texture;
+
+            switch (format) {
+            case RENDERER_PIXEL_FORMAT_P8:
+            {
+                texture->Bits = GRAPHICS_BITS_PER_PIXEL_8;
+                texture->ColorDepth = TextureColorDepth;
+                texture->Stride = width;
+                texture->Size = width * height;
+
+                const size_t pal_size = TextureColorDepth * 1024;
+
+                texture->Data = (u16*)malloc(texture->Size + pal_size + 0x20 + width);
+                texture->Palette = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
+                texture->Pixels = (u16*)((addr)texture->Palette + pal_size);
+
+                break;
+            }
+            case RENDERER_PIXEL_FORMAT_R5G5B5:
+            case RENDERER_PIXEL_FORMAT_R5G6B5:
+            {
+                texture->Bits = GRAPHICS_BITS_PER_PIXEL_16;
+                texture->Stride = (texture->Bits >> 3) * width;
+                texture->Size = texture->Stride * height;
+
+                texture->Data = (u16*)malloc(texture->Size + 0x20 + width * 4);
+                texture->Palette = NULL;
+                texture->Pixels = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
+
+                break;
+            }
+            case RENDERER_PIXEL_FORMAT_R4G4B4:
+            {
+                texture->Bits = GRAPHICS_BITS_PER_PIXEL_32;
+                texture->Stride = (texture->Bits >> 3) * width;
+                texture->Size = texture->Stride * height;
+
+                texture->Data = (u16*)malloc(texture->Size + 0x20 + width * 8);
+                texture->Palette = NULL;
+                texture->Pixels = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
+
+                break;
+            }
+            }
+        }
+
+        return texture;
     }
-
 
     // 0x600011b0
     // a.k.a. THRASH_tfree
@@ -697,9 +779,25 @@ namespace RendererModule
     // a.k.a. THRASH_treset
     DLLAPI u32 STDCALLAPI ResetTextures(void)
     {
-        // TODO NOT IMPLEMENTED
+        while (State.Textures.Current != NULL)
+        {
+            if (State.Textures.Current->Data != NULL)
+            {
+                free(State.Textures.Current->Data);
+            }
 
-        return RENDERER_MODULE_FAILURE;
+            RendererTexture* prev = State.Textures.Current->Previous;
+
+            free(State.Textures.Current);
+
+            State.Textures.Current = prev;
+        }
+
+        State.Textures.Current = NULL;
+
+        ResetSelectedTexture();
+
+        return RENDERER_MODULE_SUCCESS;
     }
 
     // 0x600037f0
@@ -760,33 +858,29 @@ namespace RendererModule
 
         SelectRendererStateValue(RENDERER_MODULE_STATE_SELECT_GAME_WINDOW_INDEX, (void*)indx);
 
-        return State.DX.Surfaces.Window != NULL;
+        return State.DX.Surfaces.Window == NULL ? RENDERER_MODULE_FAILURE : RENDERER_MODULE_SUCCESS;
     }
 
     // 0x60003050
     // a.k.a. THRASH_writerect
     DLLAPI u32 STDCALLAPI WriteRectangle(const u32 x, const u32 y, const u32 width, const u32 height, const u32* pixels)
     {
-        RendererModuleWindowLock* lock = LockGameWindow();
+        const RendererModuleWindowLock* state = LockGameWindow();
 
-        if (lock == NULL)
+        if (state == NULL) { return RENDERER_MODULE_FAILURE; }
+
+        const u32 multiplier = state->Format == RENDERER_PIXEL_FORMAT_R8G8B8
+            ? (GRAPHICS_BITS_PER_PIXEL_32 >> 3) : (GRAPHICS_BITS_PER_PIXEL_16 >> 3);
+
+        const u32 length = multiplier * width;
+
+        for (u32 xx = 0; xx < height; xx++)
         {
-            return RENDERER_MODULE_FAILURE;
+            const addr offset = (xx * state->Stride) + (state->Stride * y) + (multiplier * x);
+
+            CopyMemory((void*)((addr)state->Data + (addr)offset), &pixels[xx * length], length);
         }
 
-        const u32 stride = lock->Stride;
-        const u32 bytes = lock->Format == RENDERER_PIXEL_FORMAT_R8G8B8 ? 4 : 2;
-        const u32 line = width * bytes;
-
-        u32* ptr = (u32*)((addr)lock->Data + (x * bytes + y * stride));
-
-        for (u32 xx = 0; xx < height; xx++) {
-            u32* dst = (u32*)((addr)ptr + stride * xx);
-            const u32* src = (u32*)((addr)pixels + line * xx);
-
-            memcpy(dst, src, line);
-        }
-
-        return UnlockGameWindow(lock);
+        return UnlockGameWindow(state);
     }
 }

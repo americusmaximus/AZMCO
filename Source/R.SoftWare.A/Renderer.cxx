@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Americus Maximus
+Copyright (c) 2024 - 2026 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,8 +76,8 @@ namespace RendererModule
             State.Renderer.Colors.Unknown3 = Unknown16BitColors3;
             State.Renderer.Colors.Unknown4 = Unknown16BitColors4;
 
-            GreenRendererColorShift = 11;
-            GreenRendererColorLength = 6;
+            RedColorBitsOffset = 11;
+            GreenColorBitsSize = 6;
         }
         else
         {
@@ -91,8 +91,8 @@ namespace RendererModule
             State.Renderer.Colors.Unknown3 = Unknown32BitColors3;
             State.Renderer.Colors.Unknown4 = Unknown32BitColors4;
 
-            GreenRendererColorShift = 10;
-            GreenRendererColorLength = 5;
+            RedColorBitsOffset = 10;
+            GreenColorBitsSize = 5;
         }
     }
     // 0x60001440
@@ -184,6 +184,20 @@ namespace RendererModule
         }
 
         return color;
+    }
+
+    // 0x60001b40
+    void CalculateVertexColor(u32 color)
+    {
+        VertexColor = AcquireColorValue(color);
+        VertexColorOptimized = (VertexColor << 16) | VertexColor;
+
+        State.Renderer.Colors.UnknownValue1 = State.Renderer.Colors.Unknown1[8] & (VertexColor >> 1);
+        State.Renderer.Colors.UnknownValue2 = State.Renderer.Colors.Unknown3[4] & (VertexColor >> 2);
+        State.Renderer.Colors.UnknownValue3 = State.Renderer.Colors.UnknownValue1 + State.Renderer.Colors.UnknownValue2;
+
+        State.Renderer.Colors.UnknownValues[0] = VertexColorOptimized;
+        State.Renderer.Colors.UnknownValues[1] = VertexColorOptimized;
     }
     
     // 0x60001bc0
@@ -867,6 +881,19 @@ namespace RendererModule
             (void*)AcquireSettingsValue(RENDERER_MODULE_DEPTH_FUNCTION_LESS_EQUAL, section, "DEPTHCMP"));
     }
 
+    // 0x600044d0
+    void ModifyRendererSurface(void)
+    {
+        if (RendererSurfaceStride == State.Renderer.Active.Stride)
+        {
+            RendererSurfaceStride = RendererSurfaceStride * 2;
+
+            State.Renderer.Settings.Width = State.Renderer.Settings.Width * 2;
+
+            State.Renderer.Settings.Height = State.Renderer.Settings.Height / 2;
+        }
+    }
+
     // 0x60004510
     void FUN_60004510(const u32 mode)
     {
@@ -893,17 +920,11 @@ namespace RendererModule
         }
     }
 
-    // 0x600044d0
-    void ModifyRendererSurface(void)
+    // 0x600046e0
+    void ResetSelectedTexture()
     {
-        if (RendererSurfaceStride == State.Renderer.Active.Stride)
-        {
-            RendererSurfaceStride = RendererSurfaceStride * 2;
-
-            State.Renderer.Settings.Width = State.Renderer.Settings.Width * 2;
-
-            State.Renderer.Settings.Height = State.Renderer.Settings.Height / 2;
-        }
+        SelectBasicRendererState(RENDERER_MODULE_STATE_55, (void*)(DAT_60a2a5d0 + 1));
+        SelectState(RENDERER_MODULE_STATE_SELECT_TEXTURE, (void*)0);
     }
 
     // 0x60004700

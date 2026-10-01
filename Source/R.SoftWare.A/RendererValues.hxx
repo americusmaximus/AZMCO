@@ -35,32 +35,36 @@ namespace RendererModuleValues
 
     extern u32 RendererSurfaceStride; // 0x60021074
 
-    extern u32 Unknown32BitColors1[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021098
-    extern u32 Unknown32BitColors2[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021118
-    extern u32 Unknown32BitColors3[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x600210d8
-    extern u32 Unknown32BitColors4[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021158
+    extern u32 Unknown32BitColors1[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021098
+    extern u32 Unknown32BitColors2[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021118
+    extern u32 Unknown32BitColors3[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x600210d8
+    extern u32 Unknown32BitColors4[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021158
 
-    extern u32 Unknown16BitColors1[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021198
-    extern u32 Unknown16BitColors2[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021218
-    extern u32 Unknown16BitColors3[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x600211d8
-    extern u32 Unknown16BitColors4[MAX_UNKNOWN_COLOR_ARAY_COUNT]; // 0x60021258
+    extern u32 Unknown16BitColors1[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021198
+    extern u32 Unknown16BitColors2[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021218
+    extern u32 Unknown16BitColors3[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x600211d8
+    extern u32 Unknown16BitColors4[MAX_UNKNOWN_COLOR_ARRAY_COUNT]; // 0x60021258
 
-    extern u32 GreenRendererColorMask; // 0x60021298
-    extern u32 RedRendererColorMask; // 0x6002129c
-    extern u32 BlueRendererColorMask; // 0x600212a0
-    extern u32 NonGreenRendererColorMask; // 0x600212a4
-    extern u32 GreenRendererColorShift; // 0x600212a8
-    extern u32 GreenRendererColorLength; // 0x600212ac
+    extern u32 GreenRendererColorMask;      // 0x60021298
+    extern u32 RedRendererColorMask;        // 0x6002129c
+    extern u32 BlueRendererColorMask;       // 0x600212a0
+    extern u32 NonGreenRendererColorMask;   // 0x600212a4
+    extern u32 RedColorBitsOffset;          // 0x600212a8
+    extern u32 GreenColorBitsSize;          // 0x600212ac
 
     extern RendererModule::MinMax MinMax[6]; // 0x600212b0 // TODO
 
-    extern s32 RendererVideoMode; // 0x600212e0
+    extern s32 RendererVideoMode;   // 0x600212e0
 
-    extern u32 RendererCullMode; // 0x600212e8
+    extern u32 RendererCullMode;    // 0x600212e8
+    extern u32 TextureColorDepth;   // 0x600212ec
 
-    extern u32 RendererVersion; // 0x600212f4
+    extern u32 RendererVersion;     // 0x600212f4
 
     extern s32 RendererDeviceIndex; // 0x6002a584
 
     extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x60a2d440
+
+    extern u32 VertexColor;                 // 0x6002107c
+    extern u32 VertexColorOptimized;        // 0x60021080
 }
