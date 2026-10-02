@@ -728,11 +728,11 @@ namespace RendererModule
             case RENDERER_PIXEL_FORMAT_P8:
             {
                 texture->Bits = GRAPHICS_BITS_PER_PIXEL_8;
-                texture->ColorDepth = TextureColorDepth;
+                texture->PaletteCount = TexturePaletteCount;
                 texture->Stride = width;
                 texture->Size = width * height;
 
-                const size_t pal_size = TextureColorDepth * 1024;
+                const size_t pal_size = TexturePaletteCount * RENDERER_PALETTE_COLOR_COUNT * sizeof(u32);
 
                 texture->Data = (u16*)malloc(texture->Size + pal_size + 0x20 + width);
                 texture->Palette = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
@@ -749,7 +749,7 @@ namespace RendererModule
 
                 texture->Data = (u16*)malloc(texture->Size + 0x20 + width * 4);
                 texture->Palette = NULL;
-                texture->Pixels = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
+                texture->Pixels = (u16*)((((addr)texture->Data + 0x20) & 0xFFFFFFE0) + width * 2);
 
                 break;
             }
@@ -761,7 +761,7 @@ namespace RendererModule
 
                 texture->Data = (u16*)malloc(texture->Size + 0x20 + width * 8);
                 texture->Palette = NULL;
-                texture->Pixels = (u16*)(((addr)texture->Data + 0x20) & 0xFFFFFFE0);
+                texture->Pixels = (u16*)((((addr)texture->Data + 0x20) & 0xFFFFFFE0) + width * 4);
 
                 break;
             }
@@ -812,7 +812,7 @@ namespace RendererModule
         {
             if (pixels != NULL)
             {
-                if (FUN_60003ac0(tex, pixels))
+                if (RendererSetPaletteTexturePixels(tex, pixels))
                 {
                     tex->Format1 = RENDERER_PIXEL_FORMAT_1;
                 }
@@ -820,7 +820,7 @@ namespace RendererModule
 
             if (palette != NULL)
             {
-                FUN_60003b00(tex, palette);
+                RendererSetPaletteTexturePalette(tex, palette);
             }
 
             break;
@@ -828,13 +828,52 @@ namespace RendererModule
         case RENDERER_PIXEL_FORMAT_R5G5B5:
         case RENDERER_PIXEL_FORMAT_R5G6B5:
         {
-            // TODO NOT IMPLEMENTED
+            if (pixels == NULL)
+            {
+                return NULL;
+            }
+
+            if (State.DX.Surfaces.Bits == GRAPHICS_BITS_PER_PIXEL_16)
+            {
+                if (tex->Format1 != RENDERER_PIXEL_FORMAT_R5G6B5)
+                {
+                    if (RendererSetTexturePixelsA1R5G6B5(tex->Pixels, (u16*)pixels, tex->Size / sizeof(u16)))
+                    {
+                        tex->Format1 = RENDERER_PIXEL_FORMAT_R5G5B5;
+
+                        break;
+                    }
+                }
+
+                CopyMemory(tex->Pixels, pixels, tex->Size);
+            }
+            else
+            {
+                if (tex->Format1 == RENDERER_PIXEL_FORMAT_R5G6B5)
+                {
+                    RendererSetTexturePixelsR5G6B5(tex->Pixels, (u16*)pixels, tex->Size / sizeof(u16));
+                    tex->Format1 = RENDERER_PIXEL_FORMAT_R5G6B5;
+
+                    break;
+                }
+
+                if (RendererSetTexturePixelsR5G5B5(tex->Pixels, (u16*)pixels, tex->Size / sizeof(u16)))
+                {
+                    tex->Format1 = RENDERER_PIXEL_FORMAT_R5G5B5;
+
+                    break;
+                }
+            }
+
+            tex->Format1 = RENDERER_PIXEL_FORMAT_R5G6B5;
+
+            break;
         }
         case RENDERER_PIXEL_FORMAT_R4G4B4:
         {
             if (pixels != NULL)
             {
-                FUN_60003a20(tex->Pixels, pixels, tex->Size >> 2);
+                RendererSetTexturePixelsA4R4G4B4((u32*)tex->Pixels, (u16*)pixels, tex->Size / sizeof(u32));
                 CopyMemory((void*)((addr)tex->Pixels + tex->Size), tex->Pixels, tex->Stride);
             }
         }

@@ -54,14 +54,14 @@ namespace RendererModuleValues
 
     extern RendererModule::MinMax MinMax[6]; // 0x600212b0 // TODO
 
-    extern s32 RendererVideoMode;   // 0x600212e0
+    extern s32 RendererVideoMode;           // 0x600212e0
 
-    extern u32 RendererCullMode;    // 0x600212e8
-    extern u32 TextureColorDepth;   // 0x600212ec
+    extern u32 RendererCullMode;            // 0x600212e8
+    extern s32 TexturePaletteCount;         // 0x600212ec
+    extern s32 CurrentTexturePaletteCount;  // 0x600212f0
+    extern u32 RendererVersion;             // 0x600212f4
 
-    extern u32 RendererVersion;     // 0x600212f4
-
-    extern s32 RendererDeviceIndex; // 0x6002a584
+    extern s32 RendererDeviceIndex;         // 0x6002a584
 
     extern RendererModule::RendererModuleDescriptor ModuleDescriptor; // 0x60a2d440
 

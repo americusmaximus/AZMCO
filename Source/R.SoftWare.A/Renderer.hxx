@@ -49,6 +49,7 @@ SOFTWARE.
 #define RENDERER_SURFACE_SIZE_DESCRIPTOR_OFFSET (256 - 16) /* RENDERER_SURFACE_SIZE_OFFSET - sizeof(RendererModuleSurfaceDescriptor) */
 #define RENDERER_SURFACE_SIZE_MOFIFIER (256 + 16) /* RENDERER_SURFACE_SIZE_OFFSET + sizeof(RendererModuleSurfaceDescriptor) */
 #define RENDERER_SURFACE_SIZE_OFFSET 256
+#define RENDERER_PALETTE_COLOR_COUNT 256
 
 #define RENDERER_CULL_MODE_CLOCK_WISE           0x00000000
 #define RENDERER_CULL_MODE_NONE                 0x00000001
@@ -67,7 +68,7 @@ namespace Renderer
         u32 Stride;                     // 0x18
         u32 Format1;                    // 0x1C
         u32 Size;                       // 0x20
-        s32 ColorDepth;                 // 0x24
+        s32 PaletteCount;               // 0x24
         u32 Format2;                    // 0x28
         RendererTexture* Previous;      // 0x2C
     };
@@ -256,6 +257,7 @@ namespace RendererModule
     void Message(const char* format, ...);
 
     void CalculateVertexColor(u32 color);
+    u32 AcquireWeightedColorValue(u32 color, f32 modifier);
 
     BOOL CALLBACK EnumerateRendererDevices(GUID* uid, LPSTR name, LPSTR description, LPVOID context);
     HRESULT CALLBACK EnumerateRendererDeviceModes(LPDDSURFACEDESC2 desc, LPVOID context);
@@ -285,4 +287,10 @@ namespace RendererModule
     void* AcquireRendererSurface(void);
 
     void ResetSelectedTexture();
+    BOOL RendererSetPaletteTexturePixels(Renderer::RendererTexture* tex, const u32* pixels);
+    void RendererSetPaletteTexturePalette(Renderer::RendererTexture* tex, const u32* palette);
+    void RendererSetTexturePixelsA4R4G4B4(u32* dst, const u16* src, const u32 count);
+    BOOL RendererSetTexturePixelsA1R5G6B5(u16* dst, const u16* src, const u32 count);
+    void RendererSetTexturePixelsR5G6B5(u16* dst, const u16* src, const u32 count);
+    BOOL RendererSetTexturePixelsR5G5B5(u16* dst, const u16* src, const u32 count);
 }
