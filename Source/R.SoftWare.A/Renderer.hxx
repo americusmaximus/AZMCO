@@ -239,16 +239,33 @@ namespace RendererModule
             s32 StageStates[MAX_TEXTURE_STATE_STATE_COUNT]; // 0x60a2c300
 
             Renderer::RendererTexture* Current; // 0x60a2a598
+
+            struct
+            {
+                u16* Pixels;                // 0x60a2a59c
+                u16* Palette;               // 0x60a2a5a0
+                u32 UnknownSize;            // 0x60a2a5a4
+                u32 WidthOffset;            // 0x60a2a5a8
+
+                f32 WidthSquaredAsFloat;    // 0x60a2c284
+                f32 WidthRatio3;            // 0x60a2c288
+                f32 WidthRatio2;            // 0x60a2c28c
+                f32 WidthAsFloat;           // 0x60a2c290
+
+                u32 Width;                  // 0x60a2c29c
+                f32 WidthRatio1;            // 0x60a2c2a0
+                u32 Height;                 // 0x60a2c2a4
+            } Selected;
         } Textures;
 
         struct
         {
-            u32 Bits; // 0x60a2c2f0
+            u32 Bits;   // 0x60a2c2f0
 
-            u32 Width; // 0x60a2c2e0
+            u32 Width;  // 0x60a2c2e0
             u32 Height; // 0x60a2c2e4
 
-            HWND HWND; // 0x6002a538
+            HWND HWND;  // 0x6002a538
         } Window;
     };
 
