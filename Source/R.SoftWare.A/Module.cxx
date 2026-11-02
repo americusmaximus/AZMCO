@@ -252,9 +252,9 @@ namespace RendererModule
     // a.k.a. THRASH_getstate
     DLLAPI u32 STDCALLAPI AcquireState(const u32 state)
     {
-        // TODO NOT IMPLEMENTED
+        const s32 indx = AcquireTextureStateStageIndex(state);
 
-        return RENDERER_MODULE_SUCCESS;
+        return  (-1 < indx) ? State.Textures.StageStates[indx] : indx;
     }
 
     // 0x600011a0

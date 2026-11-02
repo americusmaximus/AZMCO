@@ -1066,7 +1066,7 @@ namespace RendererModule
     }
 
     // 0x60004510
-    void FUN_60004510(u32 mode)
+    u32 FUN_60004510(const u32 mode)
     {
         if (RendererSurfaceStride != State.Renderer.Active.Stride)
         {
@@ -1092,6 +1092,8 @@ namespace RendererModule
                 TODO
             }
         }
+
+        return State.Renderer.Active.Stride;
     }
 
     // 0x600046e0
