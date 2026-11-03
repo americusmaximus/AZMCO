@@ -260,6 +260,11 @@ namespace RendererModule
 
         struct
         {
+            RTLVX* Start;   // 0x60a2c264
+        } Vertexes;
+
+        struct
+        {
             u32 Bits;   // 0x60a2c2f0
 
             u32 Width;  // 0x60a2c2e0
