@@ -701,7 +701,7 @@ namespace RendererModule
 
     // 0x60002cc0
     // a.k.a. THRASH_setvideomode
-    DLLAPI u32 STDCALLAPI SelectVideoMode(const u32 mode, const u32 pending, const u32 depth)
+    DLLAPI u32 STDCALLAPI SelectVideoMode(const s32 mode, const u32 pending, const u32 depth)
     {
         SelectBasicRendererState(RENDERER_MODULE_STATE_62, (void*)(DAT_60a2a5d4 + 1)); // TODO
 
