@@ -110,7 +110,7 @@ namespace RendererModule
 
         if (end->XYZ.X < begin->XYZ.X || end->XYZ.Y < begin->XYZ.Y)
         {
-            State.Vertexes.Start = a;
+            State.Vertexes.Start = begin;
 
             begin = (RTLVX*)b;
             end = (RTLVX*)a;
@@ -229,7 +229,13 @@ namespace RendererModule
     // a.k.a. THRASH_drawquadmesh
     DLLAPI void STDCALLAPI DrawQuadMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            DrawQuad((RVX*)&vs[indexes[4 * x + 0]], (RVX*)&vs[indexes[4 * x + 1]],
+                (RVX*)&vs[indexes[4 * x + 2]], (RVX*)&vs[indexes[4 * x + 3]]);
+        }
     }
 
     // 0x600022f0
@@ -246,28 +252,47 @@ namespace RendererModule
     // a.k.a. THRASH_drawtri
     DLLAPI void STDCALLAPI DrawTriangle(RVX* a, RVX* b, RVX* c)
     {
-        // TODO NOT IMPLEMENTED
+        RTLVX* va = (RTLVX*)a;
+        RTLVX* vb = (RTLVX*)b;
+        RTLVX* vc = (RTLVX*)c;
+
+        const u32 alpha = ((va->Color >> 24) + (vb->Color >> 24) + (vc->Color >> 24)) / 3;
+
+        State.Renderer.Lambdas.Active->Lambdas[alpha >> 5](va, vb, vc);
     }
 
     // 0x60002400
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFan(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++) { DrawTriangle((RVX*)&vs[0], (RVX*)&vs[x + 1], (RVX*)&vs[x + 2]); }
     }
 
     // 0x60002060
     // a.k.a. THRASH_drawtrifan
     DLLAPI void STDCALLAPI DrawTriangleFans(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            DrawTriangle((RVX*)&vs[0], (RVX*)&vs[3 * x + 1], (RVX*)&vs[3 * x + 2]);
+        }
     }
 
     // 0x60001e40
     // a.k.a. THRASH_drawtrimesh
     DLLAPI void STDCALLAPI DrawTriangleMesh(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        for (u32 x = 0; x < count; x++)
+        {
+            DrawTriangle((RVX*)&vs[indexes[3 * x + 0]],
+                (RVX*)&vs[indexes[3 * x + 1]], (RVX*)&vs[indexes[3 * x + 2]]);
+        }
     }
 
     // 0x600023a0
@@ -275,14 +300,25 @@ namespace RendererModule
     // NOTE: Triangle strip vertex order: 0 1 2, 1 3 2, 2 3 4, 3 5 4, 4 5 6, ...
     DLLAPI void STDCALLAPI DrawTriangleStrip(const u32 count, RVX* vertexes)
     {
-        // TODO NOT IMPLEMENTED
+        if (count == 0) { return; }
+
+        const RTLVX* vs = (RTLVX*)vertexes;
+
+        DrawTriangle((RVX*)&vs[0], (RVX*)&vs[1], (RVX*)&vs[2]);
+
+        for (u32 x = 1; x < count; x = x + 2)
+        {
+            DrawTriangle((RVX*)&vs[x + 0], (RVX*)&vs[x + 2], (RVX*)&vs[x + 1]);
+
+            if ((x + 1) < count) { DrawTriangle((RVX*)&vs[x + 1], (RVX*)&vs[x + 2], (RVX*)&vs[x + 3]); }
+        }
     }
 
     // 0x60001fd0
     // a.k.a. THRASH_drawtristrip
     DLLAPI void STDCALLAPI DrawTriangleStrips(const u32 count, RVX* vertexes, const u32* indexes)
     {
-        // TODO NOT IMPLEMENTED
+        DrawTriangleStrip(count, vertexes);
     }
 
     // 0x60001170

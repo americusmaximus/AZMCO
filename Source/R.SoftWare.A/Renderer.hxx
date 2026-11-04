@@ -37,7 +37,6 @@ SOFTWARE.
 #define MAX_ACTIVE_SURFACE_COUNT 8
 #define MAX_ACTIVE_UNKNOWN_COUNT 4
 #define MAX_ACTIVE_USABLE_TEXTURE_FORMAT_COUNT 9
-#define MAX_RENDERER_LAMBDAS_COUNT 13
 #define MAX_RENDERER_MATERIAL_COLOR_COUNT 8
 #define MAX_TEXTURE_STATE_STATE_COUNT 120
 #define MAX_UNKNOWN_COLOR_ARRAY_COUNT 16
@@ -54,6 +53,10 @@ SOFTWARE.
 #define RENDERER_CULL_MODE_CLOCK_WISE           0x00000000
 #define RENDERER_CULL_MODE_NONE                 0x00000001
 #define RENDERER_CULL_MODE_COUNTER_CLOCK_WISE   0x80000000
+
+#define MAX_RENDERER_LAMBDA_GROUP_COUNT         1
+#define MAX_RENDERER_LAMBDA_GROUP_ITEM_COUNT    12
+#define MAX_RENDERER_LAMBDA_ITEM_COUNT          8
 
 namespace Renderer
 {
@@ -95,16 +98,13 @@ namespace RendererModule
         u32 Unk05; // TODO
     };
 
+    typedef void(*RendererModuleRendererLambda)(Renderer::RTLVX* a, Renderer::RTLVX* b, Renderer::RTLVX* c);
+
+    // Contains a list of lambdas to draw a triangle based on average alpha value of the triangle's vertexes.
+    // Alpha values are in the range of (0..255) >> 5, which results in a range of (0..7) for the lambdas.
     struct RendererModuleRendererLambdaContainer
     {
-        void* Unk00;
-        void* Unk01;
-        void* Unk02;
-        void* Unk03;
-        void* Unk04;
-        void* Unk05;
-        void* Unk06;
-        void* Unk07;
+        RendererModuleRendererLambda Lambdas[MAX_RENDERER_LAMBDA_ITEM_COUNT];
     };
 
     struct RendererModuleState
@@ -206,7 +206,7 @@ namespace RendererModule
                 u32 Index; // 0x60a2c298
 
                 RendererModuleRendererLambdaContainer* Active; // 0x6002a518
-                RendererModuleRendererLambdaContainer Lambdas[MAX_RENDERER_LAMBDAS_COUNT]; // 0x6002a34c
+                RendererModuleRendererLambdaContainer Lambdas[MAX_RENDERER_LAMBDA_GROUP_ITEM_COUNT]; // 0x6002a34c
             } Lambdas;
 
             BOOL IsActive; // 0x6002a51c
@@ -260,7 +260,7 @@ namespace RendererModule
 
         struct
         {
-            RTLVX* Start;   // 0x60a2c264
+            Renderer::RTLVX* Start;   // 0x60a2c264
         } Vertexes;
 
         struct
