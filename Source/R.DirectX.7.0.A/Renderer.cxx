@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 - 2024 Americus Maximus
+Copyright (c) 2023 - 2026 Americus Maximus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -288,7 +288,7 @@ namespace RendererModule
     // 0x600030f0
     u32 InitializeRendererDevice(void)
     {
-        if (State.Window.HWND != NULL) { return RENDERER_MODULE_FAILURE; }
+        if (State.Window.HWND == NULL) { return RENDERER_MODULE_FAILURE; }
 
         State.Settings.CooperativeLevel = (State.Settings.CooperativeLevel & ~(DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN))
             | (DDSCL_MULTITHREADED | DDSCL_NORMAL);
